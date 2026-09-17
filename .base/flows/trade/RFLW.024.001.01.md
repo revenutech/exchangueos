@@ -117,3 +117,5 @@ flowchart TB
 - FX-EDA-* (Event-Driven Architecture — outbox dispatch)
 - FX-IAM-* (TenantContext extraction)
 - FX-OTEL-* (span propagation)
+
+> **Nota de frescor 2026-09-17 (auditoria).** A pré-condição "BICs são membros CLS via `bic_records.cls_eligible`" está incorreta: a tabela `bic_records` (`migrations/000005_create_refdata.up.sql:41-53`) NÃO tem a coluna `cls_eligible`. A elegibilidade CLS é da MOEDA/PAR (`currencies.cls_eligible` em 000005:13, `currency_pairs.cls_eligible` em 000004:22), não do BIC.
