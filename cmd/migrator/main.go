@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/cockroachdb"
@@ -77,7 +78,7 @@ func run() error {
 
 	m, err := migrate.New(source, cockroachDSN(cfg.DB.DSN))
 	if err != nil {
-		return fmt.Errorf("migrate.New: %w", err)
+		return fmt.Errorf("migrate.New: %w", scrubDSNFromError(err, cfg.DB.DSN))
 	}
 	defer func() {
 		if srcErr, dbErr := m.Close(); srcErr != nil || dbErr != nil {
@@ -181,6 +182,35 @@ func cockroachDSN(dsn string) string {
 		return "cockroach://" + dsn[len(prefix):]
 	}
 	return dsn
+}
+
+// scrubDSNFromError guards against a real leak in golang-migrate itself:
+// migrate.New wraps database.Open failures with `fmt.Errorf("failed to open
+// database, %q: %w", databaseURL, err)` — i.e. it embeds the RAW DSN
+// (including the password) into the error message whenever the driver fails
+// to open the DB (bad host, refused connection, auth failure — all reachable
+// in normal operation). That error bubbles up through `run()` to
+// `fmt.Fprintf(os.Stderr, "fatal: %v\n", err)` in main(), printing the
+// password in clear text. Verified live against
+// github.com/golang-migrate/migrate/v4 v4.18.1 (database/driver.go Open()).
+//
+// rawDSN is the config's original DSN (cfg.DB.DSN); scrubDSNFromError also
+// checks the cockroachDSN(rawDSN) transform since that's the literal string
+// passed to migrate.New. Both occurrences are replaced with the value
+// config.DBConfig.Redacted() would have produced.
+func scrubDSNFromError(err error, rawDSN string) error {
+	if err == nil || rawDSN == "" {
+		return err
+	}
+	msg := err.Error()
+	transformed := cockroachDSN(rawDSN)
+	if !strings.Contains(msg, rawDSN) && !strings.Contains(msg, transformed) {
+		return err
+	}
+	redacted := config.DBConfig{DSN: rawDSN}.Redacted()
+	msg = strings.ReplaceAll(msg, rawDSN, redacted)
+	msg = strings.ReplaceAll(msg, transformed, redacted)
+	return errors.New(msg)
 }
 
 // doSeed loads all *.sql files from seedDir in lexicographic order and runs

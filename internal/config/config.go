@@ -110,19 +110,64 @@ func (c *Config) validate() error {
 	return nil
 }
 
+const redactedPassword = "REDACTED"
+
 // Redacted returns the DB DSN with the password masked. Use in logs.
+//
+// Handles both DSN forms: the URL form (postgres://user:pass@host/db) and the
+// libpq keyword/value form (host=x user=u password=y dbname=d). url.Parse does
+// NOT error on keyword/value input — it just returns the string back close to
+// verbatim with u.User left nil — so a naive "if u.User != nil" check silently
+// skips redaction and the password is logged in clear text for that form.
 func (d DBConfig) Redacted() string {
 	if d.DSN == "" {
 		return "(empty)"
+	}
+	if red, isKV := redactKeywordValueDSN(d.DSN); isKV {
+		return red
 	}
 	u, err := url.Parse(d.DSN)
 	if err != nil {
 		return "(unparseable)"
 	}
-	if u.User != nil {
-		u.User = url.UserPassword(u.User.Username(), "REDACTED")
+	if u.User == nil {
+		return d.DSN
 	}
+	if _, has := u.User.Password(); !has {
+		return d.DSN
+	}
+	u.User = url.UserPassword(u.User.Username(), redactedPassword)
 	return u.String()
+}
+
+// redactKeywordValueDSN redacts password/passfile fields in a libpq
+// keyword/value DSN (e.g. "host=x port=26257 user=u password=y dbname=d").
+// Returns ("", false) when dsn is not in this form (has a "://" scheme), so
+// the caller falls back to URL parsing.
+func redactKeywordValueDSN(dsn string) (string, bool) {
+	if strings.Contains(dsn, "://") {
+		return "", false
+	}
+	campos := strings.Fields(dsn)
+	if len(campos) == 0 {
+		return "", false
+	}
+	visto := false
+	for i, c := range campos {
+		k, v, ok := strings.Cut(c, "=")
+		if !ok {
+			continue
+		}
+		visto = true
+		_ = v
+		if strings.ToLower(strings.TrimSpace(k)) == "password" || strings.ToLower(strings.TrimSpace(k)) == "passfile" {
+			campos[i] = k + "=" + redactedPassword
+		}
+	}
+	if !visto {
+		return "", false
+	}
+	return strings.Join(campos, " "), true
 }
 
 func getEnv(key, def string) string {
