@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/revenu-tech/exchangeos/modules/refdata/infrastructure/olinda"
+	"github.com/revenutech/exchangeos/modules/refdata/infrastructure/olinda"
 )
 
 const happyResponse = `{

@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/revenu-tech/exchangeos/pkg/iso20022/registry"
+	"github.com/revenutech/exchangeos/pkg/iso20022/registry"
 )
 
 // Envelope is the canonical outer document combining BAH + business message.
@@ -27,18 +27,18 @@ type Envelope struct {
 // BAH — minimal head.001 fields used by ExchangeOS messages.
 // Full schema covered in head/head_001_001_03.go (generated from XSD).
 type BAH struct {
-	From          string `xml:"Fr>FIId>FinInstnId>BICFI"`
-	To            string `xml:"To>FIId>FinInstnId>BICFI"`
-	BizMsgIdr     string `xml:"BizMsgIdr"`
-	MsgDefIdr     string `xml:"MsgDefIdr"`
-	CreDt         string `xml:"CreDt"`
-	Signature     string `xml:"Sgntr,omitempty"`
+	From      string `xml:"Fr>FIId>FinInstnId>BICFI"`
+	To        string `xml:"To>FIId>FinInstnId>BICFI"`
+	BizMsgIdr string `xml:"BizMsgIdr"`
+	MsgDefIdr string `xml:"MsgDefIdr"`
+	CreDt     string `xml:"CreDt"`
+	Signature string `xml:"Sgntr,omitempty"`
 }
 
 // MarshalOptions controls XML output.
 type MarshalOptions struct {
-	Indent     string // e.g. "  " for pretty-print; empty for production
-	WriteBOM   bool   // SWIFT compatibility may require BOM
+	Indent   string // e.g. "  " for pretty-print; empty for production
+	WriteBOM bool   // SWIFT compatibility may require BOM
 }
 
 // Marshal serialises body with a BAH envelope using the descriptor's URN as MsgDefIdr.
@@ -77,10 +77,13 @@ func Unmarshal(reg *registry.Registry, raw []byte, body interface{}) (registry.D
 		return registry.Descriptor{}, BAH{}, fmt.Errorf("marshaller: nil registry")
 	}
 
+	// The header is read on its own pass. Capturing it alongside the body with
+	// `xml:",innerxml"` does NOT work: innerxml yields the entire content of the
+	// envelope, AppHdr included, so decoding the business message then failed
+	// with `expected element type <FXTradCaptrConf> but have <AppHdr>`.
 	var env struct {
 		XMLName xml.Name
-		Header  BAH    `xml:"AppHdr"`
-		BodyRaw []byte `xml:",innerxml"`
+		Header  BAH `xml:"AppHdr"`
 	}
 	if err := xml.NewDecoder(bytes.NewReader(raw)).Decode(&env); err != nil && err != io.EOF {
 		return registry.Descriptor{}, BAH{}, fmt.Errorf("marshaller: decode envelope: %w", err)
@@ -92,10 +95,57 @@ func Unmarshal(reg *registry.Registry, raw []byte, body interface{}) (registry.D
 		return registry.Descriptor{}, env.Header, fmt.Errorf("marshaller: unknown URN %s", urn)
 	}
 
-	if body != nil {
-		if err := xml.Unmarshal(env.BodyRaw, body); err != nil {
-			return desc, env.Header, fmt.Errorf("marshaller: decode body: %w", err)
-		}
+	if body == nil {
+		return desc, env.Header, nil
+	}
+
+	bodyStart, dec, err := seekBodyElement(raw)
+	if err != nil {
+		return desc, env.Header, err
+	}
+	if err := dec.DecodeElement(body, bodyStart); err != nil {
+		return desc, env.Header, fmt.Errorf("marshaller: decode body: %w", err)
 	}
 	return desc, env.Header, nil
+}
+
+// seekBodyElement positions a decoder on the business message: the first child
+// of the envelope root that is not the AppHdr. It returns that start element
+// and the decoder sitting just after it, ready for DecodeElement.
+func seekBodyElement(raw []byte) (*xml.StartElement, *xml.Decoder, error) {
+	dec := xml.NewDecoder(bytes.NewReader(raw))
+
+	// Consume the envelope root.
+	for {
+		tok, err := dec.Token()
+		if err != nil {
+			return nil, nil, fmt.Errorf("marshaller: envelope has no root element: %w", err)
+		}
+		if _, ok := tok.(xml.StartElement); ok {
+			break
+		}
+	}
+
+	for {
+		tok, err := dec.Token()
+		if err == io.EOF {
+			return nil, nil, fmt.Errorf("marshaller: envelope has no business message element")
+		}
+		if err != nil {
+			return nil, nil, fmt.Errorf("marshaller: scan envelope: %w", err)
+		}
+
+		se, ok := tok.(xml.StartElement)
+		if !ok {
+			continue
+		}
+		if se.Name.Local == "AppHdr" {
+			if err := dec.Skip(); err != nil {
+				return nil, nil, fmt.Errorf("marshaller: skip header: %w", err)
+			}
+			continue
+		}
+		start := se.Copy()
+		return &start, dec, nil
+	}
 }

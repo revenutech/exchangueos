@@ -1,0 +1,69 @@
+name: Message Repository Gate
+
+# Gate do catálogo global de eventos (MS-057 F1 E1.4).
+#
+# Duas verificações, ambas contra o repositório central em
+# revenutech/ledgeros/.base/aasc/iso20022/:
+#
+#   drift  este módulo passou a emitir mensagem que não está no catálogo?
+#   sync   a projeção em .base/events/ está em dia e não foi editada à mão?
+#
+# O drift é um RATCHET, não um zero: quando o gate nasceu havia 1.575 strings
+# de evento na plataforma e nenhuma Message Definition registrada. Ele falha
+# só quando a contagem SOBE ou um arquivo novo aparece. Descer é sempre
+# permitido — é o que a migração faz.
+#
+# Se este job ficar vermelho, o conserto é REGISTRAR a mensagem no repositório
+# central, não subir o baseline. Subir o baseline é desligar o gate sem dizer
+# que desligou.
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+concurrency:
+  group: msgrepo-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: catálogo de eventos
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: modulo
+
+      - name: Checkout do repositório central
+        uses: actions/checkout@v4
+        with:
+          repository: revenutech/ledgeros
+          path: ledgeros
+          token: ${{ secrets.PLATFORM_REPO_TOKEN }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ledgeros/tools/msgrepo/go.mod
+          cache-dependency-path: ledgeros/tools/msgrepo/go.sum
+
+      # T1.4.3 e T1.4.16 — drift novo, e emissão de mensagem que o módulo não
+      # declara emitir.
+      - name: Anti-drift
+        run: |
+          go run . drift \
+            --module "exchangeos" \
+            --src "$GITHUB_WORKSPACE/modulo/." \
+            --repo ../../.base/aasc/iso20022
+        working-directory: ledgeros/tools/msgrepo
+
+      # T1.4.14 e T1.4.15 — projeção editada à mão, ou defasada.
+      - name: Projeção .base/events em dia
+        run: |
+          go run . sync "exchangeos" \
+            --out "$GITHUB_WORKSPACE/modulo" \
+            --repo ../../.base/aasc/iso20022 \
+            --check
+        working-directory: ledgeros/tools/msgrepo

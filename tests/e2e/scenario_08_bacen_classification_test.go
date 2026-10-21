@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	e2e "github.com/revenu-tech/exchangeos/tests/e2e"
+	e2e "github.com/revenutech/exchangeos/tests/e2e"
 )
 
 // Scenario 8 — BACEN classification + IOF (smoke).

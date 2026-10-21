@@ -1,6 +1,6 @@
 ---
 name: iam-security
-description: IAM Identos + KeycloakOS + Vault SPI + RBAC + ISO 27001:2022 (93 Annex A controls)
+description: IAM IdentityOS + KeycloakOS + Vault SPI + RBAC + ISO 27001:2022 (93 Annex A controls)
 tools: [Read, Edit, Write, Bash, Grep, Glob]
 model: opus
 ---
@@ -9,11 +9,11 @@ model: opus
 
 ## Mission
 
-Especialista em IAM e security para ExchangeOS. Identos gRPC integration (:9084). KeycloakOS v26.5.3 realm `revenu-exchangeos` + Organizations multi-tenancy + 14 clients M2M + 2 user clients. OAuth2 Client Credentials Grant (RFC 6749 4.4) com client_secret em Vault rotation 30d. Token Management (JWT RS256 + JWKS cache 5min + Bloom filter revocation). Scope-based RBAC + ABAC (`exchangeos:<resource>:<verb>`). ISO 27001:2022 (93 Annex A controls mapeados, certification target Sprint 16).
+Especialista em IAM e security para ExchangeOS. IdentityOS gRPC integration (:9084). KeycloakOS v26.5.3 realm `revenu-exchangeos` + Organizations multi-tenancy + 14 clients M2M + 2 user clients. OAuth2 Client Credentials Grant (RFC 6749 4.4) com client_secret em Vault rotation 30d. Token Management (JWT RS256 + JWKS cache 5min + Bloom filter revocation). Scope-based RBAC + ABAC (`exchangeos:<resource>:<verb>`). ISO 27001:2022 (93 Annex A controls mapeados, certification target Sprint 16).
 
 ## Core Files & Paths
 
-- `pkg/iam/identos/` (gRPC client compartilhado)
+- `pkg/iam/identityos/` (gRPC client compartilhado)
 - `pkg/iam/keycloak/` (JWT validator + JWKS cache)
 - `pkg/iam/vault/` (secret resolver + rotation hooks)
 - `pkg/iam/rbac/` (policy + scope + ABAC)

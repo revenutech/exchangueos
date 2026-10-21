@@ -34,7 +34,7 @@ Para implementar:
 | 05 | Integrations | CLS, CFETS, BACEN, AccountOS, PaymentOS, all modules | [`05-integrations/index.md`](./05-integrations/index.md) |
 | 06 | Infrastructure | Docker, K8s, Terraform/GCP, Vault, OTel, local deploy | [`06-infrastructure/index.md`](./06-infrastructure/index.md) |
 | 07 | CI/CD | GitHub Actions, git flow, SLSA L3, pre-commit enforcement | [`07-cicd/index.md`](./07-cicd/index.md) |
-| 08 | Security | IAM (Identos+Keycloak), ISO 27000-27005, threat model | [`08-security/index.md`](./08-security/index.md) |
+| 08 | Security | IAM (IdentityOS+Keycloak), ISO 27000-27005, threat model | [`08-security/index.md`](./08-security/index.md) |
 | 09 | Compliance | BACEN cambio, Lei 14.286, IOF, COAF, VASP, eFX | [`09-compliance/index.md`](./09-compliance/index.md) |
 | 10 | Quality | TDD, E2E, CRUD tests, SLI/SLO, performance | [`10-quality/index.md`](./10-quality/index.md) |
 | 11 | SDD | Spec-Driven Development sub-framework (out-of-scope MVP) | [`11-sdd/index.md`](./11-sdd/index.md) |

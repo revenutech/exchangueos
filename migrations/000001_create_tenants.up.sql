@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS tenants (
 CREATE TABLE IF NOT EXISTS actors (
     actor_id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id     UUID NOT NULL REFERENCES tenants(tenant_id) ON DELETE RESTRICT,
-    external_sub  STRING(256) NOT NULL,    -- OIDC sub (Identos/Keycloak)
+    external_sub  STRING(256) NOT NULL,    -- OIDC sub (IdentityOS/Keycloak)
     type          STRING(32)  NOT NULL,    -- HUMAN | SERVICE
     display_name  STRING(256),
     status        STRING(32)  NOT NULL DEFAULT 'ACTIVE',

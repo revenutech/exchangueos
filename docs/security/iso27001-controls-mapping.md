@@ -27,7 +27,7 @@ Scope: ExchangeOS module + its hosting (GKE Autopilot / GCP / shared CRDB hub).
 | A.5.10 | Acceptable use of information + assets | 🟡 | Cited in CLAUDE.md; formal AUP doc deferred |
 | A.5.12 | Classification of information | ✅ | PII-bearing topics tagged in `deploy/kafka/topics.yaml` with 7-day retention |
 | A.5.14 | Information transfer | ✅ | TLS 1.3 mandatory + mTLS inter-service (`CLAUDE.md`) |
-| A.5.15 | Access control | ✅ | RBAC via Identos + KeycloakOS, M2M 14 client_secrets (`cmd/cred-rotator`) |
+| A.5.15 | Access control | ✅ | RBAC via IdentityOS + KeycloakOS, M2M 14 client_secrets (`cmd/cred-rotator`) |
 | A.5.17 | Authentication information | ✅ | Secrets in Vault (NEVER in code) — `scripts/vault-seed.sh` + External Secrets Operator |
 | A.5.18 | Access rights | ✅ | WIF (zero JSON keys) + 6 least-privilege roles in `deploy/terraform/modules/exchangeos-iam` |
 | A.5.19..A.5.23 | Supplier relationships | ⏳ | Procurement + DPA reviews (separate compliance work) |

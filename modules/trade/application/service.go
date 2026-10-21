@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/modules/trade/domain"
+	"github.com/revenutech/exchangeos/modules/trade/domain"
 )
 
 // TradeRepository persists FXTrade aggregates.

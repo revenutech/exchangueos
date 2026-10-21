@@ -12,8 +12,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/modules/risk/application"
-	"github.com/revenu-tech/exchangeos/modules/risk/domain"
+	"github.com/revenutech/exchangeos/modules/risk/application"
+	"github.com/revenutech/exchangeos/modules/risk/domain"
 )
 
 type LimitRepo struct{ pool *pgxpool.Pool }

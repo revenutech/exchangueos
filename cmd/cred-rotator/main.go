@@ -10,8 +10,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/revenu-tech/exchangeos/internal/config"
-	"github.com/revenu-tech/exchangeos/internal/telemetry"
+	"github.com/revenutech/exchangeos/internal/config"
+	"github.com/revenutech/exchangeos/internal/telemetry"
 )
 
 func main() {

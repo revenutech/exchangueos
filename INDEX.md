@@ -15,7 +15,7 @@
 | `.pre-commit-config.yaml` | Fallback pre-commit Python |
 | `.gitattributes` | Line endings (LF/CRLF per file type) |
 | `.gitignore` | Standard + IDE + Go + secrets |
-| `go.mod` | `github.com/revenu-tech/exchangeos` |
+| `go.mod` | `github.com/revenutech/exchangeos` |
 | `docker-compose.local.yml` | Local stack (app + dependencias) |
 | `docker-compose.deps.yml` | Dependencias auxiliares (Kafka + Vault + Keycloak + OTel) |
 | `docker-compose.test.yml` | CI testcontainers stack |

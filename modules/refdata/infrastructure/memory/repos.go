@@ -11,8 +11,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/revenu-tech/exchangeos/modules/refdata/application"
-	"github.com/revenu-tech/exchangeos/modules/refdata/domain"
+	"github.com/revenutech/exchangeos/modules/refdata/application"
+	"github.com/revenutech/exchangeos/modules/refdata/domain"
 )
 
 // ─── Currencies ────────────────────────────────────────────────────────────

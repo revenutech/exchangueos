@@ -6,7 +6,7 @@ import (
 
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/pkg/pricing"
+	"github.com/revenutech/exchangeos/pkg/pricing"
 )
 
 func dec(s string) decimal.Decimal { return decimal.RequireFromString(s) }
@@ -23,7 +23,11 @@ func almostEqual(t *testing.T, got, want decimal.Decimal, tol string) {
 // ─── Golden cases (cite source) ────────────────────────────────────────────
 
 // EUR/USD 90 days, US 5.25%, EU 4.00%, both 360 basis.
-// Hand calc: F = 1.0800 × 1.013125 / 1.010000 = 1.083340099...
+//
+//	F = 1.0800 × (1 + 0.0525 × 90/360) / (1 + 0.0400 × 90/360)
+//	  = 1.0800 × 1.013125 / 1.010000
+//	  = 1.094175 / 1.010000
+//	  = 1.08334158415841584158...  → RoundBank(8) = 1.08334158
 func TestForward_EURUSD_90d_Golden(t *testing.T) {
 	in := pricing.ForwardInput{
 		Spot:        dec("1.0800"),
@@ -37,14 +41,16 @@ func TestForward_EURUSD_90d_Golden(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Forward: %v", err)
 	}
-	almostEqual(t, f, dec("1.08334010"), "0.00000001")
+	almostEqual(t, f, dec("1.08334158"), "0.00000001")
 }
 
 // USDBRL 30 days, BR rate 11.75% (basis 252→approximated as 365 for this synthetic test),
 // US rate 5.25%, both 360 basis. Hand calc:
 // F = 5.0000 × (1 + 0.1175 × 30/360) / (1 + 0.0525 × 30/360)
-//   = 5.0000 × 1.0097916666... / 1.0043750000
-//   ≈ 5.026969...
+//
+//	= 5.0000 × 1.00979166666... / 1.00437500000
+//	= 5.04895833333... / 1.004375
+//	= 5.02696535988384152665...  → RoundBank(8) = 5.02696536
 func TestForward_USDBRL_30d_Synthetic(t *testing.T) {
 	in := pricing.ForwardInput{
 		Spot:        dec("5.0000"),
@@ -58,13 +64,15 @@ func TestForward_USDBRL_30d_Synthetic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Forward: %v", err)
 	}
-	almostEqual(t, f, dec("5.02696956"), "0.00000005")
+	almostEqual(t, f, dec("5.02696536"), "0.00000005")
 }
 
 // GBPUSD 180d — GBP uses 365 basis (sterling money-market convention).
 // F = 1.2700 × (1 + 0.0525 × 180/360) / (1 + 0.0475 × 180/365)
-//   = 1.2700 × 1.02625 / 1.02342465753
-//   ≈ 1.273505...
+//
+//	= 1.2700 × 1.02625 / 1.02342465753424657534...
+//	= 1.3033375 / 1.02342465753424657534...
+//	= 1.27350605675277740596...  → RoundBank(8) = 1.27350606
 func TestForward_GBPUSD_180d_MixedBasis(t *testing.T) {
 	in := pricing.ForwardInput{
 		Spot:        dec("1.2700"),
@@ -78,13 +86,15 @@ func TestForward_GBPUSD_180d_MixedBasis(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Forward: %v", err)
 	}
-	almostEqual(t, f, dec("1.27350541"), "0.00000005")
+	almostEqual(t, f, dec("1.27350606"), "0.00000005")
 }
 
 // USDJPY 365d, US 5.25%, JP 0.10%
 // F = 145.00 × (1 + 0.0525 × 365/360) / (1 + 0.0010 × 365/360)
-//   = 145.00 × 1.053229166... / 1.001013888...
-//   ≈ 152.547...
+//
+//	= 145.00 × 1.05322916666... / 1.00101388888...
+//	= 152.71822916666... / 1.00101388888...
+//	= 152.56354668183647135543...  → RoundBank(8) = 152.56354668
 func TestForward_USDJPY_365d_LargeSpread(t *testing.T) {
 	in := pricing.ForwardInput{
 		Spot:        dec("145.00"),
@@ -98,7 +108,7 @@ func TestForward_USDJPY_365d_LargeSpread(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Forward: %v", err)
 	}
-	almostEqual(t, f, dec("152.54732988"), "0.00000010")
+	almostEqual(t, f, dec("152.56354668"), "0.00000010")
 }
 
 // ─── Properties ────────────────────────────────────────────────────────────

@@ -6,12 +6,12 @@
 # table aborts with non-zero exit so CI can catch seed regressions.
 #
 # Env:
-#   EXCHANGEOS_BASE_URL  default http://localhost:8094
+#   EXCHANGEOS_BASE_URL  default http://localhost:8084
 #   MIN_ROWS             default 5
 
 set -euo pipefail
 
-BASE_URL="${EXCHANGEOS_BASE_URL:-http://localhost:8094}"
+BASE_URL="${EXCHANGEOS_BASE_URL:-http://localhost:8084}"
 MIN_ROWS="${MIN_ROWS:-5}"
 
 echo "── ExchangeOS CRUD smoke (≥ ${MIN_ROWS} rows per table) ──"

@@ -17,7 +17,7 @@ import (
 	"encoding/xml"
 	"fmt"
 
-	"github.com/revenu-tech/exchangeos/pkg/iso20022/registry"
+	"github.com/revenutech/exchangeos/pkg/iso20022/registry"
 )
 
 // Violation describes a single validation failure.

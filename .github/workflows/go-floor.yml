@@ -1,0 +1,140 @@
+name: Go Floor
+
+# Piso mínimo de qualidade, uniforme em todos os repositórios Go da plataforma.
+# Deliberadamente pequeno e sem dependências externas nos gates de build/vet,
+# para que seja um required check confiável em qualquer repo.
+#
+# Cobre TODOS os go.mod do repositório, não só o da raiz: um módulo aninhado
+# fica fora do `go build ./...` do módulo pai e apodrece sem ninguém ver.
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: '1.26.10'
+
+jobs:
+  build-vet:
+    name: build + vet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      # go vet compila os testes, então pega quebra em *_test.go que o build sozinho não pega.
+      - name: build + vet em todos os módulos
+        run: |
+          set -euo pipefail
+          failed=0
+          while IFS= read -r mod; do
+            dir=$(dirname "$mod")
+            echo "::group::$dir"
+            ( cd "$dir" && go build ./... && go vet ./... ) || failed=1
+            echo "::endgroup::"
+          done < <(find . -name go.mod -not -path '*/vendor/*' -not -path '*/node_modules/*' | sort)
+          exit $failed
+
+  grpcgen:
+    name: build + vet (tag grpcgen)
+    runs-on: ubuntu-latest
+    # Os adapters gRPC de modules/*/api ficam atrás da build tag `grpcgen`, então
+    # `go build ./...` nunca os compila. Foi assim que sete placeholders — hint de
+    # classificação BACEN fixo, notional de IOF fabricado, NetReport literal,
+    # health sempre SERVING — sobreviveram sem nenhum gate reclamar.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - uses: bufbuild/buf-setup-action@v1
+
+      - name: codegen
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+          buf generate
+
+      - name: build + vet com a tag
+        run: |
+          go build -tags grpcgen ./...
+          go vet -tags grpcgen ./...
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    services:
+      cockroach:
+        image: cockroachdb/cockroach:v24.3.0
+        ports:
+          - 26257:26257
+        options: >-
+          --health-cmd "curl -f http://localhost:8080/health"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+        env:
+          COCKROACH_ARGS: "start-single-node --insecure"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: test em todos os módulos
+        env:
+          CRDB_HOST: localhost
+          CRDB_PORT: '26257'
+          CRDB_DB: defaultdb
+        run: |
+          set -euo pipefail
+          # A DSN é montada aqui em vez de literal no YAML: um literal
+          # postgresql://...:26257 dispara a regra cockroachdb-connection do
+          # gitleaks, que roda como pre-commit hook em parte dos repositórios.
+          DSN="postgresql://root@${CRDB_HOST}:${CRDB_PORT}/${CRDB_DB}?sslmode=disable"
+          export DATABASE_URL="$DSN" DB_DSN="$DSN"
+          failed=0
+          while IFS= read -r mod; do
+            dir=$(dirname "$mod")
+            echo "::group::$dir"
+            ( cd "$dir" && go test -race -count=1 ./... ) || failed=1
+            echo "::endgroup::"
+          done < <(find . -name go.mod -not -path '*/vendor/*' -not -path '*/node_modules/*' | sort)
+          exit $failed
+
+  govulncheck:
+    name: govulncheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: govulncheck em todos os módulos
+        run: |
+          set -euo pipefail
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          failed=0
+          while IFS= read -r mod; do
+            dir=$(dirname "$mod")
+            echo "::group::$dir"
+            ( cd "$dir" && govulncheck ./... ) || failed=1
+            echo "::endgroup::"
+          done < <(find . -name go.mod -not -path '*/vendor/*' -not -path '*/node_modules/*' | sort)
+          exit $failed

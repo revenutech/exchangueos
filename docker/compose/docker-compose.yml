@@ -6,7 +6,7 @@
 #   - crdb      :26257 (SQL) + :8080 (admin UI)
 #   - kafka     :9092 (Redpanda single-node)
 #   - otel      :4317 (gRPC) — Collector
-#   - exchangeos-api :8094 (HTTP) + :9094 (gRPC)
+#   - exchangeos-api :8084 (HTTP) + :9084 (gRPC)
 #
 # Up:   task compose:up
 # Down: task compose:down
@@ -227,20 +227,20 @@ services:
         condition: service_started
     environment:
       EXCHANGEOS_ENV: dev
-      EXCHANGEOS_HTTP_PORT: "8094"
-      EXCHANGEOS_GRPC_PORT: "9094"
+      EXCHANGEOS_HTTP_PORT: "8084"
+      EXCHANGEOS_GRPC_PORT: "9084"
       EXCHANGEOS_DB_DSN: postgres://exchangeos_app@crdb:26257/exchangeos?sslmode=disable
       EXCHANGEOS_REPO_BACKEND: postgres
       EXCHANGEOS_ENABLE_ADMIN_API: "true"   # local dev only — production gates this off
       OTEL_EXPORTER_OTLP_ENDPOINT: otel-collector:4317
       OTEL_EXPORTER_OTLP_INSECURE: "true"
     ports:
-      - "8094:8094"
-      - "9094:9094"
+      - "8084:8084"
+      - "9084:9084"
     healthcheck:
       # distroless/static has no shell + no wget/curl, so we ship a tiny standalone
       # /app/healthcheck binary that GETs /healthz. See cmd/healthcheck/main.go.
-      test: ["CMD", "/app/healthcheck", "http://localhost:8094/healthz"]
+      test: ["CMD", "/app/healthcheck", "http://localhost:8084/healthz"]
       interval: 10s
       timeout: 3s
       retries: 6

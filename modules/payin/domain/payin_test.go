@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/modules/payin/domain"
+	"github.com/revenutech/exchangeos/modules/payin/domain"
 )
 
 func validInput(t *testing.T, deadline time.Time) domain.NewPayInInput {

@@ -75,16 +75,16 @@ All seeds FK-respecting + idempotent (`ON CONFLICT DO NOTHING`).
 
 ```bash
 # Catalogue
-curl -s http://localhost:8094/v1/admin/_schemas | jq
+curl -s http://localhost:8084/v1/admin/_schemas | jq
 
 # LIST trades, filtered
-curl 'http://localhost:8094/v1/admin/fx-trades?status=CONFIRMED&limit=10'
+curl 'http://localhost:8084/v1/admin/fx-trades?status=CONFIRMED&limit=10'
 
 # Full lifecycle
-curl -X POST -H 'Content-Type: application/json' -d '{"code":"XTS","name":"Test","minor_units":2,"cls_eligible":false,"cfets_eligible":false,"active":true}' http://localhost:8094/v1/admin/currencies
-curl http://localhost:8094/v1/admin/currencies/XTS
-curl -X PUT -H 'Content-Type: application/json' -d '{"active":false}' http://localhost:8094/v1/admin/currencies/XTS
-curl -X DELETE http://localhost:8094/v1/admin/currencies/XTS
+curl -X POST -H 'Content-Type: application/json' -d '{"code":"XTS","name":"Test","minor_units":2,"cls_eligible":false,"cfets_eligible":false,"active":true}' http://localhost:8084/v1/admin/currencies
+curl http://localhost:8084/v1/admin/currencies/XTS
+curl -X PUT -H 'Content-Type: application/json' -d '{"active":false}' http://localhost:8084/v1/admin/currencies/XTS
+curl -X DELETE http://localhost:8084/v1/admin/currencies/XTS
 
 # Smoke
 bash scripts/smoke-crud.sh
@@ -257,7 +257,7 @@ Plan remains 100% (26/26 delivered). 3 post-closure layers addressing financial 
 - `deploy/grafana/dashboards/exchangeos-finops.json` — 8-panel FinOps board including MTD spend stat with thresholds, forecasted month-end (`predict_linear`), daily spend timeseries, spend-by-service pie, spend-by-BC bargauge, **unlabeled spend table** (catches allocation escapees), GitHub Actions minutes + lefthook-pre-empted savings.
 
 **(b) Chaos engineering program:**
-- `docs/security/chaos/README.md` — 5 principles + 10-scenario catalogue (CHAOS-01..10: pod kills + node drain + network latency/loss + region failover + Vault outage + Identos discovery 503 + PTAX unreachable + Kafka broker death). Tooling: Litmus + Chaos Mesh + kubectl drain + Toxiproxy + k6. Cadence: weekly automated + monthly manual + quarterly chaos day + annual production-canary.
+- `docs/security/chaos/README.md` — 5 principles + 10-scenario catalogue (CHAOS-01..10: pod kills + node drain + network latency/loss + region failover + Vault outage + IdentityOS discovery 503 + PTAX unreachable + Kafka broker death). Tooling: Litmus + Chaos Mesh + kubectl drain + Toxiproxy + k6. Cadence: weekly automated + monthly manual + quarterly chaos day + annual production-canary.
 - `deploy/chaos/chaos-pod-kill.yaml` — Litmus ChaosEngine for api + worker with Prometheus probes (5xx<1% + p99<200ms + outbox recovery<300s).
 - `deploy/chaos/chaos-network-latency.yaml` — Chaos Mesh NetworkChaos: 200ms delay + 20ms jitter api→CRDB for 5min.
 - `deploy/chaos/chaos-network-loss.yaml` — 10% packet loss worker→Kafka with idempotent-producer dedup verification.
@@ -333,12 +333,12 @@ Plan remains 100% (26/26 delivered). 3 post-closure operational layers added:
 - `docs/security/drills/template.md` — tabletop drill template with metadata + scenario brief + timeline table + observations (what worked / slow / wrong) + action items + updates-to-artefacts checklist + sign-off.
 
 **(c) Sibling module integration contracts:**
-- `docs/integrations/README.md` — 5-module integration matrix (LedgerOS + AccountOS + PaymentOS + AuthorityOS + Identos) + 6-module out-of-scope rationale (RiskOS / ComplOS / TreasuryOS / OnboardOS / BillingOS / CardOS+InvestOS v2) + common contract conventions (event naming `<context>.<action>.v<N>`, TenantContext as first sync RPC field, async at-least-once + sync 5s × 3 retries) + versioning policy.
+- `docs/integrations/README.md` — 5-module integration matrix (LedgerOS + AccountOS + PaymentOS + AuthorityOS + IdentityOS) + 6-module out-of-scope rationale (RiskOS / ComplOS / TreasuryOS / OnboardOS / BillingOS / CardOS+InvestOS v2) + common contract conventions (event naming `<context>.<action>.v<N>`, TenantContext as first sync RPC field, async at-least-once + sync 5s × 3 retries) + versioning policy.
 - `docs/integrations/ledgeros.md` — `trade.settled.v1` → posts journal entries (4 open Qs incl. chart-of-accounts + multi-currency entry shape + cross-tenant ledger model + reconciliation cadence). Status 🟡 Spec.
 - `docs/integrations/accountos.md` — tenant + actor SoT via CDC (5 consumed events) + ResolveTenant sync fallback 5s × 3 retries + 5min in-process cache. Schema mapping table (account_id ↔ tenant_id UUID equivalence). LGPD right-to-erasure open Q. Status ✅ Conceptually wired.
 - `docs/integrations/paymentos.md` — PvP coordination: ExchangeOS emits `settlement.payin_requested.v1`, PaymentOS executes wire + responds with `payment.settled.v1` / `.failed.v1`, ExchangeOS calls PayInService.Confirm/Fail. Hot-path CommitPvP sync RPC 10s timeout. 4 open Qs incl. PvP atomicity authority + partial-settle handling. Status 🟡 Spec.
 - `docs/integrations/authorityos.md` — `compliance.report_ready.v1` + `compliance.cos_required.v1` → AuthorityOS submits to BACEN/SISCOAF. Consumes `regulator.response_received.v1` (marks BACENReport ACCEPTED/REJECTED) + `regulator.policy_updated.v1` (alert Compliance team, no auto-update of `pkg/bacen`). 4 open Qs incl. SISCOAF COS template prefill + cross-tenant regulator account. Status 🟡 Spec.
-- `docs/integrations/identos.md` — JWT contract (KrakenD validates signature; forwards `x-actor-sub`/`x-tenant-id`/`x-scope`/`x-correlation-id`); ExchangeOS NEVER validates JWT itself. 14-secret M2M client catalog (api + 10 tenant traders + eod + cls-cycle + mq-bridge) managed by `cmd/cred-rotator` monthly CronJob via KeycloakOS Admin API + Vault SPI. Status ✅ Wired (env + Helm + Vault SPI scaffolding in place).
+- `docs/integrations/identityos.md` — JWT contract (KrakenD validates signature; forwards `x-actor-sub`/`x-tenant-id`/`x-scope`/`x-correlation-id`); ExchangeOS NEVER validates JWT itself. 14-secret M2M client catalog (api + 10 tenant traders + eod + cls-cycle + mq-bridge) managed by `cmd/cred-rotator` monthly CronJob via KeycloakOS Admin API + Vault SPI. Status ✅ Wired (env + Helm + Vault SPI scaffolding in place).
 
 ### State unchanged
 - **Delivered:** 26/26 (100%)
@@ -415,7 +415,7 @@ Plan remains 100% complete (26/26 delivered). This release adds **operational + 
 **(b) MS-023h Production wrap-up:**
 - `deploy/k8s/cert-manager/cluster-issuer.yaml` — cert-manager ClusterIssuer for letsencrypt-prod + letsencrypt-staging with DNS-01 via GCP CloudDNS (wildcards) + HTTP-01 fallback + sample Certificate for api/grpc.exchangeos.revenu.tech (90d duration + 30d renewBefore).
 - `.github/workflows/slsa-attestation.yml` — SLSA Level 3 release workflow triggered on tag push. Per-binary matrix (7 binaries) job: GCP WIF auth → docker/build-push-action multi-arch (amd64+arm64) → Cosign keyless sign (Sigstore OIDC + Rekor) → SBOM CycloneDX attach → actions/attest-build-provenance@v2 push-to-registry → smoke `cosign verify` step validating identity-regexp + OIDC issuer.
-- `deploy/argocd/application.yaml` — GitOps Application pointing at deploy/helm/exchangeos + values-production.yaml. Automated sync (prune+selfHeal+allowEmpty=false) + CreateNamespace + ServerSideApply + ApplyOutOfSyncOnly + PrunePropagationPolicy=foreground + retry backoff (5×, 30s→5m exponential). AppProject `revenu-platform` with sourceRepos whitelist (`https://github.com/revenu-tech/*`) + namespace whitelist + RBAC roles for deployer group.
+- `deploy/argocd/application.yaml` — GitOps Application pointing at deploy/helm/exchangeos + values-production.yaml. Automated sync (prune+selfHeal+allowEmpty=false) + CreateNamespace + ServerSideApply + ApplyOutOfSyncOnly + PrunePropagationPolicy=foreground + retry backoff (5×, 30s→5m exponential). AppProject `revenu-platform` with sourceRepos whitelist (`https://github.com/revenutech/*`) + namespace whitelist + RBAC roles for deployer group.
 - MS-023h moved to delivered/.
 
 **(c) 10 remaining backlog milestones moved to delivered/ with detailed notes:**
@@ -1185,7 +1185,7 @@ Closes 2 of 4 MS-023a gaps acknowledged in 4.2.0.
 - `MS-023a-foundation-scaffolding.md` moved `milestones/backlog/` → `milestones/active/`, status flipped BACKLOG → ACTIVE, `Started: 2026-05-24` field added.
 
 **Repo scaffolding (root):**
-- `go.mod` (`github.com/revenu-tech/exchangeos`, Go 1.25.1, pinned deps: gin, pgx/v5, viper, godotenv, prometheus, shopspring/decimal, zap, OTel SDK 1.34.0, grpc 1.69.4, protobuf 1.36.3)
+- `go.mod` (`github.com/revenutech/exchangeos`, Go 1.25.1, pinned deps: gin, pgx/v5, viper, godotenv, prometheus, shopspring/decimal, zap, OTel SDK 1.34.0, grpc 1.69.4, protobuf 1.36.3)
 - `Taskfile.yml` primary cross-platform runner (40+ targets: install/build/test/lint/sec/db/compose/dash/hooks)
 - `Makefile` delegating to `task` for traditional Unix flows
 - `scripts/exchangeos.ps1` PowerShell mirror for Windows
@@ -1218,7 +1218,7 @@ Closes 2 of 4 MS-023a gaps acknowledged in 4.2.0.
 - `buf.yaml` + `buf.gen.yaml` (managed mode + go_package_prefix, grpc-go plugin)
 
 **Migrations (CRDB v24.3.32, golang-migrate format):**
-- `000001_create_tenants` — tenants, actors (OIDC sub mapped to Identos/Keycloak), audit_events (envelope-of-envelopes), schema_migrations
+- `000001_create_tenants` — tenants, actors (OIDC sub mapped to IdentityOS/Keycloak), audit_events (envelope-of-envelopes), schema_migrations
 - `000002_create_fx_trades` — counterparties (BIC/LEI), fx_trades (DECIMAL(36,18) money/rate), trade_amendments (append-only)
 - All wrapped `BEGIN/COMMIT`, `IF NOT EXISTS`, idempotent
 - `migrations/README.md` with 000001-000020 roadmap + conventions
@@ -1235,7 +1235,7 @@ Closes 2 of 4 MS-023a gaps acknowledged in 4.2.0.
 **Docker / compose:**
 - `docker/api/Dockerfile` — distroless multi-stage multi-arch (linux/amd64+arm64), nonroot user, BuildKit cache mounts, target < 50 MB
 - `docker/_template/Dockerfile.template` — reusable spec for the other 6 binaries
-- `docker/compose/docker-compose.yml` — local stack (CRDB :26257 single-node, Redpanda Kafka :9092, OTel Collector :4317, exchangeos-api :8094/:9094) with healthchecks + db init job
+- `docker/compose/docker-compose.yml` — local stack (CRDB :26257 single-node, Redpanda Kafka :9092, OTel Collector :4317, exchangeos-api :8084/:9084) with healthchecks + db init job
 - `docker/otel-collector/config.yaml` — OTLP receiver + batch processor + debug exporter (Tempo/Mimir hooks commented for prod)
 - `.dockerignore` excluding `.git/.claude/.base/secrets/.env`
 
@@ -1304,7 +1304,7 @@ Closes 2 of 4 MS-023a gaps acknowledged in 4.2.0.
 - 108+ open questions
 - 90+ riscos identificados
 - 200+ fontes oficiais consultadas
-- Cobertura completa: FX ISO 20022 + CLS + CFETS + BACEN + Pricing CIP + Ontology TTL + Flows RFLW.024 + ERDs CRDB + IAM Identos+Keycloak + OTel + CRUD/Deploy local + TDD/E2E/Security gates + Cross-platform tooling + Pre-Commit HARD enforcement + Integration audit + Database sync pattern
+- Cobertura completa: FX ISO 20022 + CLS + CFETS + BACEN + Pricing CIP + Ontology TTL + Flows RFLW.024 + ERDs CRDB + IAM IdentityOS+Keycloak + OTel + CRUD/Deploy local + TDD/E2E/Security gates + Cross-platform tooling + Pre-Commit HARD enforcement + Integration audit + Database sync pattern
 
 ---
 
@@ -1340,7 +1340,7 @@ Closes 2 of 4 MS-023a gaps acknowledged in 4.2.0.
 ### Added
 - **§19 Database Sync Pattern + Native Cross-Module Integration**
 - 3 sync patterns (gRPC pull + CDC push + Kafka events)
-- 13 modulos integrados nativamente (AccountOS + PaymentOS + LedgerOS + AuthorityOS + RiskOS + ComplOS + TreasuryOS + Identos + KeycloakOS + OnboardOS + BillingOS + CardOS/InvestOS v2)
+- 13 modulos integrados nativamente (AccountOS + PaymentOS + LedgerOS + AuthorityOS + RiskOS + ComplOS + TreasuryOS + IdentityOS + KeycloakOS + OnboardOS + BillingOS + CardOS/InvestOS v2)
 - 40 FX-SYNC-* patterns + Fase 15M + Milestone MS-023u
 
 ## [3.11.3] — 2026-05-24
@@ -1368,7 +1368,7 @@ Closes 2 of 4 MS-023a gaps acknowledged in 4.2.0.
 ## [3.11.0] — 2026-05-24
 
 ### Added
-- **§15 IAM Integration (Identos + KeycloakOS) + ISO 27000-27005 Coverage**
+- **§15 IAM Integration (IdentityOS + KeycloakOS) + ISO 27000-27005 Coverage**
 - 14 clients M2M com client_secret rotation 30d via Vault SPI
 - 50 FX-IAM-* patterns + 8 docs ISO 27000-27005 + Fase 15I + Milestone MS-023q
 

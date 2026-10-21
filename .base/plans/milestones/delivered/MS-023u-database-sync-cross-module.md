@@ -24,7 +24,7 @@
 - ✅ Publisher selection via build tag (default no-op / kafka franz-go)
 
 **Deferred:**
-- ⏳ Concrete sync handlers across 13 sibling platform modules (AccountOS, PaymentOS, LedgerOS, AuthorityOS, RiskOS, ComplOS, TreasuryOS, Identos, KeycloakOS, OnboardOS, BillingOS, CardOS, InvestOS v2) — those happen at integration-with-platform time
+- ⏳ Concrete sync handlers across 13 sibling platform modules (AccountOS, PaymentOS, LedgerOS, AuthorityOS, RiskOS, ComplOS, TreasuryOS, IdentityOS, KeycloakOS, OnboardOS, BillingOS, CardOS, InvestOS v2) — those happen at integration-with-platform time
 - ⏳ 40 FX-SYNC-* pattern catalog — separate documentation track
 
 ## Description

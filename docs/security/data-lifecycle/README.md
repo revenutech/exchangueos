@@ -68,7 +68,7 @@ GCS bucket lifecycle: Coldline → Archive after 1 year → permanent retention
 ```
 DPO receives request → routes via secure channel
    ↓
-Verify identity (CPF + 2FA via Identos)
+Verify identity (CPF + 2FA via IdentityOS)
    ↓
 Classification:
    ├─ If under regulatory hold (BACEN 5y / 10y) → REJECT with citation, notify ANPD

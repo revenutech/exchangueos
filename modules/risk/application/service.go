@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/modules/risk/domain"
+	"github.com/revenutech/exchangeos/modules/risk/domain"
 )
 
 // Repository persists Limit aggregates.

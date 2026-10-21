@@ -5,16 +5,16 @@ package main
 import (
 	"google.golang.org/grpc"
 
-	"github.com/revenu-tech/exchangeos/internal/container"
-	adminapi "github.com/revenu-tech/exchangeos/modules/admin/api"
-	setlapi "github.com/revenu-tech/exchangeos/modules/cls_settlement/api"
-	complapi "github.com/revenu-tech/exchangeos/modules/compliance/api"
-	posapi "github.com/revenu-tech/exchangeos/modules/position/api"
-	quoteapi "github.com/revenu-tech/exchangeos/modules/quote/api"
-	refapi "github.com/revenu-tech/exchangeos/modules/refdata/api"
-	riskapi "github.com/revenu-tech/exchangeos/modules/risk/api"
-	tradeapi "github.com/revenu-tech/exchangeos/modules/trade/api"
-	pb "github.com/revenu-tech/exchangeos/proto/gen/exchangeos/v1"
+	"github.com/revenutech/exchangeos/internal/container"
+	adminapi "github.com/revenutech/exchangeos/modules/admin/api"
+	setlapi "github.com/revenutech/exchangeos/modules/cls_settlement/api"
+	complapi "github.com/revenutech/exchangeos/modules/compliance/api"
+	posapi "github.com/revenutech/exchangeos/modules/position/api"
+	quoteapi "github.com/revenutech/exchangeos/modules/quote/api"
+	refapi "github.com/revenutech/exchangeos/modules/refdata/api"
+	riskapi "github.com/revenutech/exchangeos/modules/risk/api"
+	tradeapi "github.com/revenutech/exchangeos/modules/trade/api"
+	pb "github.com/revenutech/exchangeos/proto/gen/exchangeos/v1"
 )
 
 // registerGeneratedServices wires the gRPC adapter for each bounded context to the

@@ -23,8 +23,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/modules/payin/application"
-	"github.com/revenu-tech/exchangeos/modules/payin/domain"
+	"github.com/revenutech/exchangeos/modules/payin/application"
+	"github.com/revenutech/exchangeos/modules/payin/domain"
 )
 
 // Compile-time interface satisfaction check.

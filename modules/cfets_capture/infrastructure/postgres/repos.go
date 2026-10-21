@@ -15,8 +15,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/revenu-tech/exchangeos/modules/cfets_capture/application"
-	"github.com/revenu-tech/exchangeos/modules/cfets_capture/domain"
+	"github.com/revenutech/exchangeos/modules/cfets_capture/application"
+	"github.com/revenutech/exchangeos/modules/cfets_capture/domain"
 )
 
 var _ application.Repository = (*CFETSCaptureRepo)(nil)

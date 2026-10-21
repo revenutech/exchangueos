@@ -9,9 +9,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/modules/payin/application"
-	"github.com/revenu-tech/exchangeos/modules/payin/domain"
-	"github.com/revenu-tech/exchangeos/modules/payin/infrastructure/memory"
+	"github.com/revenutech/exchangeos/modules/payin/application"
+	"github.com/revenutech/exchangeos/modules/payin/domain"
+	"github.com/revenutech/exchangeos/modules/payin/infrastructure/memory"
 )
 
 func newSvc(t *testing.T) (*application.Service, *memory.Repo, *memory.NoopPublisher) {

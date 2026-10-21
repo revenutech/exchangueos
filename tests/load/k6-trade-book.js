@@ -49,7 +49,7 @@ export const options = {
   },
 };
 
-const BASE_URL = __ENV.EXCHANGEOS_BASE_URL || 'http://localhost:8094';
+const BASE_URL = __ENV.EXCHANGEOS_BASE_URL || 'http://localhost:8084';
 
 export default function () {
   // 1. health probe

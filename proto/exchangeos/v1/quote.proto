@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package exchangeos.v1;
 
-option go_package = "github.com/revenu-tech/exchangeos/proto/gen/exchangeos/v1;exchangeosv1";
+option go_package = "github.com/revenutech/exchangeos/proto/gen/exchangeos/v1;exchangeosv1";
 
 import "google/protobuf/timestamp.proto";
 import "exchangeos/v1/common.proto";
@@ -34,6 +34,13 @@ message GetQuoteRequest {
   string base_ccy = 2;
   string quote_ccy = 3;
   Money notional = 4;
+  // Counterparties and direction. A quote without them cannot be turned into a
+  // trade: the side decides which price applies (BUY pays the ask, SELL
+  // receives the bid) and which party lands on each leg.
+  string requester_bic = 5;  // the party quoted TO
+  string provider_bic = 6;   // the party quoting
+  string side = 7;           // BUY | SELL, on the base currency
+  string venue = 8;          // CLS | CFETS | BILATERAL | INTERNAL
 }
 
 message GetQuoteResponse {

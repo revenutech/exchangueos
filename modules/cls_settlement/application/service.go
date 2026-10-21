@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/revenu-tech/exchangeos/modules/cls_settlement/domain"
+	"github.com/revenutech/exchangeos/modules/cls_settlement/domain"
 )
 
 // CycleRepository persists CLSCycle aggregates.

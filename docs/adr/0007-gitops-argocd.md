@@ -26,7 +26,7 @@ Production deploys need:
 - Sync options: `CreateNamespace=true`, `ServerSideApply=true`, `ApplyOutOfSyncOnly=true`
 - Retry: 5× exponential backoff 30s → 5min
 
-`AppProject revenu-platform` whitelists source repos (`github.com/revenu-tech/*`) + namespaces (`exchangeos*` + `observability`) + RBAC role `deployer` for the platform-team group.
+`AppProject revenu-platform` whitelists source repos (`github.com/revenutech/*`) + namespaces (`exchangeos*` + `observability`) + RBAC role `deployer` for the platform-team group.
 
 ## Consequences
 

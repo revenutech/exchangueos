@@ -42,7 +42,7 @@ INSERT INTO audit_events (event_id, tenant_id, actor_id, correlation_id, causati
 
     ('22222222-0000-5000-8000-000000000005', '00000000-0000-5000-8000-000000000001',
      '11111111-0000-5000-8000-000000000002', 'corr-005', NULL,
-     'identos.auth', 'ACTOR_LOGIN', 'v1',
+     'identityos.auth', 'ACTOR_LOGIN', 'v1',
      '{"method":"oidc","ip":"127.0.0.1"}'::JSONB,
      '2026-05-25T09:30:00Z')
 ON CONFLICT (event_id) DO NOTHING;

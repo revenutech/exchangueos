@@ -12,9 +12,9 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/revenu-tech/exchangeos/modules/quote/application"
-	"github.com/revenu-tech/exchangeos/modules/quote/domain"
-	pb "github.com/revenu-tech/exchangeos/proto/gen/exchangeos/v1"
+	"github.com/revenutech/exchangeos/modules/quote/application"
+	"github.com/revenutech/exchangeos/modules/quote/domain"
+	pb "github.com/revenutech/exchangeos/proto/gen/exchangeos/v1"
 )
 
 // GRPCServer adapts pb.QuoteServiceServer to the application service.
@@ -40,12 +40,24 @@ func (s *GRPCServer) GetQuote(ctx context.Context, req *pb.GetQuoteRequest) (*pb
 		return nil, status.Errorf(codes.InvalidArgument, "notional.amount: %v", err)
 	}
 
+	// Counterparties, side and venue are required — the domain rejects a quote
+	// without them, because a quote that does not say who is dealing, in which
+	// direction and where cannot be turned into a trade.
+	side, err := domain.ParseSide(req.GetSide())
+	if err != nil {
+		return nil, mapErr(err)
+	}
+
 	q, err := s.svc.GetQuote(ctx, application.GetQuoteRequest{
-		TenantID:    tid,
-		BaseCCY:     req.GetBaseCcy(),
-		QuoteCCY:    req.GetQuoteCcy(),
-		Notional:    notional,
-		NotionalCCY: req.GetNotional().GetCurrency(),
+		TenantID:     tid,
+		RequesterBIC: req.GetRequesterBic(),
+		ProviderBIC:  req.GetProviderBic(),
+		Side:         side,
+		BaseCCY:      req.GetBaseCcy(),
+		QuoteCCY:     req.GetQuoteCcy(),
+		Notional:     notional,
+		NotionalCCY:  req.GetNotional().GetCurrency(),
+		Venue:        req.GetVenue(),
 	})
 	if err != nil {
 		return nil, mapErr(err)
@@ -54,8 +66,9 @@ func (s *GRPCServer) GetQuote(ctx context.Context, req *pb.GetQuoteRequest) (*pb
 }
 
 // AcceptQuote — pb.QuoteServiceServer
-// Returns the quote_id back as the response trade_id. Real trade creation is
-// driven downstream by a worker reacting to the `quote.accepted.v1` event.
+//
+// Trade creation is driven downstream by the quote.accepted.v1 handler, which
+// books from the aggregate's own counterparties, side and venue.
 func (s *GRPCServer) AcceptQuote(ctx context.Context, req *pb.AcceptQuoteRequest) (*pb.AcceptQuoteResponse, error) {
 	if _, err := parseTenant(req.GetTenant()); err != nil {
 		return nil, err
@@ -71,9 +84,15 @@ func (s *GRPCServer) AcceptQuote(ctx context.Context, req *pb.AcceptQuoteRequest
 	if err != nil {
 		return nil, mapErr(err)
 	}
-	// Placeholder: until trade-creation worker is implemented, return the quote
-	// id as the trade id. Caller correlates via event log.
-	return &pb.AcceptQuoteResponse{TradeId: q.ID().String()}, nil
+	// trade_id is left empty: accepting a quote does not book a trade.
+	//
+	// This used to return q.ID() — the QUOTE id — in the trade_id field, so every
+	// caller received an identifier that looks like a trade reference and
+	// resolves to nothing. Auto-booking is disabled upstream because the Quote
+	// aggregate carries no counterparties (see internal/container), and until it
+	// does, the honest answer is "no trade".
+	_ = q
+	return &pb.AcceptQuoteResponse{}, nil
 }
 
 // StreamQuotes — pb.QuoteServiceServer streaming RPC (TODO).

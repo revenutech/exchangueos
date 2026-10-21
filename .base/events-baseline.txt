@@ -1,0 +1,17 @@
+# Baseline anti-drift — MS-057 F1 E1.4 · T1.4.3 — módulo exchangeos
+#
+# Contagem de strings de evento AINDA FORA do repositório central de
+# mensagens. O gate falha se uma contagem SUBIR ou um arquivo novo
+# aparecer; descer é sempre permitido e é o que a migração faz.
+#
+# Regenerar: msgrepo drift --module exchangeos --src . --update
+# Só regenere para BAIXO. Subir o baseline para acomodar um evento novo
+# é desligar o gate sem dizer que desligou.
+#
+# total: 25 string(s) em 6 arquivo(s)
+6	internal/adminapi/registry.go
+1	internal/container/container.go
+2	internal/erasure/auditadapter.go
+4	modules/payin/domain/events.go
+7	modules/quote/domain/events.go
+5	modules/trade/domain/events.go

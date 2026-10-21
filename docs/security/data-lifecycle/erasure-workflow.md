@@ -18,7 +18,7 @@ issue tracker.
 Required:
 - CPF/CNPJ of the data subject
 - Government-issued ID copy
-- Second factor: SMS code via Identos OR notarised request
+- Second factor: SMS code via IdentityOS OR notarised request
 
 If unable to verify within 7 days: reject with cause (Art. 18 § 1º — entity must
 demonstrate identity to exercise the right).
@@ -28,7 +28,7 @@ Tracker fields:
 ticket: LGPD-2026-0001
 received_at: 2026-05-24T10:30:00-03:00
 subject_cpf: hashed-sha256-of-cpf
-verification_method: identos-sms
+verification_method: identityos-sms
 verified_at: 2026-05-26T14:00:00-03:00
 ```
 

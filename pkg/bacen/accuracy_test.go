@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/revenu-tech/exchangeos/pkg/bacen"
+	"github.com/revenutech/exchangeos/pkg/bacen"
 )
 
 // AccuracyThreshold is the minimum hit ratio the keyword classifier must

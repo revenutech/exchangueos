@@ -19,8 +19,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/revenu-tech/exchangeos/internal/dbtest"
-	"github.com/revenu-tech/exchangeos/internal/erasure"
+	"github.com/revenutech/exchangeos/internal/dbtest"
+	"github.com/revenutech/exchangeos/internal/erasure"
 )
 
 func TestErasureExecutor_Apply_RedactAndDelete(t *testing.T) {

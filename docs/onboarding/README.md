@@ -26,7 +26,7 @@ task install
 task compose:up
 
 # Verify the smoke endpoint.
-curl http://localhost:8094/v1/refdata/currencies?active_only=true | jq .count
+curl http://localhost:8084/v1/refdata/currencies?active_only=true | jq .count
 ```
 
 ### First test run

@@ -11,8 +11,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/revenu-tech/exchangeos/modules/cls_settlement/application"
-	"github.com/revenu-tech/exchangeos/modules/cls_settlement/domain"
+	"github.com/revenutech/exchangeos/modules/cls_settlement/application"
+	"github.com/revenutech/exchangeos/modules/cls_settlement/domain"
 )
 
 type CycleRepo struct{ pool *pgxpool.Pool }

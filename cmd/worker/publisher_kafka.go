@@ -9,8 +9,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/revenu-tech/exchangeos/pkg/outbox"
-	outboxkafka "github.com/revenu-tech/exchangeos/pkg/outbox/kafka"
+	"github.com/revenutech/exchangeos/pkg/outbox"
+	outboxkafka "github.com/revenutech/exchangeos/pkg/outbox/kafka"
 )
 
 // newPublisher (kafka tag): reads EXCHANGEOS_KAFKA_BROKERS (comma-separated) +

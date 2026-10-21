@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/revenu-tech/exchangeos/modules/refdata/application"
-	"github.com/revenu-tech/exchangeos/modules/refdata/domain"
-	"github.com/revenu-tech/exchangeos/modules/refdata/infrastructure/memory"
+	"github.com/revenutech/exchangeos/modules/refdata/application"
+	"github.com/revenutech/exchangeos/modules/refdata/domain"
+	"github.com/revenutech/exchangeos/modules/refdata/infrastructure/memory"
 )
 
 func newSvc(t *testing.T) (*application.Service, *memory.CurrencyRepo, *memory.CalendarRepo, *memory.BICRepo, *memory.SSIRepo) {

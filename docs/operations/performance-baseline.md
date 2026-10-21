@@ -19,17 +19,17 @@
 ## Current numbers (v4.17.0 — placeholder until first CI run)
 
 ```
-pkg: github.com/revenu-tech/exchangeos/pkg/pricing
+pkg: github.com/revenutech/exchangeos/pkg/pricing
 BenchmarkForward_360-2           500000        3120 ns/op    1024 B/op    32 allocs/op
 BenchmarkCross_EURUSD_USDBRL-2   400000        3500 ns/op    1152 B/op    36 allocs/op
 BenchmarkPositionMTM-2           600000        2800 ns/op     960 B/op    30 allocs/op
 
-pkg: github.com/revenu-tech/exchangeos/pkg/outbox
+pkg: github.com/revenutech/exchangeos/pkg/outbox
 BenchmarkDispatch_HotPath-2      100000       12000 ns/op    1856 B/op    40 allocs/op
 BenchmarkDispatch_Batch100-2       2000      720000 ns/op  185600 B/op  4000 allocs/op
 BenchmarkRecord_Build-2          2000000       620 ns/op      320 B/op     8 allocs/op
 
-pkg: github.com/revenu-tech/exchangeos/modules/trade/domain
+pkg: github.com/revenutech/exchangeos/modules/trade/domain
 BenchmarkNewFXTrade-2            300000        4500 ns/op    1408 B/op    42 allocs/op
 BenchmarkLifecycle_BookConfirmSettle-2  100000  18000 ns/op  4992 B/op   148 allocs/op
 ```

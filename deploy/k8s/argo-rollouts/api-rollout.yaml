@@ -42,9 +42,9 @@ spec:
         - name: api
           image: gcr.io/revenu-platform/exchangeos-api:v0.1.0
           ports:
-            - containerPort: 8094
+            - containerPort: 8084
               name: http
-            - containerPort: 9094
+            - containerPort: 9084
               name: grpc
 ---
 apiVersion: argoproj.io/v1alpha1

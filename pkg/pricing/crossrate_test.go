@@ -6,7 +6,7 @@ import (
 
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/pkg/pricing"
+	"github.com/revenutech/exchangeos/pkg/pricing"
 )
 
 func almostEqualP(t *testing.T, got, want decimal.Decimal, tol string) {

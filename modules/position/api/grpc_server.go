@@ -5,16 +5,15 @@ package api
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/revenu-tech/exchangeos/modules/position/application"
-	"github.com/revenu-tech/exchangeos/modules/position/domain"
-	pb "github.com/revenu-tech/exchangeos/proto/gen/exchangeos/v1"
+	"github.com/revenutech/exchangeos/modules/position/application"
+	"github.com/revenutech/exchangeos/modules/position/domain"
+	pb "github.com/revenutech/exchangeos/proto/gen/exchangeos/v1"
 )
 
 type GRPCServer struct {
@@ -54,24 +53,26 @@ func (s *GRPCServer) ListPositions(ctx context.Context, req *pb.ListPositionsReq
 }
 
 // RecomputePositions — pb.PositionServiceServer
-// Stub: returns 0 updated. Real recomputation reads trades within business_date
-// and replays via ApplyTradeLeg — TODO MS-023g.
+//
+// Not implemented. It used to return PositionsUpdated: 0 with a fresh
+// CompletedAt, which reads as "recomputed successfully, nothing changed" — an
+// operator reconciling positions would take that as a clean run when no trade
+// was replayed at all. Unimplemented is the honest answer until the replay over
+// business_date via ApplyTradeLeg exists (MS-023g).
 func (s *GRPCServer) RecomputePositions(_ context.Context, req *pb.RecomputePositionsRequest) (*pb.RecomputePositionsResponse, error) {
 	if _, err := parseTenant(req.GetTenant()); err != nil {
 		return nil, err
 	}
-	return &pb.RecomputePositionsResponse{
-		PositionsUpdated: 0,
-		CompletedAt:      timestamppb.New(time.Now().UTC()),
-	}, nil
+	return nil, status.Error(codes.Unimplemented,
+		"position recomputation is not implemented; positions are not replayed")
 }
 
 func toPB(p *domain.Position) *pb.Position {
 	return &pb.Position{
-		PositionId: p.ID().String(),
-		TenantId:   p.TenantID().String(),
-		Currency:   p.Currency(),
-		LongAmount: &pb.Money{Amount: p.Long().String(), Currency: p.Currency()},
+		PositionId:  p.ID().String(),
+		TenantId:    p.TenantID().String(),
+		Currency:    p.Currency(),
+		LongAmount:  &pb.Money{Amount: p.Long().String(), Currency: p.Currency()},
 		ShortAmount: &pb.Money{Amount: p.Short().String(), Currency: p.Currency()},
 		NetAmount:   &pb.Money{Amount: p.Net().String(), Currency: p.Currency()},
 		AsOf:        timestamppb.New(p.AsOf()),

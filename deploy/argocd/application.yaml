@@ -15,7 +15,7 @@ metadata:
 spec:
   project: revenu-platform
   source:
-    repoURL: https://github.com/revenu-tech/exchangeos
+    repoURL: https://github.com/revenutech/exchangeos
     targetRevision: main
     path: deploy/helm/exchangeos
     helm:
@@ -59,7 +59,7 @@ metadata:
 spec:
   description: Revenu Platform applications (ExchangeOS + sibling modules)
   sourceRepos:
-    - https://github.com/revenu-tech/*
+    - https://github.com/revenutech/*
   destinations:
     - server: https://kubernetes.default.svc
       namespace: 'exchangeos*'

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/revenu-tech/exchangeos/internal/erasure"
+	"github.com/revenutech/exchangeos/internal/erasure"
 )
 
 const validPlan = `{

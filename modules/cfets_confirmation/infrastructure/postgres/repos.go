@@ -14,8 +14,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/revenu-tech/exchangeos/modules/cfets_confirmation/application"
-	"github.com/revenu-tech/exchangeos/modules/cfets_confirmation/domain"
+	"github.com/revenutech/exchangeos/modules/cfets_confirmation/application"
+	"github.com/revenutech/exchangeos/modules/cfets_confirmation/domain"
 )
 
 var _ application.Repository = (*CFETSConfirmationRepo)(nil)

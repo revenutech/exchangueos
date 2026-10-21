@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/revenu-tech/exchangeos/modules/netreport/domain"
+	"github.com/revenutech/exchangeos/modules/netreport/domain"
 )
 
 type Repository interface {

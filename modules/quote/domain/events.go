@@ -13,13 +13,16 @@ type DomainEvent interface {
 }
 
 type EventQuoteCreated struct {
-	QuoteID    uuid.UUID
-	TenantID   uuid.UUID
-	BaseCCY    string
-	QuoteCCY   string
-	Bid        decimal.Decimal
-	Ask        decimal.Decimal
-	OccurredAt time.Time
+	QuoteID      uuid.UUID
+	TenantID     uuid.UUID
+	RequesterBIC string
+	ProviderBIC  string
+	Side         string
+	BaseCCY      string
+	QuoteCCY     string
+	Bid          decimal.Decimal
+	Ask          decimal.Decimal
+	OccurredAt   time.Time
 }
 
 func (e EventQuoteCreated) EventName() string { return "quote.created.v1" }

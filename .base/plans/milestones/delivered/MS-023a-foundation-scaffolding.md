@@ -43,7 +43,7 @@ Materializar a base do repositorio ExchangeOS: scaffolding completo + proto cont
 
 ## Acceptance Criteria
 
-- [ ] Repositorio `exchangeos` criado com `go.mod` (`github.com/revenu-tech/exchangeos`), Go 1.25.1
+- [ ] Repositorio `exchangeos` criado com `go.mod` (`github.com/revenutech/exchangeos`), Go 1.25.1
 - [ ] Estrutura completa de pastas (`cmd/`, `modules/`, `pkg/`, `internal/`, `proto/`, `migrations/`, `seeds/`, `tests/`)
 - [ ] 9 proto services compilando via `buf` (`exchangeos.v1.{trade,quote,amendment,settlement,refdata,admin,risk,position,compliance}`)
 - [ ] CockroachDB migrations 000001-000020 idempotentes

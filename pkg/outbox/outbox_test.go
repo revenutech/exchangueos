@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/revenu-tech/exchangeos/pkg/outbox"
+	"github.com/revenutech/exchangeos/pkg/outbox"
 )
 
 // fakeStore — minimal in-memory Store for testing Dispatch.

@@ -9,9 +9,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/modules/quote/application"
-	"github.com/revenu-tech/exchangeos/modules/quote/domain"
-	"github.com/revenu-tech/exchangeos/modules/quote/infrastructure/memory"
+	"github.com/revenutech/exchangeos/modules/quote/application"
+	"github.com/revenutech/exchangeos/modules/quote/domain"
+	"github.com/revenutech/exchangeos/modules/quote/infrastructure/memory"
 )
 
 func dec(s string) decimal.Decimal { return decimal.RequireFromString(s) }
@@ -46,12 +46,15 @@ func TestGetQuote_PricesAndPersists(t *testing.T) {
 	ctx := context.Background()
 
 	q, err := svc.GetQuote(ctx, application.GetQuoteRequest{
-		TenantID:    uuid.New(),
-		BaseCCY:     "eur",
-		QuoteCCY:    "usd",
-		Notional:    decimal.NewFromInt(1_000_000),
-		NotionalCCY: "EUR",
-		Venue:       "INTERNAL",
+		TenantID:     uuid.New(),
+		RequesterBIC: "CHASUS33",
+		ProviderBIC:  "DEUTDEFF",
+		Side:         domain.SideBuy,
+		BaseCCY:      "eur",
+		QuoteCCY:     "usd",
+		Notional:     decimal.NewFromInt(1_000_000),
+		NotionalCCY:  "EUR",
+		Venue:        "INTERNAL",
 	})
 	if err != nil {
 		t.Fatalf("GetQuote: %v", err)
@@ -80,11 +83,14 @@ func TestGetQuote_PricingError_Propagated(t *testing.T) {
 	eng := &stubEngine{err: errors.New("no liquidity")}
 	svc, _, _, _ := newSvc(t, eng)
 	_, err := svc.GetQuote(context.Background(), application.GetQuoteRequest{
-		TenantID:    uuid.New(),
-		BaseCCY:     "EUR",
-		QuoteCCY:    "USD",
-		Notional:    decimal.NewFromInt(1000),
-		NotionalCCY: "EUR",
+		TenantID:     uuid.New(),
+		RequesterBIC: "CHASUS33",
+		ProviderBIC:  "DEUTDEFF",
+		Side:         domain.SideBuy,
+		BaseCCY:      "EUR",
+		QuoteCCY:     "USD",
+		Notional:     decimal.NewFromInt(1000),
+		NotionalCCY:  "EUR",
 	})
 	if err == nil || err.Error() != "no liquidity" {
 		t.Fatalf("expected propagated pricing error, got %v", err)
@@ -119,12 +125,16 @@ func TestAcceptQuote_Lifecycle(t *testing.T) {
 	tenant := uuid.New()
 
 	q, err := svc.GetQuote(ctx, application.GetQuoteRequest{
-		TenantID:    tenant,
-		BaseCCY:     "EUR",
-		QuoteCCY:    "USD",
-		Notional:    decimal.NewFromInt(1_000_000),
-		NotionalCCY: "EUR",
-		TTL:         5 * time.Minute,
+		TenantID:     tenant,
+		RequesterBIC: "CHASUS33",
+		ProviderBIC:  "DEUTDEFF",
+		Side:         domain.SideBuy,
+		BaseCCY:      "EUR",
+		QuoteCCY:     "USD",
+		Notional:     decimal.NewFromInt(1_000_000),
+		NotionalCCY:  "EUR",
+		Venue:        "INTERNAL",
+		TTL:          5 * time.Minute,
 	})
 	if err != nil {
 		t.Fatalf("setup GetQuote: %v", err)
@@ -155,13 +165,19 @@ func TestAcceptQuote_Expired_Propagates(t *testing.T) {
 	eng := &stubEngine{mid: dec("1.0800"), half: dec("0.0002")}
 	svc, _, _, _ := newSvc(t, eng)
 	ctx := context.Background()
-	q, _ := svc.GetQuote(ctx, application.GetQuoteRequest{
-		TenantID: uuid.New(), BaseCCY: "EUR", QuoteCCY: "USD",
+	// The error is checked rather than discarded: swallowing it turned a
+	// construction failure into a nil-pointer panic on q.ID() below.
+	q, err := svc.GetQuote(ctx, application.GetQuoteRequest{
+		TenantID: uuid.New(), RequesterBIC: "CHASUS33", ProviderBIC: "DEUTDEFF",
+		Side: domain.SideBuy, BaseCCY: "EUR", QuoteCCY: "USD",
 		Notional: decimal.NewFromInt(1), NotionalCCY: "EUR",
-		TTL: 1 * time.Millisecond,
+		Venue: "INTERNAL", TTL: 1 * time.Millisecond,
 	})
+	if err != nil {
+		t.Fatalf("setup GetQuote: %v", err)
+	}
 	time.Sleep(5 * time.Millisecond)
-	_, err := svc.AcceptQuote(ctx, application.AcceptQuoteRequest{QuoteID: q.ID(), Actor: "trader-a"})
+	_, err = svc.AcceptQuote(ctx, application.AcceptQuoteRequest{QuoteID: q.ID(), Actor: "trader-a"})
 	if !errors.Is(err, domain.ErrQuoteExpired) {
 		t.Fatalf("want ErrQuoteExpired, got %v", err)
 	}
@@ -196,11 +212,15 @@ func TestRFQ_FullFlow(t *testing.T) {
 	}
 
 	// Get a quote and attach it
-	q, _ := svc.GetQuote(ctx, application.GetQuoteRequest{
-		TenantID: tenant, BaseCCY: "EUR", QuoteCCY: "USD",
+	q, err := svc.GetQuote(ctx, application.GetQuoteRequest{
+		TenantID: tenant, RequesterBIC: "CHASUS33", ProviderBIC: "DEUTDEFF",
+		Side: domain.SideBuy, BaseCCY: "EUR", QuoteCCY: "USD",
 		Notional: decimal.NewFromInt(1_000_000), NotionalCCY: "EUR",
-		TTL: 5 * time.Minute,
+		Venue: "INTERNAL", TTL: 5 * time.Minute,
 	})
+	if err != nil {
+		t.Fatalf("setup GetQuote: %v", err)
+	}
 	rfq2, err := svc.AttachQuoteToRFQ(ctx, application.AttachQuoteToRFQRequest{
 		RFQID: rfq.ID(), QuoteID: q.ID(),
 	})

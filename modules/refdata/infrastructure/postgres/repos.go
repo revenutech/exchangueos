@@ -16,8 +16,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/revenu-tech/exchangeos/modules/refdata/application"
-	"github.com/revenu-tech/exchangeos/modules/refdata/domain"
+	"github.com/revenutech/exchangeos/modules/refdata/application"
+	"github.com/revenutech/exchangeos/modules/refdata/domain"
 )
 
 // ─── CurrencyRepo ──────────────────────────────────────────────────────────

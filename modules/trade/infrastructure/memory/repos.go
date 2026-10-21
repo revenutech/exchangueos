@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/revenu-tech/exchangeos/modules/trade/application"
-	"github.com/revenu-tech/exchangeos/modules/trade/domain"
+	"github.com/revenutech/exchangeos/modules/trade/application"
+	"github.com/revenutech/exchangeos/modules/trade/domain"
 )
 
 // ─── TradeRepo ─────────────────────────────────────────────────────────────

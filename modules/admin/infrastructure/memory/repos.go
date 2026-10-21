@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/revenu-tech/exchangeos/modules/admin/application"
-	"github.com/revenu-tech/exchangeos/modules/admin/domain"
+	"github.com/revenutech/exchangeos/modules/admin/application"
+	"github.com/revenutech/exchangeos/modules/admin/domain"
 )
 
 type EventRepo struct {

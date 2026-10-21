@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/revenu-tech/exchangeos/modules/cls_settlement/application"
-	"github.com/revenu-tech/exchangeos/modules/cls_settlement/domain"
-	"github.com/revenu-tech/exchangeos/modules/cls_settlement/infrastructure/memory"
+	"github.com/revenutech/exchangeos/modules/cls_settlement/application"
+	"github.com/revenutech/exchangeos/modules/cls_settlement/domain"
+	"github.com/revenutech/exchangeos/modules/cls_settlement/infrastructure/memory"
 )
 
 func newSvc(t *testing.T) (*application.Service, *memory.CycleRepo, *memory.NoopPublisher) {

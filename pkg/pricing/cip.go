@@ -30,12 +30,12 @@ const internalScale int32 = 8
 //	  = 1.0800 × 1.013125 / 1.010000
 //	  = 1.0833402...
 type ForwardInput struct {
-	Spot          decimal.Decimal // quoted CCY per 1 base CCY
-	QuotedRate    decimal.Decimal // i_p, nominal annual rate as fraction
-	BaseRate      decimal.Decimal // i_b, nominal annual rate as fraction
-	Days          int             // n
-	QuotedBasis   int             // N_p (360 or 365)
-	BaseBasis     int             // N_b
+	Spot        decimal.Decimal // quoted CCY per 1 base CCY
+	QuotedRate  decimal.Decimal // i_p, nominal annual rate as fraction
+	BaseRate    decimal.Decimal // i_b, nominal annual rate as fraction
+	Days        int             // n
+	QuotedBasis int             // N_p (360 or 365)
+	BaseBasis   int             // N_b
 }
 
 // Forward returns F per the CIP formula at `internalScale` decimal places,

@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/revenu-tech/exchangeos/modules/cls_settlement/application"
-	"github.com/revenu-tech/exchangeos/modules/cls_settlement/domain"
+	"github.com/revenutech/exchangeos/modules/cls_settlement/application"
+	"github.com/revenutech/exchangeos/modules/cls_settlement/domain"
 )
 
 // ─── CycleRepo ─────────────────────────────────────────────────────────────

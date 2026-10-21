@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/revenu-tech/exchangeos/modules/cfets_confirmation/application"
-	"github.com/revenu-tech/exchangeos/modules/cfets_confirmation/domain"
+	"github.com/revenutech/exchangeos/modules/cfets_confirmation/application"
+	"github.com/revenutech/exchangeos/modules/cfets_confirmation/domain"
 )
 
 type Repo struct {

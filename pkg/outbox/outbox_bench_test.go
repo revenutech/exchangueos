@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/revenu-tech/exchangeos/pkg/outbox"
+	"github.com/revenutech/exchangeos/pkg/outbox"
 )
 
 // BenchmarkDispatch_HotPath measures the per-record overhead of the Dispatch

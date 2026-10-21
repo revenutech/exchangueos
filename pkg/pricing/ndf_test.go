@@ -6,7 +6,7 @@ import (
 
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/pkg/pricing"
+	"github.com/revenutech/exchangeos/pkg/pricing"
 )
 
 // BRL devalues 5.00 → 5.10 with 1M BRL notional.

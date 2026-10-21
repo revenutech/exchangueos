@@ -5,7 +5,7 @@
 ## T-1 week — Prep
 
 - [ ] Game-day lead schedules: 4h block + 30min retro afterwards
-- [ ] Confirm staging cluster matches production topology (3 GKE nodes, 3 CRDB nodes, 3 Kafka brokers, Vault, Identos)
+- [ ] Confirm staging cluster matches production topology (3 GKE nodes, 3 CRDB nodes, 3 Kafka brokers, Vault, IdentityOS)
 - [ ] Confirm steady-state baseline (capture last 24h of dashboards as PNG)
 - [ ] Notify `#exchangeos`, `#platform-incidents` — staging may misbehave
 - [ ] Pre-load synthetic load via `k6 run tests/load/k6-trade-book.js --duration=10m` to warm caches

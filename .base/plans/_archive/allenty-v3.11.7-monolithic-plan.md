@@ -3,7 +3,7 @@
 > **Version:** 3.11.4
 > **Date:** 2026-05-24
 > **Status:** DRAFT — Pending approval (revisao 17: Database Sync Pattern unificado + integracao nativa AccountOS/PaymentOS via shared CRDB hub `cockroachdb/modules/exchangeos/` + cross-module CDC + Kafka event sync)
-> **Scope:** ExchangeOS (Standalone FX Module) — cobertura completa FX + Patterns (16 catalogos / 740 patterns) + CRUD/deploy local + TDD/E2E + **Database Sync Pattern** (shared CRDB hub TLS + native AccountOS + PaymentOS + LedgerOS + AuthorityOS + RiskOS + ComplOS + TreasuryOS + Identos integration via CDC + Kafka events)
+> **Scope:** ExchangeOS (Standalone FX Module) — cobertura completa FX + Patterns (16 catalogos / 740 patterns) + CRUD/deploy local + TDD/E2E + **Database Sync Pattern** (shared CRDB hub TLS + native AccountOS + PaymentOS + LedgerOS + AuthorityOS + RiskOS + ComplOS + TreasuryOS + IdentityOS integration via CDC + Kafka events)
 > **Source primaria:** [ISO 20022 FX Messages](https://www.iso20022.org/fx_messages.page), [iotafinance fxtr catalogue](https://www.iotafinance.com/en/SWIFT-ISO20022-Business-area-fxtr-Foreign-Exchange-Trade.html), [Oracle FLEXCUBE CLS workflow](https://docs.oracle.com/cd/E74659_01/html/FX/FX07_CLS.htm), [CFETS Business Services](http://www.chinamoney.com.cn/english/ausbas/), [RBA CLS Operational Arrangements](https://www.rba.gov.au/payments-and-infrastructure/rits/information-papers/cls-rits-session-times-and-operational-arrangements/introduction.html)
 > **Dependency:** Allenty v3.8.0 (OnboardOS + AccountOS), PaymentOS (messaging), LedgerOS (dual-ledger), AuthorityOS (BACEN/CCS)
 > **Reference principal:** [iso20022.org/iso-20022-message-definitions?business-domain[0]=21](https://www.iso20022.org/iso-20022-message-definitions?business-domain%5B0%5D=21) (FX = business domain ID 21)
@@ -98,7 +98,7 @@
 >         - Wire TED FX: ExchangeOS dispara wire TED com FX rate booked
 >         - 4 gRPC RPCs canonicas: InitiateCrossBorderPIX, InitiateWireTEDFX, GetCrossBorderStatus, CancelOutboundPayment
 >         - Settlement saga: PaymentOS publica `paymentos.cross-border.settled` → ExchangeOS atualiza FXSettlement
->     - **All other modules integration:** LedgerOS (multi-CCY postings PvP atomic), AuthorityOS (DEC/SCE-IED/SCE-Credito/COS submit), RiskOS (credit reserve + NOP), ComplOS (sanctions + AML), TreasuryOS (nostro funding + exposure sync), Identos (auth + AuthZ), KeycloakOS (token issuance)
+>     - **All other modules integration:** LedgerOS (multi-CCY postings PvP atomic), AuthorityOS (DEC/SCE-IED/SCE-Credito/COS submit), RiskOS (credit reserve + NOP), ComplOS (sanctions + AML), TreasuryOS (nostro funding + exposure sync), IdentityOS (auth + AuthZ), KeycloakOS (token issuance)
 >     - **CDC Kafka topics canonicas:** `__exchangeos_cdc.fx_trades`, `__exchangeos_cdc.positions`, `__exchangeos_cdc.cls_submissions`, `__exchangeos_cdc.dec_declarations` — consumidos por AccountOS (balance update), AuthorityOS (audit), Flink (analytics)
 >     - **Tenant resolution unificada** via single source of truth em AccountOS — ExchangeOS NUNCA cria tenant local; sempre referencia FK para `accountos.tenants.id`
 > - **Nova subsecao §14.24 FX-SYNC-* — 40 patterns** dedicado a Database Sync + Cross-Module Integration:
@@ -106,7 +106,7 @@
 >     - Sync Patterns (10): sync gRPC pull, sync CDC push CockroachDB CHANGEFEED, async Kafka domain events outbox, request-response vs fire-and-forget, idempotency keys, dedup tables, eventual consistency, saga compensation, cross-aggregate transactions PROIBIDA (saga only), tenant scoping cross-module
 >     - AccountOS Integration (6): tenant FK single source, multi-CCY balance gRPC, CNR validation, debit/credit FX trade RPCs, account events subscribe, eventual consistency 1s SLA
 >     - PaymentOS Integration (6): cross-border PIX initiation, wire TED FX execution, settlement callback, status sync, payment events subscribe, retry policy
->     - Other Modules (10): LedgerOS multi-CCY postings, AuthorityOS DEC/SCE/COS, RiskOS credit+NOP, ComplOS sanctions+AML, TreasuryOS nostro+exposure, Identos+KeycloakOS auth, OnboardOS optional, CardOS cross-ref optional, InvestOS cross-ref, BillingOS fees
+>     - Other Modules (10): LedgerOS multi-CCY postings, AuthorityOS DEC/SCE/COS, RiskOS credit+NOP, ComplOS sanctions+AML, TreasuryOS nostro+exposure, IdentityOS+KeycloakOS auth, OnboardOS optional, CardOS cross-ref optional, InvestOS cross-ref, BillingOS fees
 > - **Nova Fase 15M — Database Sync + Cross-Module Native Integration** com 60+ subtarefas; Milestone MS-023u (Sprint 17-18).
 > - **Migration playbook** para accountos + paymentos adotarem shared hub TLS (out of scope mas documentado em F15M-G).
 >
@@ -184,16 +184,16 @@
 > - **OTel Collector Helm chart** + ConfigMap em `k8s/otel-collector/`
 > - **Grafana dashboards** FX-specific em `docker/grafana/dashboards/` (trade volume, RFQ latency, CLS cycle, NOP realtime, MTM EOD, COS detection, RED+USE per BC)
 >
-> ### ⚠ Novidades em relacao a revisao 3.10.1 → 3.11.0 (IAM nativo Identos + KeycloakOS + ISO 27000-27005)
+> ### ⚠ Novidades em relacao a revisao 3.10.1 → 3.11.0 (IAM nativo IdentityOS + KeycloakOS + ISO 27000-27005)
 >
 > - **Nova secao §15 — ExchangeOS IAM Integration** cobrindo:
->     - **Identos Integration**: gRPC client para `:9084`, propagacao tenant + roles via context, scope-based authorization, session validation, consent management para client-facing operations
+>     - **IdentityOS Integration**: gRPC client para `:9084`, propagacao tenant + roles via context, scope-based authorization, session validation, consent management para client-facing operations
 >     - **KeycloakOS Integration**: Realm `revenu-exchangeos` no Keycloak v26.5.3, Organizations multi-tenancy, JWT validation via JWKS, Token Exchange RFC 8693, Step-up auth para amendments + cancellations > USD 100k, FAPI 2.0 conformance, ICP-Brasil X.509 para counterparties bancarios
 >     - **client_id / client_secret flow** OAuth2 Client Credentials Grant (RFC 6749 4.4) para todas as integracoes M2M: Counterparties (CLS, CFETS, SWIFT), Internal modulos (LedgerOS, PaymentOS, AccountOS, AuthorityOS, RiskOS, ComplOS, TreasuryOS), External providers (Refinitiv, Bloomberg, PTAX/BACEN OLINDA)
 >     - **Vault SPI** para client_secret rotation automatica (30d TTL)
->     - **AuthZ Policy Engine** via Identos com decision points em cada endpoint
+>     - **AuthZ Policy Engine** via IdentityOS com decision points em cada endpoint
 > - **Nova subsecao §14.20 FX-IAM-* — 50 patterns** com prefixo dedicado (nao colide com FX-GRPC-SEC-*):
->     - Identos Integration (8 patterns): gRPC adapter, context propagation, session, consent, authz policy, federation, audit, observability
+>     - IdentityOS Integration (8 patterns): gRPC adapter, context propagation, session, consent, authz policy, federation, audit, observability
 >     - KeycloakOS Integration (10 patterns): realm strategy, Organizations, JWT JWKS, Token Exchange, Step-up, FAPI 2.0, WebAuthn/Passkeys, X.509 ICP-Brasil, custom SPI, Vault SPI secrets
 >     - Client Credentials flow (8 patterns): client_id/client_secret canonical, secret rotation 30d, secret in Vault never in code, scope-per-client granular, audit per token issuance, JWKS validation cache 5min, tenant binding via claim, mTLS-bound tokens BACEN SPI
 >     - Token Management (6 patterns): JWT structure (iss/aud/sub/exp/iat/jti/scope/tenant_id/roles), access token TTL 1h, refresh token TTL 24h sliding, revocation via Bloom filter no KrakenD, jti dedup table, audience validation per service
@@ -341,7 +341,7 @@ ExchangeOS e o **modulo canonico de Foreign Exchange** da Revenu Platform — re
 │                          FX TRADE LIFECYCLE PIPELINE                         │
 │                                                                              │
 │  Cliente/Trader → [ExchangeOS] → Quote → Trade → Confirm → Settle → Report   │
-│                    :8094 / :9094                                             │
+│                    :8084 / :9084                                             │
 │                       │                                                      │
 │                       ├── fxtr  (FX Trade)         ──► trade booking         │
 │                       ├── fxti  (FX Trade Init)    ──► RFQ / quote           │
@@ -358,7 +358,7 @@ ExchangeOS e o **modulo canonico de Foreign Exchange** da Revenu Platform — re
 │                       ├── TreasuryOS  (exposure, nostro reconciliation)      │
 │                       ├── ComplOS     (sanctions, OFAC, COAF)                │
 │                       ├── RiskOS      (credit limit, market risk, VaR)       │
-│                       └── Identos     (trader/operator authorization)        │
+│                       └── IdentityOS     (trader/operator authorization)        │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -378,7 +378,7 @@ ExchangeOS e o **modulo canonico de Foreign Exchange** da Revenu Platform — re
 
 ### 2.1 ExchangeOS — Foreign Exchange Trading & Settlement
 
-**Tier:** 3 (External) | **HTTP:** :8094 | **gRPC:** :9094 | **Repo:** `exchangeos`
+**Tier:** 3 (External) | **HTTP:** :8084 | **gRPC:** :9084 | **Repo:** `exchangeos`
 
 #### Bounded Contexts
 
@@ -580,7 +580,7 @@ PAY_LEG_DONE + RECEIVE_LEG_DONE → SETTLED → RECONCILED
 | `RiskScorer` | RiskOSGRPCAdapter | StubRiskAdapter |
 | `RegulatoryReporter` | AuthorityOSGRPCAdapter (DEC/BACEN/COAF) | StubReporterAdapter |
 | `LedgerGateway` | LedgerOSGRPCAdapter, TemenosFXAdapter | StubLedgerAdapter |
-| `IdentityProvisioner` | IdentosGRPCAdapter | StubIdentityAdapter |
+| `IdentityProvisioner` | IdentityOSGRPCAdapter | StubIdentityAdapter |
 | `MQTransport` | IBMMQAdapter (reuso `paymentos/internal/ibmmq/`) | StubMQAdapter |
 
 #### Dual-Ledger Wiring (Multi-Currency)
@@ -1096,7 +1096,7 @@ Posicao 10-12: Detalhamento por anexo (codigo do produto, motivo, etc.)
 ```
 revenu-platform/exchangeos/
 ├── cmd/
-│   ├── api/main.go                    # HTTP (:8094) + gRPC (:9094) entrypoint
+│   ├── api/main.go                    # HTTP (:8084) + gRPC (:9084) entrypoint
 │   ├── migrator/main.go               # CockroachDB migrations
 │   ├── worker/main.go                 # Async event processor (settlement, reconciliation)
 │   ├── mq-bridge/main.go              # IBM MQ <-> internal Kafka bridge (SWIFT FIN)
@@ -1319,7 +1319,7 @@ revenu-platform/exchangeos/
 ├── docker-compose.test.yml
 ├── docker-compose.kafka-cluster.yml
 ├── Makefile
-├── go.mod                             # module github.com/revenu-tech/exchangeos
+├── go.mod                             # module github.com/revenutech/exchangeos
 ├── go.sum
 ├── .env.example
 ├── .golangci.yml
@@ -1360,11 +1360,11 @@ revenu-platform/exchangeos/
 | **F15F** | Patterns Suite infra/data (`205-207-*`) | 3 catalogos: 50 FX-CP-* (CockroachDB) + 60 FX-KP-* (Kafka) + 40 FX-FP-* (Apache Flink) = **150 patterns infra**; FOCO security (44 patterns) + data (130 patterns); snippets Go/Java/PyFlink compilaveis | F1, F2-F13, F15B, F15C, F15D, F15E |
 | **F15G** | Patterns Suite DevSecOps/IaC (`210-213-*`) + planos `06/07/08-*` | 4 catalogos: 50 FX-DS-* (DevSecOps + CI/CD + SLSA L3) + 40 FX-K8S-* (Kubernetes + GKE Autopilot) + 40 FX-IAC-* (Terraform + GCP) + 20 FX-DOC-* (Docker distroless) = **150 patterns devops**; + planos `06-infrastructure/`, `07-cicd/`, `08-security/` materializados; + 8 GitHub Actions workflows; + Terraform repo; + 5 Helm charts; + Dockerfiles distroless | F1, F8, F14, F15F |
 | **F15H** | Patterns Suite API contracts (`220-222-*`) + specs `api/` | 3 catalogos: 55 FX-GRPC-* (proto + services + streaming + interceptors + security + ops) + 50 FX-API-* (OpenAPI 3.1 + CRUD canonical + RFC 7807 errors + pagination cursor + security + webhooks) + 45 FX-ASYNC-* (AsyncAPI 3.0 + schemas Avro + channels Kafka + security mTLS/OAuth2/SASL + tooling/governance) = **150 patterns API**; + 5 specs concretas (OpenAPI/AsyncAPI/Protobuf/Postman/HTML docs) | F1, F4, F15E, F15F, F15G |
-| **F15I** | IAM + ISO 27000-27005 Suite (`230-*`) + `08-security/` (8 docs) | 1 catalogo: 50 FX-IAM-* (Identos integration + KeycloakOS realm/clients + client_credentials flow + token mgmt + RBAC scopes + ISO 27001 controls); + integracao nativa **Identos** (gRPC :9084) + **KeycloakOS** (realm `revenu-exchangeos` + 14 clients M2M + 2 user) + Vault SPI rotation 30d + 8 docs ISO 27000/27001/27002/27003/27004/27005 + 93 Annex A controls mapeados | F1, F4, F8, F15G, F15H |
+| **F15I** | IAM + ISO 27000-27005 Suite (`230-*`) + `08-security/` (8 docs) | 1 catalogo: 50 FX-IAM-* (IdentityOS integration + KeycloakOS realm/clients + client_credentials flow + token mgmt + RBAC scopes + ISO 27001 controls); + integracao nativa **IdentityOS** (gRPC :9084) + **KeycloakOS** (realm `revenu-exchangeos` + 14 clients M2M + 2 user) + Vault SPI rotation 30d + 8 docs ISO 27000/27001/27002/27003/27004/27005 + 93 Annex A controls mapeados | F1, F4, F8, F15G, F15H |
 | **F15J** | Telemetry Suite (OpenTelemetry) (`240-*`) + `pkg/telemetry/` | 1 catalogo: 60 FX-OTEL-* (Foundation + Tracing + Metrics + Logs + Auto-instr + Sampling + Collector + Security/PII); + **`pkg/telemetry/` shared lib** + OTel Collector Helm + ConfigMap + 10 Grafana dashboards FX-specific + SLI/SLO catalog + alerting + multi-tier backends (Tempo+Mimir+Loki+Grafana+GCP Cloud Ops dual) | F1, F8, F15F, F15I |
 | **F15K** | Local Deploy + CRUD Test Suite (`cockroachdb/modules/exchangeos/`) | Registro no hub CRDB shared (TLS shared CA + isolated cluster `crdb-exchangeos`) + 3 docker-compose + Makefile raiz 30+ targets + **~290 CRUD tests** (14 BCs × ~20) + ~30 E2E/contract/load/compliance + 5 test helpers + 10 seeds + 20 migrations + 1 catalogo FX-TEST-* (40 patterns) + 4 CI workflows | F1, F15B, F15D, F15F, F15G |
 | **F15L** | Local Quality Gates + TDD/E2E (`lefthook.yml` + `.pre-commit-config.yaml` + Makefile + scripts) | TDD workflow Red-Green-Refactor + 30 security gates locais em 3 ciclos (9 pre-commit + 13 pre-push + 11 pre-merge) + 10 E2E cenarios canonicos + 9 Makefile quality targets + 7 scripts + 1 catalogo FX-QA-* (35 patterns) + 4 docs onboarding + CI espelha local 100% — **zero push falho** | F15G, F15H, F15I, F15J, F15K |
-| **F15M** | Database Sync + Cross-Module Native Integration | Shared CRDB hub TLS desde dia 1 (ADR-015) + 3 sync patterns (gRPC pull + CDC push + Kafka events) + 13 integrations nativas (AccountOS + PaymentOS + LedgerOS + AuthorityOS + RiskOS + ComplOS + TreasuryOS + Identos + KeycloakOS + OnboardOS + BillingOS + CardOS/InvestOS v2) + 7 CDC topics + 11 Kafka domain events + tenant materialized view + 1 catalogo FX-SYNC-* (40 patterns) + migration playbook accountos/paymentos | F1, F4, F7, F10, F13, F15J, F15K, F15L |
+| **F15M** | Database Sync + Cross-Module Native Integration | Shared CRDB hub TLS desde dia 1 (ADR-015) + 3 sync patterns (gRPC pull + CDC push + Kafka events) + 13 integrations nativas (AccountOS + PaymentOS + LedgerOS + AuthorityOS + RiskOS + ComplOS + TreasuryOS + IdentityOS + KeycloakOS + OnboardOS + BillingOS + CardOS/InvestOS v2) + 7 CDC topics + 11 Kafka domain events + tenant materialized view + 1 catalogo FX-SYNC-* (40 patterns) + migration playbook accountos/paymentos | F1, F4, F7, F10, F13, F15J, F15K, F15L |
 | **F15N** | Integration Verification & Gap Closure | Auditoria 4 vetores × 13 modulos (§20 matrix) + closure dos 7 gaps identificados (`pkg/integration/_template/`, Kafka ACL matrix Terraform, CDC consumer registry, gRPC service discovery + LB, schema evolution policy, saga compensation matrix, integration test strategy) + 1 catalogo FX-INT-* (25 patterns) + CI integration audit quarterly + validation tests | F1, F15A-M |
 | **F15O** | Cross-Platform Tooling (Task + Makefile + PowerShell + Bash POSIX + Docker cross-platform) | `Taskfile.yml` source-of-truth + Makefile auto-gerado + `scripts/win/` PowerShell mirror + `scripts/` bash POSIX-compliant + shellcheck CI + docker-compose named volumes + multi-arch buildx + `.gitattributes` line endings + CI matrix `[ubuntu, macos, windows]` + 4 docs onboarding + 1 catalogo FX-XOS-* (20 patterns) — **ExchangeOS roda identicamente em qualquer SO** | F1, F15E, F15G, F15K, F15L |
 | **F15P** | Pre-Commit HARD Enforcement + Cost-Saving (zero GitHub Actions desperdicado) | Git wrapper bloqueia `--no-verify` + 3 tiers SLO (Tier 1 < 30s pre-commit / Tier 2 < 3min pre-push / Tier 3 < 15min pre-merge) com TODOS gatilhos (TDD + E2E + Security + SAST + Supply Chain) + test impact analysis (70%+ speedup) + 7 caches agressivos + cost reporting weekly Slack + Grafana dashboard + 25 FX-COMMIT-* patterns + 4 docs onboarding | F15G, F15H, F15I, F15J, F15K, F15L, F15M, F15N, F15O |
@@ -1380,7 +1380,7 @@ revenu-platform/exchangeos/
 
 | # | Tarefa | Artefato | Detalhes |
 |---|--------|----------|---------|
-| F1.1 | Criar repositorio `exchangeos` | `revenu-platform/exchangeos/` | go.mod (`github.com/revenu-tech/exchangeos`), Go 1.25.1, .gitignore, LICENSE, CLAUDE.md |
+| F1.1 | Criar repositorio `exchangeos` | `revenu-platform/exchangeos/` | go.mod (`github.com/revenutech/exchangeos`), Go 1.25.1, .gitignore, LICENSE, CLAUDE.md |
 | F1.2 | Scaffolding completo | `cmd/`, `modules/`, `pkg/`, `internal/`, `proto/` | Estrutura da secao 3, Makefile com targets build/test/lint/run/proto/migrate |
 | F1.3 | Proto contracts | `proto/exchangeos/v1/` | 9 services: trade, quote, amendment, settlement, refdata, admin, risk, position, compliance. buf.yaml + buf.gen.yaml |
 | F1.4 | Proto contracts compartilhados | `revenu-platform/proto/` | Atualizar buf.yaml com `exchangeos/v1`. Gerar stubs Go consumidos por outros modulos |
@@ -1775,7 +1775,7 @@ revenu-platform/exchangeos/
 | F9B-F.1 | SISCOAF client | `modules/compliance/bacen/siscoaf/client.go` | HTTPS client para envio de COS (Comunicacao de Operacao Suspeita) |
 | F9B-F.2 | COS aggregate | `modules/compliance/bacen/siscoaf/domain/` | Estado: DETECTED → UNDER_REVIEW → APPROVED_FOR_FILING → FILED → ACKED |
 | F9B-F.3 | Monitoring rules engine | `modules/compliance/bacen/siscoaf/rules/` | RN_FX_040: detecta fragmentacao, smurfing, pass-through, paraiso fiscal, PEP, jurisdicao FATF risco |
-| F9B-F.4 | Review queue UI hook | `modules/compliance/bacen/siscoaf/application/` | Fila de revisao manual com SLA 24h; integracao com Identos para RBAC compliance officer |
+| F9B-F.4 | Review queue UI hook | `modules/compliance/bacen/siscoaf/application/` | Fila de revisao manual com SLA 24h; integracao com IdentityOS para RBAC compliance officer |
 | F9B-F.5 | Auto-filer | `cmd/worker/` | Para COS aprovadas, envia ao SISCOAF ate o 1º dia util seguinte (RN_FX_039) |
 | F9B-F.6 | Tipologias library | `modules/compliance/bacen/siscoaf/tipologias.go` | Manual COAF tipologias mapeadas em regras |
 | F9B-F.7 | Tests | `*_test.go` | 30+ tests: cobre cada tipologia, fluxo manual + auto |
@@ -1821,7 +1821,7 @@ revenu-platform/exchangeos/
 
 | # | Tarefa | Artefato | Detalhes |
 |---|--------|----------|---------|
-| F9B-K.1 | ResidencyClassifier | `modules/compliance/bacen/residency/classifier.go` | RN_FX_033: PF (CPF + endereco fiscal); PJ (CNPJ + sede). Integration com onboardos/identos |
+| F9B-K.1 | ResidencyClassifier | `modules/compliance/bacen/residency/classifier.go` | RN_FX_033: PF (CPF + endereco fiscal); PJ (CNPJ + sede). Integration com onboardos/identityos |
 | F9B-K.2 | Over-ride workflow | `modules/compliance/bacen/residency/override.go` | Compliance officer pode reclassificar com auditoria; 4-eyes |
 | F9B-K.3 | Tests | `*_test.go` | 10+ tests |
 
@@ -1946,7 +1946,7 @@ revenu-platform/exchangeos/
 | F14.2 | Dockerfile.dev | `Dockerfile.dev` | Hot-reload com Air |
 | F14.3 | Helm chart | `k8s/helm/exchangeos/` | Deployment (api, worker, mq-bridge, eod), Service, SA, HPA, PDB, ConfigMap, Secret (Vault). Liveness/readiness probes |
 | F14.4 | Kustomize overlays | `k8s/kustomize/` | base/, overlays/dev/, overlays/staging/, overlays/production/ |
-| F14.5 | Network policies | `k8s/policies/` | Ingress: KrakenD + cluster-internal :8094/:9094. Egress: CockroachDB, Kafka, IBM MQ, Vault, LedgerOS, AuthorityOS, ComplOS, RiskOS, internet (CLS, Refinitiv, BACEN) |
+| F14.5 | Network policies | `k8s/policies/` | Ingress: KrakenD + cluster-internal :8084/:9084. Egress: CockroachDB, Kafka, IBM MQ, Vault, LedgerOS, AuthorityOS, ComplOS, RiskOS, internet (CLS, Refinitiv, BACEN) |
 | F14.6 | Vault policy | `vault/policies/exchangeos-policy.hcl` | KVv2 read/write para SSI, MQ creds, counterparty API keys, CLS certs |
 | F14.7 | Observability | `internal/telemetry/` | OTel tracing (Tempo), Prometheus metrics (quote_latency, trade_booking_latency, settlement_latency, nostro_breaks, nop_value, credit_utilization), slog structured logs |
 | F14.8 | Grafana dashboards | `docker/grafana/` | ExchangeOS dashboard: trade volume, settlement success rate, NOP, P&L, latencies, MQ throughput, nostro breaks |
@@ -1964,15 +1964,15 @@ revenu-platform/exchangeos/
 
 | # | Tarefa | Artefato | Detalhes |
 |---|--------|----------|---------|
-| F15.1 | ExchangeOS Engine doc | `.base/plans/02-core-domain/exchangeos-engine.md` | 15th engine. ~1,500 linhas. Template Identos: TOC, Purpose, BCs, Aggregates, Rules, Events, CQRS, State Machines, Integrations, ISO 20022 mapping |
+| F15.1 | ExchangeOS Engine doc | `.base/plans/02-core-domain/exchangeos-engine.md` | 15th engine. ~1,500 linhas. Template IdentityOS: TOC, Purpose, BCs, Aggregates, Rules, Events, CQRS, State Machines, Integrations, ISO 20022 mapping |
 | F15.2 | ExchangeOS Orchestrator | `.base/plans/05-integrations/exchangeos-orchestrator.md` | ~1,000 linhas. Saga flows, counterparty adapters, CLS integration, BACEN cambio, IBM MQ bridge |
 | F15.3 | FX-* Pattern Catalog | `.base/plans/01-architecture/patterns/121-exchangeos-patterns.md` | 30 patterns: FX-QUO (quote), FX-TRD (trade), FX-AMD (amendment), FX-STL (settlement), FX-PVP (CLS/PVP), FX-NST (nostro), FX-POS (position), FX-RSK (risk), FX-DEC (compliance), FX-MQT (IBM MQ), FX-ISO (ISO 20022 marshaling) |
 | F15.4 | ADR: ExchangeOS Architecture | `.base/plans/00-governance/decision-records/ADR-011-exchangeos-architecture.md` | Standalone vs embedded, multi-currency dual-ledger, CLS strategy, SWIFT FIN vs MX |
 | F15.5 | ADR: PVP Strategy | `.base/plans/00-governance/decision-records/ADR-012-pvp-strategy.md` | CLS first para CCYs elegiveis, fallback gross com Herstatt threshold |
 | F15.6 | ADR: ISO 20022 FX Coverage | `.base/plans/00-governance/decision-records/ADR-013-iso20022-fx-coverage.md` | Decisao de cobrir fxtr+fxti+fxmt+admi+camt+reda, decomposicao trea → fxti/fxmt |
-| F15.7 | Platform Topology update | `revenu-platform-topology.md` | Adicionar ExchangeOS (Tier 3, :8094, BCs, integrations) |
+| F15.7 | Platform Topology update | `revenu-platform-topology.md` | Adicionar ExchangeOS (Tier 3, :8084, BCs, integrations) |
 | F15.8 | RP-* Pattern Catalog update | `118-revenu-platform-patterns.md` | Adicionar RP-MOD-005 (ExchangeOS) |
-| F15.9 | Communication Matrix | `revenu-platform-topology.md` | Matrix atualizada: ExchangeOS ↔ LedgerOS/PaymentOS/AccountOS/AuthorityOS/ComplOS/RiskOS/TreasuryOS/Identos |
+| F15.9 | Communication Matrix | `revenu-platform-topology.md` | Matrix atualizada: ExchangeOS ↔ LedgerOS/PaymentOS/AccountOS/AuthorityOS/ComplOS/RiskOS/TreasuryOS/IdentityOS |
 | F15.10 | Integration Flows | `.base/flows/exchangeos/` | Mermaid: RFQ, trade booking, PVP settlement, nostro recon, EOD MTM, DEC registration |
 | F15.11 | (Movido para Fase 15B) Ontologia | — | **Ver Fase 15B — Ontology Suite** (35 TTL v1.2.0 detalhados em §10/§11) |
 | F15.12 | (Movido para Fase 15B) Bridge ISO 20022 FX | — | **Ver F15B-C.3** (`bridges/iso20022-fx-bridge.ttl` extende ledgeros) |
@@ -2782,31 +2782,31 @@ Materializar planos espelhando LedgerOS:
 
 ### Fase 15I — IAM + ISO 27000-27005 Coverage Suite
 
-**Objetivo:** Materializar a §15 — integracao nativa Identos + KeycloakOS + client_id/client_secret + cobertura **ISO 27000 / 27001 / 27002 / 27003 / 27004 / 27005** completa. Cria catalogo FX-IAM-* (50 patterns) + 8 docs em `08-security/` espelhando LedgerOS.
+**Objetivo:** Materializar a §15 — integracao nativa IdentityOS + KeycloakOS + client_id/client_secret + cobertura **ISO 27000 / 27001 / 27002 / 27003 / 27004 / 27005** completa. Cria catalogo FX-IAM-* (50 patterns) + 8 docs em `08-security/` espelhando LedgerOS.
 
 #### F15I-A — Foundation IAM
 
 | # | Tarefa | Artefato | Detalhes |
 |---|--------|----------|---------|
-| F15I-A.1 | `pkg/iam/identos/` client compartilhado | `pkg/iam/identos/{client.go, mock.go, options.go}` | gRPC client com circuit breaker + cache |
+| F15I-A.1 | `pkg/iam/identityos/` client compartilhado | `pkg/iam/identityos/{client.go, mock.go, options.go}` | gRPC client com circuit breaker + cache |
 | F15I-A.2 | `pkg/iam/keycloak/` JWT validator | `pkg/iam/keycloak/{jwks.go, validator.go, cache.go}` | JWKS cache 5min, RS256, audience check |
 | F15I-A.3 | `pkg/iam/vault/` secret resolver | `pkg/iam/vault/{client.go, rotation.go}` | client_secret resolver + rotation hooks |
-| F15I-A.4 | `pkg/iam/rbac/` decision engine | `pkg/iam/rbac/{policy.go, scope.go, abac.go}` | Scope + ABAC decision local + Identos remote |
+| F15I-A.4 | `pkg/iam/rbac/` decision engine | `pkg/iam/rbac/{policy.go, scope.go, abac.go}` | Scope + ABAC decision local + IdentityOS remote |
 | F15I-A.5 | gRPC interceptor `internal/middleware/auth_interceptor.go` | Extrai JWT, valida via JWKS, injecta context tenant/roles/scopes | Para CADA RPC |
 | F15I-A.6 | HTTP middleware `internal/middleware/auth_middleware.go` | Idem para REST endpoints | Para CADA HTTP request |
 
-#### F15I-B — Identos Integration (F15I-B-1..8)
+#### F15I-B — IdentityOS Integration (F15I-B-1..8)
 
 | # | Tarefa | Detalhes |
 |---|--------|----------|
-| F15I-B.1 | Identos proto consumido | `proto/identos/v1/*.proto` importado em `go.mod` |
+| F15I-B.1 | IdentityOS proto consumido | `proto/identityos/v1/*.proto` importado em `go.mod` |
 | F15I-B.2 | gRPC client com circuit breaker (FX-GP-026) | Sony/gobreaker; 5 failures = open |
-| F15I-B.3 | Token validation cache (5min) com singleflight | Reduz Identos calls em hot path |
-| F15I-B.4 | AuthZ Policy decision com fallback local | Se Identos down, decide localmente via cached policy snapshot |
+| F15I-B.3 | Token validation cache (5min) com singleflight | Reduz IdentityOS calls em hot path |
+| F15I-B.4 | AuthZ Policy decision com fallback local | Se IdentityOS down, decide localmente via cached policy snapshot |
 | F15I-B.5 | Consent management para RFQ external | gRPC call para `ConsentService` |
 | F15I-B.6 | Identity Federation para counterparty SSO | Itau, Bradesco, internacional |
 | F15I-B.7 | Audit publisher async para `exchangeos.audit.*` Kafka topic | Nao bloqueia request hot path |
-| F15I-B.8 | Identos health check em `/readyz` | Falha readiness se Identos down > 30s |
+| F15I-B.8 | IdentityOS health check em `/readyz` | Falha readiness se IdentityOS down > 30s |
 
 #### F15I-C — KeycloakOS Integration (F15I-C-1..10)
 
@@ -2892,7 +2892,7 @@ Materializar planos espelhando LedgerOS:
 | F15I-I.5 | Penetration test scope | `08-security/penetration-test-plan-fx.md` |
 | F15I-I.6 | Compliance metrics dashboard (Grafana) | ISO 27004 SLIs/SLOs realtime |
 
-**Entregavel F15I:** 1 catalogo FX-IAM-* (50 patterns) em `230-fx-iam-rbac-patterns.md`, + 8 docs em `08-security/` (ISO 27000-27005 completos) + integracao nativa Identos (`pkg/iam/identos/`) + KeycloakOS (realm + 14 clients + Vault SPI) + client_secret rotation 30d automatica + cred-rotator worker + ISO 27001 evidence repo. **TOTAL Patterns Suite: 605 patterns** (120 app + 150 data + 150 devops + 150 API + **50 IAM**).
+**Entregavel F15I:** 1 catalogo FX-IAM-* (50 patterns) em `230-fx-iam-rbac-patterns.md`, + 8 docs em `08-security/` (ISO 27000-27005 completos) + integracao nativa IdentityOS (`pkg/iam/identityos/`) + KeycloakOS (realm + 14 clients + Vault SPI) + client_secret rotation 30d automatica + cred-rotator worker + ISO 27001 evidence repo. **TOTAL Patterns Suite: 605 patterns** (120 app + 150 data + 150 devops + 150 API + **50 IAM**).
 
 ---
 
@@ -3056,7 +3056,7 @@ Materializar planos espelhando LedgerOS:
 | F15K-C.2 | Kafka testcontainer helper | `tests/testhelpers/kafka/` | Confluent CP image; auto-create topics |
 | F15K-C.3 | Vault testcontainer helper | `tests/testhelpers/vault/` | Vault dev mode com seeds |
 | F15K-C.4 | OTel test recorder | `tests/testhelpers/otel/recorder.go` | Captura spans/metrics em memoria |
-| F15K-C.5 | IAM helper | `tests/testhelpers/iam/jwt_generator.go` + `identos_mock.go` | Gera JWTs validos + mocks Identos gRPC |
+| F15K-C.5 | IAM helper | `tests/testhelpers/iam/jwt_generator.go` + `identityos_mock.go` | Gera JWTs validos + mocks IdentityOS gRPC |
 | F15K-C.6 | Fixture loader | `tests/testhelpers/fixtures/loader.go` | YAML → INSERT statements |
 | F15K-C.7 | Transactional rollback per test | `tests/testhelpers/crdb/tx.go` | tx.Rollback() em defer para isolation |
 | F15K-C.8 | Parallel test safety | `tests/testhelpers/crdb/parallel.go` | Per-test schema (CREATE SCHEMA tenant_<test_id>) |
@@ -3301,7 +3301,7 @@ Cada test file segue o template §17.6 (Create happy + duplicates + validation +
 
 | # | Tarefa | Artefato | Detalhes |
 |---|--------|----------|---------|
-| F15M-B.1 | gRPC clients shared lib | `pkg/integration/{accountos,paymentos,ledgeros,authorityos,riskos,complos,treasuryos,identos,keycloakos,onboardos,billingos}/` | 1 client per modulo |
+| F15M-B.1 | gRPC clients shared lib | `pkg/integration/{accountos,paymentos,ledgeros,authorityos,riskos,complos,treasuryos,identityos,keycloakos,onboardos,billingos}/` | 1 client per modulo |
 | F15M-B.2 | Circuit breaker + retry per client | `pkg/integration/<module>/client.go` | Gobreaker + exponential backoff |
 | F15M-B.3 | Tracing propagation (OTel) | Auto via otelgrpc | Span context cross-modulo |
 | F15M-B.4 | Mock generation per client | `pkg/integration/<module>/mock/` | mockery for tests |
@@ -3369,7 +3369,7 @@ Cada test file segue o template §17.6 (Create happy + duplicates + validation +
 | F15M-H.3 | RiskOS | Credit reserve gRPC + NOP events |
 | F15M-H.4 | ComplOS | Sanctions + AML gRPC |
 | F15M-H.5 | TreasuryOS | Nostro + exposure gRPC + CDC subscribe |
-| F15M-H.6 | Identos + KeycloakOS | (ja em F15I) |
+| F15M-H.6 | IdentityOS + KeycloakOS | (ja em F15I) |
 | F15M-H.7 | OnboardOS | Kafka event subscribe |
 | F15M-H.8 | BillingOS | Kafka event publish |
 | F15M-H.9 | CardOS / InvestOS | (roadmap v2) |
@@ -3717,7 +3717,7 @@ Cada test file segue o template §17.6 (Create happy + duplicates + validation +
 | **MS-023n: Patterns Suite Infra (CRDB/Kafka/Flink)** | F15F | Sprint 13 | 150 patterns (50 FX-CP + 60 FX-KP + 40 FX-FP) com 44 security-focused + 130 data-focused; snippets Go/Java/PyFlink compilaveis; CI build + lint green |
 | **MS-023o: Patterns Suite DevSecOps + IaC + Supply Chain** | F15G | Sprint 14 | 150 patterns (50 FX-DS + 40 FX-K8S + 40 FX-IAC + 20 FX-DOC) com 78 security-focused + 150 devops-focused; 8 GitHub Actions workflows; Terraform repo completo; 5 Helm charts; Dockerfiles distroless multi-stage; SLSA L3 verificavel; planos 06/07/08-* materializados |
 | **MS-023p: Patterns Suite API Contracts** | F15H | Sprint 14-15 | 150 patterns (55 FX-GRPC + 50 FX-API + 45 FX-ASYNC) com 36 security-focused; 5 specs concretas (OpenAPI 3.1 + AsyncAPI 3.0 + Protobuf + Postman + HTML docs); buf/redocly/asyncapi CI lint+breaking green; 14 services proto production-ready; ~100+ endpoints REST CRUD; ~24 events AsyncAPI |
-| **MS-023q: IAM + ISO 27000-27005** | F15I | Sprint 15-16 | 50 FX-IAM-* patterns + integracao nativa Identos + KeycloakOS realm `revenu-exchangeos` + 14 clients M2M com client_secret rotation 30d via Vault SPI + 8 docs ISO 27000-27005 + 93 Annex A controls mapeados + gap analysis + internal audit checklist + ISO 27001 certification-ready |
+| **MS-023q: IAM + ISO 27000-27005** | F15I | Sprint 15-16 | 50 FX-IAM-* patterns + integracao nativa IdentityOS + KeycloakOS realm `revenu-exchangeos` + 14 clients M2M com client_secret rotation 30d via Vault SPI + 8 docs ISO 27000-27005 + 93 Annex A controls mapeados + gap analysis + internal audit checklist + ISO 27001 certification-ready |
 | **MS-023r: Telemetry Suite (OpenTelemetry)** | F15J | Sprint 16 | 60 FX-OTEL-* patterns + `pkg/telemetry/` shared lib + OTel Collector Helm + 10 Grafana dashboards FX-specific + SLI/SLO catalog + multi-tier backends (Tempo + Mimir + Loki + GCP Cloud Ops dual) + tail-sampling 95% volume reduction + PII redaction processor + integration test full-pipeline |
 | **MS-023s: Local Deploy + CRUD Test Suite** | F15K | Sprint 16-17 | Hub CRDB registration (`cockroachdb/modules/exchangeos/`) com TLS shared CA igual authorityos + Makefile com 30+ targets + ~290 CRUD integration tests (14 BCs × ~20) + ~30 E2E/contract/load/compliance + 40 FX-TEST-* patterns + 4 CI workflows (`integration.yml`, `e2e.yml`, `load.yml`, `compliance.yml`) + 4 docs onboarding |
 | **MS-023t: Local Quality Gates + TDD/E2E** | F15L | Sprint 17 | `lefthook.yml` + `.pre-commit-config.yaml` instalados + 30 security gates locais em 3 ciclos (pre-commit 5s + pre-push 60s + pre-merge 15min) + 10 E2E cenarios + 35 FX-QA-* patterns + 7 scripts + 4 docs onboarding + CI espelha local 100% — **zero push falho ao GitHub** |
@@ -3734,7 +3734,7 @@ Cada test file segue o template §17.6 (Create happy + duplicates + validation +
 |-----------|---------|
 | [Allenty v3.8.0](allenty-v3.8.0-onboardos-accountos-plan.md) | Pattern de referencia (estrutura, fases) |
 | [ISO 20022 Full Coverage Plan](03-ontology/iso20022-full-coverage-plan.md) | Fase 3 — FX & Bank Loan: ExchangeOS realiza esta fase |
-| [Platform Topology](01-architecture/revenu-platform-topology.md) | ExchangeOS (Tier 3, :8094) |
+| [Platform Topology](01-architecture/revenu-platform-topology.md) | ExchangeOS (Tier 3, :8084) |
 | [ADR Dual-Ledger](00-governance/decision-records/ADR-014-dual-ledger-strategy.md) | ExchangeOS usa LedgerGateway estendido (multi-CCY) |
 | [ADR Microservice Architecture](00-governance/decision-records/ADR-001-microservice-architecture.md) | Padrao de modulo canonico |
 | [PaymentOS](../../../paymentos/) | Modelo para IBM MQ + Kafka messaging |
@@ -3902,17 +3902,17 @@ Cada test file segue o template §17.6 (Create happy + duplicates + validation +
 
 ### Fontes oficiais para §15 IAM + ISO 27000-27005 (Fase 15I)
 
-#### Identos + KeycloakOS
+#### IdentityOS + KeycloakOS
 
 | Documento | Uso no plano |
 |-----------|--------------|
-| [LedgerOS Identos Orchestrator](../../../ledgeros/.base/plans/05-integrations/identos-orchestrator.md) | **Pattern de referencia Identos** (12th core engine, :8084/:9084) |
+| [LedgerOS IdentityOS Orchestrator](../../../ledgeros/.base/plans/05-integrations/identityos-orchestrator.md) | **Pattern de referencia IdentityOS** (12th core engine, :8084/:9084) |
 | [LedgerOS AU-KC Keycloak Core (115)](../../../ledgeros/.base/plans/01-architecture/patterns/115-auth-keycloak-core.md) | 25 Keycloak patterns base |
 | [LedgerOS AU-KK KrakenD+Keycloak (116)](../../../ledgeros/.base/plans/01-architecture/patterns/116-auth-krakend-keycloak.md) | Gateway integration |
 | [LedgerOS AU-SR Scopes RBAC (117)](../../../ledgeros/.base/plans/01-architecture/patterns/117-auth-scopes-rbac.md) | Scope catalog reference |
 | [LedgerOS Auth OAuth2 Core (66)](../../../ledgeros/.base/plans/01-architecture/patterns/66-auth-oauth2-core.md) | OAuth2 foundations |
 | [LedgerOS Auth High Security (71)](../../../ledgeros/.base/plans/01-architecture/patterns/71-auth-high-security.md) | FAPI 2.0, mTLS, BACEN SPI |
-| [Identos repo (proto + modules)](../../../identos/) | gRPC contracts |
+| [IdentityOS repo (proto + modules)](../../../identityos/) | gRPC contracts |
 | [KeycloakOS repo](../../../keycloakos/) | Keycloak v26.5.3 setup |
 | [Keycloak Documentation v26.5](https://www.keycloak.org/documentation) | Reference oficial |
 | [Keycloak Organizations](https://www.keycloak.org/docs/latest/server_admin/#_organizations) | Multi-tenancy |
@@ -4424,11 +4424,11 @@ Cada test file segue o template §17.6 (Create happy + duplicates + validation +
 | **Endpoints REST documentados** | **~100+** (14 aggregates × CRUD canonical + custom actions + bulk) |
 | **Events AsyncAPI documentados** | **~24 domain events** (send/receive per BC) |
 | **gRPC services proto** | **14 services** + common.proto |
-| **Patterns Suite IAM layer** | **50 patterns** (Identos + KeycloakOS + client_credentials + token mgmt + RBAC + ISO 27001 controls) |
+| **Patterns Suite IAM layer** | **50 patterns** (IdentityOS + KeycloakOS + client_credentials + token mgmt + RBAC + ISO 27001 controls) |
 | **Patterns Suite TOTAL ATUALIZADO** | **605 patterns** (120 app + 150 data + 150 devops + 150 API + 50 IAM) |
 | **Patterns Security-focused (ATUALIZADO)** | **164 patterns** (114 prev + 50 IAM/ISO 27001) |
-| **Patterns IAM-focused** | **50 patterns** dedicados Identos/Keycloak/RBAC/ISO27k |
-| **Identos integration** | gRPC `:9084` client compartilhado em `pkg/iam/identos/`; AuthZ Policy decision em CADA RPC; consent + federation + audit publisher |
+| **Patterns IAM-focused** | **50 patterns** dedicados IdentityOS/Keycloak/RBAC/ISO27k |
+| **IdentityOS integration** | gRPC `:9084` client compartilhado em `pkg/iam/identityos/`; AuthZ Policy decision em CADA RPC; consent + federation + audit publisher |
 | **KeycloakOS integration** | Realm `revenu-exchangeos` v26.5.3 + 14 clients M2M + 2 user clients (PKCE); Organizations multi-tenant; Vault SPI Secrets; FAPI 2.0; WebAuthn; ICP-Brasil X.509 |
 | **client_id/client_secret** | OAuth2 Client Credentials Grant RFC 6749 4.4 canonical; secret em Vault NUNCA em codigo; rotation 30d automatica via cred-rotator worker |
 | **ISO 27000-27005 coverage** | 6 standards mapeados: 27000 (vocab) + 27001 (ISMS req, 93 controls) + 27002 (impl guidance) + 27003 (4-phase roadmap) + 27004 (10+ SLI/SLO metrics) + 27005 (STRIDE+DREAD risk mgmt) |
@@ -4458,7 +4458,7 @@ Cada test file segue o template §17.6 (Create happy + duplicates + validation +
 | **Princip:** | **Zero push falho** — CI espelha 100% gates locais; PR que passou local pre-push NUNCA fica vermelho |
 | **Database Sync Pattern** | Shared CRDB hub TLS (`cockroachdb/modules/exchangeos/`) desde dia 1 — NUNCA inline insecure |
 | **Sync patterns implementados** | **3 padroes** complementares: gRPC pull (sync) + CDC push (async via CHANGEFEED) + Kafka domain events (async via Outbox) |
-| **Modulos integrados nativamente** | **13 modulos** (LedgerOS + AccountOS + PaymentOS + AuthorityOS + RiskOS + ComplOS + TreasuryOS + Identos + KeycloakOS + OnboardOS + BillingOS + CardOS/InvestOS v2) |
+| **Modulos integrados nativamente** | **13 modulos** (LedgerOS + AccountOS + PaymentOS + AuthorityOS + RiskOS + ComplOS + TreasuryOS + IdentityOS + KeycloakOS + OnboardOS + BillingOS + CardOS/InvestOS v2) |
 | **gRPC clients ExchangeOS** | 13 clients em `pkg/integration/<module>/` com circuit breaker + retry + mocks + tests |
 | **CDC topics ExchangeOS** | 7 topics `__exchangeos_cdc.*` para downstream consumers |
 | **Kafka domain event topics** | 11 topics `exchangeos.<bc>.*` formalizados em AsyncAPI 3.0 |
@@ -4498,7 +4498,7 @@ Cada test file segue o template §17.6 (Create happy + duplicates + validation +
 
 ## 9. Open Questions (para o OK)
 
-1. **Allocation de port:** Confirmar `:8094 HTTP / :9094 gRPC` (proxima na sequencia OnboardOS :8092, AccountOS :8093).
+1. **Allocation de port:** Confirmar `:8084 HTTP / :9084 gRPC` (proxima na sequencia OnboardOS :8092, AccountOS :8093).
 2. **TreasuryOS FX migration:** Migrar o codigo de `treasuryos/modules/fx/` (FXRate aggregate, etc.) para `exchangeos` na F15 ou manter coexistencia inicial?
 3. **Escopo MVP:** O Sprint 1-5 (MS-023a → MS-023d) ja entregam MVP funcional. Confirmar: MVP inclui ambas as organisations (CLS + CFETS) ou apenas CLS primeiro com CFETS em v2?
 3b. **Confirmar remocao definitiva de fxti/fxmt do plano:** Revisao 3.9.2 removeu por completo o framing "fxti/fxmt como ISO 20022" — confirmar que esta correto. Quote/Amendment vivem como gRPC interno (`proto/exchangeos/v1/quote.proto` + `amendment.proto`) que traduz para fxtr.014/015/016 (CLS) ou fxtr.031/035/036 (CFETS) na fronteira.
@@ -4549,7 +4549,7 @@ Cada test file segue o template §17.6 (Create happy + duplicates + validation +
 5e. **OpenAPI docs hosting:** GitHub Pages (gratis, simples) vs Stoplight Elements vs Redoc (customizavel) vs Bump.sh (managed)? Recomendacao: Redoc auto-hospedado em GitHub Pages.
 5f. **Idempotency-Key TTL:** 24h (recomendado FX-API-CRUD-012) vs 7d (mais memoria mas safer)? Trade-off storage vs replay protection. Recomendacao: 24h padrao, 7d para operacoes criticas (trade booking).
 5g. **gRPC reflection em staging:** Habilitada (DX para grpcurl) vs desabilitada (parity com prod)? Recomendacao: habilitada em dev, desabilitada staging+prod.
-6a. **Identos como dependencia hard:** ExchangeOS bloqueia se Identos down ou opera em degraded mode com policy cache 5min? Recomendacao: degraded mode com banner + alert (recomendacao F15I-B.4).
+6a. **IdentityOS como dependencia hard:** ExchangeOS bloqueia se IdentityOS down ou opera em degraded mode com policy cache 5min? Recomendacao: degraded mode com banner + alert (recomendacao F15I-B.4).
 6b. **Keycloak realm separado:** Confirmar `revenu-exchangeos` (isolation) vs reuse de realm compartilhado (simpler, menos overhead)? Recomendacao: realm dedicado pela isolacao de blast radius (FX-IAM-KC-001).
 6c. **client_secret rotation 30d:** Aceito (recomendado FX-IAM-CC-003) ou prefere 7d (security++) ou 90d (operacional++)? Recomendacao: 30d default, 7d para counterparties (CLS, CFETS, BACEN), 90d para internal dev/staging.
 6d. **Vault SPI no Keycloak:** Habilitado (recomendado FX-IAM-KC-010, secrets nunca no Keycloak DB) ou usa Keycloak DB encryption? Recomendacao: Vault SPI obrigatorio para prod.
@@ -4584,11 +4584,11 @@ Cada test file segue o template §17.6 (Create happy + duplicates + validation +
 10a. **Database adoption pattern:** Confirmar shared CRDB hub TLS desde dia 1 (recomendado FX-SYNC-HUB-001, igual authorityos/onboardos) vs inline insecure como accountos/paymentos? Recomendacao: shared hub TLS (zero exceptions).
 10b. **Tenant resolution canonical:** AccountOS como single source of truth (recomendado FX-SYNC-ACC-001) ou ExchangeOS mantem proprio tenant store + sync? Recomendacao: AccountOS SoT com CDC materialized view.
 10c. **CDC vs Outbox para sync downstream:** CDC CockroachDB CHANGEFEED para tabelas (row changes) + Outbox Kafka para domain events (intent). Confirmar uso complementar (NAO mutually exclusive).
-10d. **Cross-module saga orchestrator:** Cada BC mantem propria saga vs orchestrator centralizado? Recomendacao: per-BC saga (decentralizado) com Identos como AuthZ universal.
+10d. **Cross-module saga orchestrator:** Cada BC mantem propria saga vs orchestrator centralizado? Recomendacao: per-BC saga (decentralizado) com IdentityOS como AuthZ universal.
 10e. **AccountOS legacy migration:** ExchangeOS funciona TAMBEM com accountos em legacy `--insecure` mode (backward compat) ou requer migration prior? Recomendacao: backward compat por 6 meses, depois requer shared hub.
 10f. **PaymentOS cross-border async vs sync:** Cross-border PIX initiation gRPC sync (com timeout) ou apenas async via Kafka publish? Recomendacao: gRPC sync para get payment_id imediatamente; status update via Kafka event.
-10g. **Identos AuthZ Policy cache TTL:** 5min cache local (recomendado FX-IAM-IDN-005, perf) vs sempre sync (consistency++)? Recomendacao: 5min cache + invalidate on `identos.policy.changed` event.
-10h. **Sync chaos engineering scope:** Network partition entre ExchangeOS + AccountOS (critical), ExchangeOS + PaymentOS, ExchangeOS + Identos. Quais sao must-test? Recomendacao: todas as 3 CRITICAL paths.
+10g. **IdentityOS AuthZ Policy cache TTL:** 5min cache local (recomendado FX-IAM-IDN-005, perf) vs sempre sync (consistency++)? Recomendacao: 5min cache + invalidate on `identityos.policy.changed` event.
+10h. **Sync chaos engineering scope:** Network partition entre ExchangeOS + AccountOS (critical), ExchangeOS + PaymentOS, ExchangeOS + IdentityOS. Quais sao must-test? Recomendacao: todas as 3 CRITICAL paths.
 10i. **Migration playbook ownership:** ExchangeOS documenta playbook accountos/paymentos migration (recomendado F15M-G) mas execucao e platform team. Confirmar.
 11a. **Task runner primary:** Task (taskfile.dev, Go-based) recomendado vs Makefile puro (devs Linux/macOS happy) vs Mage (Go puro, no extra dependency)? Recomendacao: Task primary + Makefile auto-gen delegacao + Mage opcional Sprint+.
 11b. **Windows nativo suportado:** Sim (recomendado FX-XOS-PSH-*) ou apenas WSL2 (mais simples)? Recomendacao: ambos — WSL2 preferido + PowerShell para Win-native developers que nao querem WSL2.
@@ -6482,20 +6482,20 @@ revenu-platform/exchangeos/.base/plans/01-architecture/patterns/
 
 > **Pattern de referencia LedgerOS:** `66-73-auth-*.md` (9 files AU-OA/TM/CP/IF/MFA/HS/AP/SC + AU-KC + AU-KK + AU-SR), `08-security/iam-scope-catalog.md`, `08-security/iso27001-iam-mapping.md`.
 > **Arquivo:** `230-fx-iam-rbac-patterns.md`
-> **Stack:** Identos `:9084` + KeycloakOS v26.5.3 + KrakenD + Vault + ISO 27001:2022 controls.
+> **Stack:** IdentityOS `:9084` + KeycloakOS v26.5.3 + KrakenD + Vault + ISO 27001:2022 controls.
 
-#### Identos Integration (FX-IAM-IDN-* — 8 patterns)
+#### IdentityOS Integration (FX-IAM-IDN-* — 8 patterns)
 
 | ID | Pattern | Priority | ISO Control |
 |----|---------|----------|------------|
-| **FX-IAM-IDN-001** | **Identos gRPC client em `pkg/iam/identos/client.go`** (compartilhado) | CRITICAL | A.5.15 |
+| **FX-IAM-IDN-001** | **IdentityOS gRPC client em `pkg/iam/identityos/client.go`** (compartilhado) | CRITICAL | A.5.15 |
 | FX-IAM-IDN-002 | Context propagation: tenant_id, user_id, roles, scopes via gRPC metadata | CRITICAL | A.5.18 |
 | FX-IAM-IDN-003 | Session validation via `SessionService.Validate(token)` com cache 5min | CRITICAL | A.5.17 |
 | FX-IAM-IDN-004 | Consent check para client-facing operations (RFQ external) via `ConsentService.GetConsent()` | HIGH | A.5.34 |
 | FX-IAM-IDN-005 | AuthZ Policy decision em cada RPC: `AuthZPolicyService.Decide(subject, resource, action)` | CRITICAL | A.5.15 |
-| FX-IAM-IDN-006 | Identity Federation via Identos para counterparty SSO (Itau, Bradesco) | HIGH | A.5.16 |
+| FX-IAM-IDN-006 | Identity Federation via IdentityOS para counterparty SSO (Itau, Bradesco) | HIGH | A.5.16 |
 | FX-IAM-IDN-007 | Audit access events publicados em `exchangeos.audit.*` topic Kafka | CRITICAL | A.8.15 |
-| FX-IAM-IDN-008 | Observability: Identos call latency p99 < 50ms; circuit breaker se > 500ms | HIGH | A.8.16 |
+| FX-IAM-IDN-008 | Observability: IdentityOS call latency p99 < 50ms; circuit breaker se > 500ms | HIGH | A.8.16 |
 
 #### KeycloakOS Integration (FX-IAM-KC-* — 10 patterns)
 
@@ -6531,7 +6531,7 @@ revenu-platform/exchangeos/.base/plans/01-architecture/patterns/
 |----|---------|----------|------------|
 | FX-IAM-TKN-001 | JWT structure obrigatoria: iss, aud, sub, exp, iat, jti, scope, tenant_id, roles | CRITICAL | A.8.24 |
 | FX-IAM-TKN-002 | Access token TTL 1h (3600s); refresh token TTL 24h sliding | CRITICAL | A.5.17 |
-| FX-IAM-TKN-003 | Revocation via Bloom filter no KrakenD (rebuild 1min); fallback Identos check | CRITICAL | A.5.18 |
+| FX-IAM-TKN-003 | Revocation via Bloom filter no KrakenD (rebuild 1min); fallback IdentityOS check | CRITICAL | A.5.18 |
 | FX-IAM-TKN-004 | jti dedup table (replay protection) com TTL = exp + 1h | HIGH | A.5.17 |
 | FX-IAM-TKN-005 | Audience validation per service: `aud=exchangeos` obrigatorio | CRITICAL | A.5.17 |
 | FX-IAM-TKN-006 | RS256 signing (NUNCA HS256; chave privada em Vault HSM) | CRITICAL | A.8.24 |
@@ -6555,7 +6555,7 @@ revenu-platform/exchangeos/.base/plans/01-architecture/patterns/
 
 | ID | Pattern | Priority | ISO Control |
 |----|---------|----------|------------|
-| **FX-IAM-ISO-001** | **A.5.15 Access control** — policy framework via Identos AuthZ + scope catalog | CRITICAL | A.5.15 |
+| **FX-IAM-ISO-001** | **A.5.15 Access control** — policy framework via IdentityOS AuthZ + scope catalog | CRITICAL | A.5.15 |
 | FX-IAM-ISO-002 | A.5.16 Identity management — Keycloak Organizations + lifecycle (provision/deprovision) | CRITICAL | A.5.16 |
 | FX-IAM-ISO-003 | A.5.17 Authentication info — secret rotation 30d + Vault + mTLS + MFA | CRITICAL | A.5.17 |
 | FX-IAM-ISO-004 | A.5.18 Access rights — RBAC + ABAC + tenant scoping enforced | CRITICAL | A.5.18 |
@@ -6799,7 +6799,7 @@ revenu-platform/exchangeos/.base/plans/01-architecture/patterns/
 | FX-SYNC-OTH-003 | RiskOS credit reserve + NOP realtime via gRPC + Kafka | CRITICAL | RiskOS |
 | FX-SYNC-OTH-004 | ComplOS sanctions screen pre-trade + AML monitor post-trade | CRITICAL | ComplOS |
 | FX-SYNC-OTH-005 | TreasuryOS nostro funding check pre-PayIn + exposure sync | CRITICAL | TreasuryOS |
-| FX-SYNC-OTH-006 | Identos AuthZ + audit via gRPC sync + Kafka audit publish | CRITICAL | Identos |
+| FX-SYNC-OTH-006 | IdentityOS AuthZ + audit via gRPC sync + Kafka audit publish | CRITICAL | IdentityOS |
 | FX-SYNC-OTH-007 | KeycloakOS JWT validation via JWKS cache 5min | CRITICAL | KeycloakOS |
 | FX-SYNC-OTH-008 | OnboardOS KYC completed → ExchangeOS habilita FX (Kafka subscribe) | HIGH | OnboardOS |
 | FX-SYNC-OTH-009 | BillingOS subscribe `exchangeos.trade.confirmed` → calcula fee FX | MEDIUM | BillingOS |
@@ -6999,7 +6999,7 @@ revenu-platform/exchangeos/.base/plans/01-architecture/patterns/
 | **Data-focused (subset)** | **130** | schema, indexing, CDC, replication, EOS |
 | **DevOps-focused (subset)** | **150** | git flow, CI/CD, K8s, Terraform, Docker, supply chain |
 | **API-focused (subset)** | **150** | proto, OpenAPI, AsyncAPI, CRUD, streaming, webhooks |
-| **IAM-focused (subset)** | **50** | Identos, KeycloakOS, client_credentials, RBAC |
+| **IAM-focused (subset)** | **50** | IdentityOS, KeycloakOS, client_credentials, RBAC |
 | **Observability-focused (subset)** | **60** | OTel traces+metrics+logs, Collector, sampling, SLI/SLO |
 | **Quality/Testing-focused (subset)** | **75** (40 FX-TEST + 35 FX-QA) | TDD + CRUD + E2E + Security Local Gates pre-push |
 
@@ -7219,7 +7219,7 @@ RFLW.<DOMAIN>.<FAMILY>.<VERSION>
 ## Actors / Participants
 
 - **Client** — External API consumer (trader, RFQ system, counterparty)
-- **API** — Gin HTTP server on `:8094` ou gRPC `:9094`
+- **API** — Gin HTTP server on `:8084` ou gRPC `:9084`
 - **CMD** — `<CommandHandler>`
 - **Domain** — `<Aggregate>` (e.g., FXTrade, CLSSubmission)
 - **PRICING** — `pkg/pricing/` engine
@@ -7447,8 +7447,8 @@ flowchart TD
 
 ## 15. ExchangeOS IAM Integration + ISO 27000-27005 Coverage
 
-> **Pattern de referencia:** [LedgerOS Identos Orchestrator](../../../ledgeros/.base/plans/05-integrations/identos-orchestrator.md), [LedgerOS ISO 27000 Framework](../../../ledgeros/.base/plans/08-security/iso27000-security-framework.md), [LedgerOS ISO 27001 IAM Mapping](../../../ledgeros/.base/plans/08-security/iso27001-iam-mapping.md), [LedgerOS AU-KC Keycloak Patterns](../../../ledgeros/.base/plans/01-architecture/patterns/115-auth-keycloak-core.md).
-> **Componentes:** **Identos** (`:8084 HTTP / :9084 gRPC`) + **KeycloakOS** (v26.5.3) + **KrakenD** (API Gateway, JWT validation no edge) + **Vault** (secrets, SPI integration).
+> **Pattern de referencia:** [LedgerOS IdentityOS Orchestrator](../../../ledgeros/.base/plans/05-integrations/identityos-orchestrator.md), [LedgerOS ISO 27000 Framework](../../../ledgeros/.base/plans/08-security/iso27000-security-framework.md), [LedgerOS ISO 27001 IAM Mapping](../../../ledgeros/.base/plans/08-security/iso27001-iam-mapping.md), [LedgerOS AU-KC Keycloak Patterns](../../../ledgeros/.base/plans/01-architecture/patterns/115-auth-keycloak-core.md).
+> **Componentes:** **IdentityOS** (`:8084 HTTP / :9084 gRPC`) + **KeycloakOS** (v26.5.3) + **KrakenD** (API Gateway, JWT validation no edge) + **Vault** (secrets, SPI integration).
 > **Flow padrao:** OAuth2 Client Credentials Grant (RFC 6749 4.4) com client_id/client_secret para M2M; OIDC Authorization Code + PKCE para user-facing.
 
 ### 15.1 Arquitetura IAM da ExchangeOS
@@ -7472,8 +7472,8 @@ flowchart TD
         │                                      │                                      │
         ▼                                      ▼                                      ▼
 ┌──────────────────┐              ┌──────────────────────┐              ┌──────────────────────┐
-│   IDENTOS        │              │   EXCHANGEOS         │              │   AUTHORITYOS        │
-│   :9084 gRPC     │              │   :9094 gRPC         │              │   ...                │
+│   IDENTITYOS        │              │   EXCHANGEOS         │              │   AUTHORITYOS        │
+│   :9084 gRPC     │              │   :9084 gRPC         │              │   ...                │
 │                  │              │                      │              │                      │
 │ Identity Mgmt    │◄──gRPC───────│  AuthZ Policy Check  │              │                      │
 │ Session Mgmt     │              │  per RPC + endpoint  │              │                      │
@@ -7503,9 +7503,9 @@ flowchart TD
 └──────────────────┘              └──────────────────────┘              └──────────────────────┘
 ```
 
-### 15.2 Integracao Identos (gRPC inter-service)
+### 15.2 Integracao IdentityOS (gRPC inter-service)
 
-| Operacao | Identos gRPC Method | Quando ExchangeOS chama |
+| Operacao | IdentityOS gRPC Method | Quando ExchangeOS chama |
 |----------|---------------------|-------------------------|
 | Validate JWT + extract claims | `IdentityService.ValidateToken(token) → claims` | Cache local 5min; fallback gRPC se cache miss |
 | Resolve tenant from token | `IdentityService.GetTenant(token) → tenant_id` | Em cada request (extraido do JWT) |
@@ -7517,7 +7517,7 @@ flowchart TD
 | Audit access | `AuditService.LogAccess(event) → ok` | Background event publisher (async) |
 | Identity federation | `FederationService.Federate(external_idp, identity) → internal_id` | Counterparty SSO via IdP externo |
 
-**Adapter Go:** `modules/<bc>/infrastructure/grpc/identos_client.go` em cada BC + shared client em `pkg/iam/identos/`.
+**Adapter Go:** `modules/<bc>/infrastructure/grpc/identityos_client.go` em cada BC + shared client em `pkg/iam/identityos/`.
 
 ### 15.3 Integracao KeycloakOS (OAuth2/OIDC, client_id/client_secret)
 
@@ -7684,7 +7684,7 @@ ExchangeOS                Vault                    Keycloak SPI                K
 | Standard | Title | Coverage para ExchangeOS |
 |----------|-------|--------------------------|
 | **ISO/IEC 27000:2022** | ISMS — Overview and vocabulary | Glossario alinhado com LedgerOS; termos como Asset, Threat, Vulnerability, Risk, Control mapeados ao dominio FX |
-| **ISO/IEC 27001:2022** | ISMS — Requirements | **93 Annex A controls mapeados para componentes ExchangeOS**; ISMS scope = ExchangeOS + dependencies (Identos, KeycloakOS, Vault); certificacao alvo |
+| **ISO/IEC 27001:2022** | ISMS — Requirements | **93 Annex A controls mapeados para componentes ExchangeOS**; ISMS scope = ExchangeOS + dependencies (IdentityOS, KeycloakOS, Vault); certificacao alvo |
 | **ISO/IEC 27002:2022** | Information security controls | **Implementation guidance dos 93 controls** com codigo Go especifico, configs Helm/Terraform, runbooks |
 | **ISO/IEC 27003:2017** | ISMS implementation guidance | **4-phase roadmap**: Foundation (Sprint 1-5) → Domain Core (Sprint 6-9) → Integration (Sprint 10-13) → Certification (Sprint 14-16) |
 | **ISO/IEC 27004:2016** | Monitoring, measurement, analysis and evaluation | **Security metrics**: SLI cert rotation rate, SLI failed auth attempts, SLI privilege escalation events, SLI cos_filed_per_day, SLI mtls_handshake_failures; SLOs definidos |
@@ -7694,10 +7694,10 @@ ExchangeOS                Vault                    Keycloak SPI                K
 
 | Control | Title | ExchangeOS Implementation |
 |---------|-------|--------------------------|
-| **A.5.15** | Access control | Identos AuthZ Policy + scope catalog §15.4 |
+| **A.5.15** | Access control | IdentityOS AuthZ Policy + scope catalog §15.4 |
 | **A.5.16** | Identity management | Keycloak Organizations multi-tenant §15.3.2 |
 | **A.5.17** | Authentication information | client_secret em Vault, NUNCA em codigo/config; rotation 30d §15.3.5 |
-| **A.5.18** | Access rights | Role catalog §15.5 + Identos enforcement |
+| **A.5.18** | Access rights | Role catalog §15.5 + IdentityOS enforcement |
 | **A.8.2** | Privileged access rights | `fx_admin` role audit reforcado; just-in-time elevation |
 | **A.8.3** | Information access restriction | Tenant scoping em TODA query; RLS CockroachDB |
 | **A.8.4** | Access to source code | GitHub branch protection + 2 approvers + signed commits |
@@ -7744,7 +7744,7 @@ ExchangeOS                Vault                    Keycloak SPI                K
 
 ### 15.7 IAM Patterns Catalog (FX-IAM-* — 50 patterns, §14.20)
 
-Catalogo completo em `.base/plans/01-architecture/patterns/230-fx-iam-rbac-patterns.md` com 6 sections (Identos 8 + KeycloakOS 10 + Client Credentials 8 + Token Mgmt 6 + RBAC 10 + ISO 27001 controls 8). Cada pattern com `ID | Pattern | Priority | ISO Control | Snippet Go`.
+Catalogo completo em `.base/plans/01-architecture/patterns/230-fx-iam-rbac-patterns.md` com 6 sections (IdentityOS 8 + KeycloakOS 10 + Client Credentials 8 + Token Mgmt 6 + RBAC 10 + ISO 27001 controls 8). Cada pattern com `ID | Pattern | Priority | ISO Control | Snippet Go`.
 
 ### 15.8 Docs `08-security/` materializados (8 documentos)
 
@@ -8226,7 +8226,7 @@ tasks:
     cmds:
       - docker compose -f docker-compose.deps.yml up -d
       - docker compose -f docker-compose.local.yml up -d
-      - echo "✅ ExchangeOS local stack up at http://localhost:8094"
+      - echo "✅ ExchangeOS local stack up at http://localhost:8084"
 ```
 
 ### 21.3 Makefile (Backward Compat — delega para task)
@@ -8491,7 +8491,7 @@ Legenda: ✅ Documentado e completo / ⚠ Documentado mas com gap / ❌ Faltante
 | **RiskOS** | Bidirectional: `riskos.limit.changed` (consume) + `exchangeos.position.nop_limit_breached` (publish) | CDC `__exchangeos_cdc.positions` consumido por RiskOS NOP monitor | ExchangeOS=client (3 RPCs: ReserveCreditLimit, ReleaseCreditLimit, EvaluatePreTradeRisk) | gRPC sync (reserve pre-trade) + Kafka events (NOP changes) + CDC (positions) | ✅ |
 | **ComplOS** | Publish `exchangeos.compliance.sanctions_hit` (consume by ComplOS audit) | n/a | ExchangeOS=client (2 RPCs: ScreenSanctions, ScreenAML) | gRPC sync pre-trade | ✅ |
 | **TreasuryOS** | Bidirectional: `treasuryos.nostro.balance_changed` (consume) + `exchangeos.payin.executed` (publish) | CDC `__exchangeos_cdc.payin_events` consumido por TreasuryOS | ExchangeOS=client (3 RPCs: GetNostroBalance, ReserveNostroFunding, RecordLiquiditySwap) | gRPC sync (pre-PayIn check) + Kafka events (post-execute) + CDC (PayIn events) | ✅ |
-| **Identos** | Publish `exchangeos.audit.*` consumido por Identos audit | n/a | ExchangeOS=client (9 RPCs §15.2) + auth interceptor | gRPC sync (AuthZ Policy) + Kafka events (audit) | ✅ |
+| **IdentityOS** | Publish `exchangeos.audit.*` consumido por IdentityOS audit | n/a | ExchangeOS=client (9 RPCs §15.2) + auth interceptor | gRPC sync (AuthZ Policy) + Kafka events (audit) | ✅ |
 | **KeycloakOS** | n/a | n/a | ExchangeOS=client (HTTPS REST + JWKS endpoint) | REST sync (token + JWKS cache 5min) | ✅ |
 | **OnboardOS** | Consume `onboardos.kyc.completed` → habilita FX para cliente | n/a | none (Kafka-only integration) | Kafka events (assincrono) | ✅ |
 | **CardOS** | Roadmap v2: consume `cardos.card.fx_transaction` | n/a | roadmap v2 | Kafka events (v2) | ⚠ marcado v2 |
@@ -8518,13 +8518,13 @@ pkg/integration/<module>/
 └── README.md                  # Quick reference + RPC catalog + SLA expectations
 
 # Import path obrigatorio:
-import "github.com/revenu-tech/exchangeos/pkg/integration/accountos"
-import accountospb "github.com/revenu-tech/accountos/proto/accountos/v1"
+import "github.com/revenutech/exchangeos/pkg/integration/accountos"
+import accountospb "github.com/revenutech/accountos/proto/accountos/v1"
 ```
 
 **Convencoes:**
 - 1 package per modulo (exclusivo)
-- Proto imports cross-repo via `go.mod` `require github.com/revenu-tech/<module>` ou via `buf` workspace
+- Proto imports cross-repo via `go.mod` `require github.com/revenutech/<module>` ou via `buf` workspace
 - Health check: `client.Health(ctx) → status` periodico (30s); falha 3x consecutivas marca `unhealthy` → impacta ExchangeOS readiness probe
 - Sentinel errors locais: `ErrAccountFrozen`, `ErrCreditLimitExceeded`, `ErrSanctionsHit` (nunca propagar `codes.FailedPrecondition` raw)
 
@@ -8672,7 +8672,7 @@ Pergunta 6: O test e CRUD basico do dominio?
 |----------|--------|---------------|
 | **Kafka mensageria** | ✅ Completo | §14.8 (60 FX-KP-* patterns) + §14.18 (45 FX-ASYNC-* AsyncAPI) + §19.2.3 (11 topics formalizados) + §20.3 (ACLs matrix) |
 | **Database (CRDB + CDC)** | ✅ Completo | §13 (ERDs Suite ~70 tabelas) + §14.7 (50 FX-CP-* CockroachDB patterns) + §17 (Deploy local shared hub TLS) + §19.2.2 (7 CDC topics) + §20.4 (CDC consumer registry) |
-| **gRPC sync** | ✅ Completo | §14.16 (55 FX-GRPC-* patterns) + §15.2 (Identos integration) + §19.3-5 (AccountOS + PaymentOS + 13 modulos) + §20.2 (`pkg/integration/<module>/` convencao) + §20.5 (service discovery + LB) |
+| **gRPC sync** | ✅ Completo | §14.16 (55 FX-GRPC-* patterns) + §15.2 (IdentityOS integration) + §19.3-5 (AccountOS + PaymentOS + 13 modulos) + §20.2 (`pkg/integration/<module>/` convencao) + §20.5 (service discovery + LB) |
 | **Sync patterns** | ✅ Completo | §14.24 (40 FX-SYNC-* patterns) + §19 (3 sync patterns A/B/C) + §20.7 (saga compensation matrix) |
 | **Cross-module integration** | ✅ 11/13 modulos completos (2 v2) | §19.5 (matriz 13 modulos) + §20.1 (audit matrix verificada) |
 | **Schema evolution** | ✅ Formalizada | §20.6 (policy unificada proto + Avro + REST + AsyncAPI + ISO XSD) |
@@ -8791,7 +8791,7 @@ CREATE CHANGEFEED FOR TABLE fx_trades, positions, cls_submissions, dec_declarati
 | `exchangeos.compliance.*` | DECRegistered, IEDRegistered, CreditoRegistered, CBEDeclared, COSFiled, SanctionsHit, IOFCalculated | AuthorityOS (BACEN forward), BigQuery (compliance) |
 | `exchangeos.refdata.*` | CurrencyPairActivated, SSIRegistered, CalendarPublished, NettingCutOffUpdated | Compacted topic — downstream eventual consistency |
 | `exchangeos.admin.*` | SystemEventReceived, MessageRejected, StaticDataReceived | Flink (CLS halt → block submissions) |
-| `exchangeos.audit.*` | AccessGranted, AccessDenied, RoleChanged, PrivilegeEscalated | Identos audit, SIEM, S3 archive |
+| `exchangeos.audit.*` | AccessGranted, AccessDenied, RoleChanged, PrivilegeEscalated | IdentityOS audit, SIEM, S3 archive |
 
 ### 19.3 Integracao Nativa AccountOS
 
@@ -8893,7 +8893,7 @@ ExchangeOS                  AccountOS              ComplOS+RiskOS         Paymen
 | **RiskOS** | gRPC sync + Kafka events + CDC | Credit limit reserve/release, NOP monitoring real-time, VaR EOD | CRITICAL |
 | **ComplOS** | gRPC sync | Sanctions screen pre-trade, AML monitor post-trade | CRITICAL |
 | **TreasuryOS** | gRPC sync + Kafka events + CDC | Nostro funding check pre-PayIn, exposure sync post-trade, liquidity swap | CRITICAL |
-| **Identos** | gRPC sync + Kafka audit | JWT validate, AuthZ Policy decision, audit publish, federation | CRITICAL |
+| **IdentityOS** | gRPC sync + Kafka audit | JWT validate, AuthZ Policy decision, audit publish, federation | CRITICAL |
 | **KeycloakOS** | REST + JWKS | Token issuance, JWKS validation, Organizations multi-tenant | CRITICAL |
 | **OnboardOS** | Kafka events | onboardos.kyc.completed → ExchangeOS habilita FX para cliente | HIGH |
 | **CardOS** | Kafka events | cardos.card.fx_transaction → cria fluxo FX para cartao internacional | MEDIUM (v2) |
@@ -8966,7 +8966,7 @@ Mesmo procedimento para `paymentos`. **Recomendacao:** propor migration via PR a
 
 | Categoria | Quantidade |
 |-----------|------------|
-| **Modulos integrados nativamente** | 13 (LedgerOS + AccountOS + PaymentOS + AuthorityOS + RiskOS + ComplOS + TreasuryOS + Identos + KeycloakOS + OnboardOS + CardOS + InvestOS + BillingOS) |
+| **Modulos integrados nativamente** | 13 (LedgerOS + AccountOS + PaymentOS + AuthorityOS + RiskOS + ComplOS + TreasuryOS + IdentityOS + KeycloakOS + OnboardOS + CardOS + InvestOS + BillingOS) |
 | **Sync patterns** | 3 (gRPC pull sync + CDC push + Kafka domain events) |
 | **CDC topics ExchangeOS** | 7 topics |
 | **Kafka domain event topics ExchangeOS** | 11 topics (`exchangeos.<bc>.*`) |
@@ -9223,8 +9223,8 @@ func TestE2E_001_FullSagaCLSLifecycle(t *testing.T) {
     ctx := context.Background()
 
     // Assume make local-up rodou. Conecta via API REST + verifica state.
-    apiClient := newAPIClient(t, "http://localhost:8094")
-    grpcClient := newGRPCClient(t, "localhost:9094")
+    apiClient := newAPIClient(t, "http://localhost:8084")
+    grpcClient := newGRPCClient(t, "localhost:9084")
 
     // 1. Request quote
     quoteResp, err := apiClient.RequestQuote(ctx, &QuoteRequest{
@@ -9566,7 +9566,7 @@ revenu-platform/
     │       ├── kafka/                        # testcontainers Kafka
     │       ├── vault/                        # testcontainers Vault
     │       ├── otel/                         # OTel test recorder
-    │       └── iam/                          # JWT generator + Identos mock
+    │       └── iam/                          # JWT generator + IdentityOS mock
     ├── certs/                                # ← NEW: symlink para cockroachdb/modules/exchangeos/certs/
     └── ...
 ```
@@ -9661,7 +9661,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       VAULT_ADDR: http://vault:8200
       KEYCLOAK_URL: http://keycloak:8080/realms/revenu-exchangeos
-      IDENTOS_GRPC_ADDR: identos:9084
+      IDENTITYOS_GRPC_ADDR: identityos:9084
     volumes:
       - ../cockroachdb/modules/exchangeos/certs:/certs:ro
     depends_on:
@@ -9823,7 +9823,7 @@ local-up:  ## Bring up full local stack (crdb + kafka + vault + keycloak + app)
 	$(MAKE) crdb-migrate
 	docker compose -f docker-compose.deps.yml up -d
 	docker compose -f docker-compose.local.yml up -d
-	@echo "✅ ExchangeOS local stack up at http://localhost:8094 (HTTP) and :9094 (gRPC)"
+	@echo "✅ ExchangeOS local stack up at http://localhost:8084 (HTTP) and :9084 (gRPC)"
 
 .PHONY: local-down
 local-down:  ## Tear down full local stack
@@ -10197,7 +10197,7 @@ slog.Info("trade booked",
 **Levels:**
 - DEBUG: apenas dev/staging; nunca prod (volume excessivo)
 - INFO: business events (trade booked, CLS submitted, COS filed)
-- WARN: degraded behaviors (Identos slow, retry triggered, circuit-breaker half-open)
+- WARN: degraded behaviors (IdentityOS slow, retry triggered, circuit-breaker half-open)
 - ERROR: erros recoverable (handled exceptions, DLQ writes)
 - FATAL: irrecuperavel (startup config invalid; usa `slog.Error` + `os.Exit(1)`)
 

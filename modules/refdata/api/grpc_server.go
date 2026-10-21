@@ -12,8 +12,8 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/revenu-tech/exchangeos/modules/refdata/application"
-	pb "github.com/revenu-tech/exchangeos/proto/gen/exchangeos/v1"
+	"github.com/revenutech/exchangeos/modules/refdata/application"
+	pb "github.com/revenutech/exchangeos/proto/gen/exchangeos/v1"
 )
 
 // GRPCServer adapts pb.RefDataServiceServer to the application service.

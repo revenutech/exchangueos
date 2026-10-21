@@ -16,7 +16,7 @@ docker compose -f docker/compose/docker-compose.yml up -d
 Verify:
 
 ```bash
-curl -s http://localhost:8094/v1/admin/_schemas | head -c 200
+curl -s http://localhost:8084/v1/admin/_schemas | head -c 200
 # → {"count":30,"schemas":[{...}]}
 ```
 
@@ -38,7 +38,7 @@ Tenant-scoped tables auto-filter by `tenant_id`. Default tenant = the dev one
 
 ```bash
 curl -H 'X-Tenant-Id: 00000000-0000-5000-8000-000000000003' \
-  http://localhost:8094/v1/admin/fx-trades
+  http://localhost:8084/v1/admin/fx-trades
 ```
 
 ### Allowlisted filters
@@ -47,7 +47,7 @@ Each table exposes a small set of filter columns. Anything else is silently
 ignored. Inspect with:
 
 ```bash
-curl -s http://localhost:8094/v1/admin/_schemas | jq '.schemas[] | {url, filters}'
+curl -s http://localhost:8084/v1/admin/_schemas | jq '.schemas[] | {url, filters}'
 ```
 
 ## Examples
@@ -55,7 +55,7 @@ curl -s http://localhost:8094/v1/admin/_schemas | jq '.schemas[] | {url, filters
 ### LIST first 3 active currencies
 
 ```bash
-curl -s 'http://localhost:8094/v1/admin/currencies?active=true&limit=3' | jq
+curl -s 'http://localhost:8084/v1/admin/currencies?active=true&limit=3' | jq
 ```
 
 ```json
@@ -72,13 +72,13 @@ curl -s 'http://localhost:8094/v1/admin/currencies?active=true&limit=3' | jq
 ### LIST settled trades
 
 ```bash
-curl -s 'http://localhost:8094/v1/admin/fx-trades?status=SETTLED' | jq
+curl -s 'http://localhost:8084/v1/admin/fx-trades?status=SETTLED' | jq
 ```
 
 ### GET specific trade
 
 ```bash
-curl -s http://localhost:8094/v1/admin/fx-trades/33333333-0000-5000-8000-000000000001 | jq
+curl -s http://localhost:8084/v1/admin/fx-trades/33333333-0000-5000-8000-000000000001 | jq
 ```
 
 ### POST a new currency
@@ -86,7 +86,7 @@ curl -s http://localhost:8094/v1/admin/fx-trades/33333333-0000-5000-8000-0000000
 ```bash
 curl -s -X POST -H 'Content-Type: application/json' \
   -d '{"code":"XTS","name":"Test","minor_units":2,"cls_eligible":false,"cfets_eligible":false,"active":true}' \
-  http://localhost:8094/v1/admin/currencies
+  http://localhost:8084/v1/admin/currencies
 # → {"status":"created","table":"currencies"}
 ```
 
@@ -95,21 +95,21 @@ curl -s -X POST -H 'Content-Type: application/json' \
 ```bash
 curl -s -X PUT -H 'Content-Type: application/json' \
   -d '{"active":false}' \
-  http://localhost:8094/v1/admin/currencies/XTS
+  http://localhost:8084/v1/admin/currencies/XTS
 # → {"status":"updated","table":"currencies","id":"XTS"}
 ```
 
 ### DELETE refdata
 
 ```bash
-curl -s -X DELETE http://localhost:8094/v1/admin/currencies/XTS
+curl -s -X DELETE http://localhost:8084/v1/admin/currencies/XTS
 # → {"status":"deleted","table":"currencies","id":"XTS"}
 ```
 
 ### Read-only tables
 
 ```bash
-curl -s -X POST http://localhost:8094/v1/admin/audit-events
+curl -s -X POST http://localhost:8084/v1/admin/audit-events
 # → HTTP 405 — audit_events is read-only (regulatory)
 ```
 

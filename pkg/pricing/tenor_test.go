@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/revenu-tech/exchangeos/pkg/pricing"
+	"github.com/revenutech/exchangeos/pkg/pricing"
 )
 
 // stubCalendar — local in-test BusinessCalendar (avoids modules/ import).
@@ -110,7 +110,9 @@ func TestValueDate_TradeOnWeekendRollsToBD(t *testing.T) {
 // 1W = Spot + 7d = Fri 2026-05-29 (BD, no roll).
 // 1M = Spot + 1 month = Mon 2026-06-22 (BD, no roll).
 // 3M = Spot + 3 months = Mon 2026-08-24 (Fri 2026-08-22 is in Aug; Aug 22 is Sat,
-//      Aug 23 is Sun → forward to Mon Aug 24 still in same month).
+//
+//	Aug 23 is Sun → forward to Mon Aug 24 still in same month).
+//
 // 6M = Spot + 6 months = Mon 2026-11-23 (Sun Nov 22 → forward to Mon Nov 23).
 // 1Y = Spot + 12 months = Mon 2027-05-24 (Sat May 22, Sun May 23 → forward to Mon May 24).
 func TestValueDate_StandardTenors(t *testing.T) {
@@ -154,9 +156,9 @@ func TestValueDate_StandardTenors(t *testing.T) {
 // BD in Sept, which is Tue Sept 29.
 func TestValueDate_ModifiedFollowing_FallbackPreviousBD(t *testing.T) {
 	cal := newStub(
-		d(2026, 9, 30),  // Wed holiday
-		d(2026, 10, 1),  // Thu holiday
-		d(2026, 10, 2),  // Fri holiday
+		d(2026, 9, 30), // Wed holiday
+		d(2026, 10, 1), // Thu holiday
+		d(2026, 10, 2), // Fri holiday
 	)
 	// Force spot to be 2026-08-31 (Mon). Pick trade = 2026-08-27 (Thu) → spot = 2026-08-31 (Mon).
 	trade := d(2026, 8, 27)
@@ -182,5 +184,25 @@ func TestValueDate_UnknownTenor_Rejected(t *testing.T) {
 	_, err := pricing.ValueDate(pricing.Tenor("BOGUS"), d(2026, 5, 20), cal)
 	if !errors.Is(err, pricing.ErrInvalidInput) {
 		t.Fatalf("want ErrInvalidInput, got %v", err)
+	}
+}
+
+// End-to-end through ValueDate: a month tenor off a month-end spot must not
+// spill past the target month.
+func TestValueDate_MonthTenorFromMonthEndDoesNotSpill(t *testing.T) {
+	cal := newStub() // no holidays; weekends only
+
+	// 2026-01-27 (Tue) → spot 2026-01-29 (Thu). 1M → 2026-02-28 (Sat, not a BD)
+	// → Modified-Following walks forward to Mon 2026-03-02, which crosses the
+	// month, so it falls back to Fri 2026-02-27.
+	got, err := pricing.ValueDate(pricing.Tenor1M, d(2026, 1, 27), cal)
+	if err != nil {
+		t.Fatalf("ValueDate: %v", err)
+	}
+	if want := d(2026, 2, 27); !got.Equal(want) {
+		t.Errorf("1M from month-end spot = %s, want %s", ymd(got), ymd(want))
+	}
+	if got.Month() != time.February {
+		t.Errorf("value date landed in %s, want February", got.Month())
 	}
 }

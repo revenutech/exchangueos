@@ -13,10 +13,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/revenu-tech/exchangeos/internal/dbtest"
-	"github.com/revenu-tech/exchangeos/modules/cfets_confirmation/application"
-	"github.com/revenu-tech/exchangeos/modules/cfets_confirmation/domain"
-	"github.com/revenu-tech/exchangeos/modules/cfets_confirmation/infrastructure/postgres"
+	"github.com/revenutech/exchangeos/internal/dbtest"
+	"github.com/revenutech/exchangeos/modules/cfets_confirmation/application"
+	"github.com/revenutech/exchangeos/modules/cfets_confirmation/domain"
+	"github.com/revenutech/exchangeos/modules/cfets_confirmation/infrastructure/postgres"
 )
 
 func TestCFETSConfirmationRepo_RoundTrip(t *testing.T) {

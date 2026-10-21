@@ -27,16 +27,16 @@
 **Deferred:**
 - ⏳ ISO 27001 audit + certification (Sprint 16 cert target) — separate auditor engagement
 - ⏳ Threat model document (STRIDE+DREAD) — security team backlog
-- ⏳ Full Identos/KeycloakOS integration with concrete OIDC client manifests — deployment-time concern
+- ⏳ Full IdentityOS/KeycloakOS integration with concrete OIDC client manifests — deployment-time concern
 
 ## Description
 
-50 FX-IAM-* patterns + integracao nativa Identos + KeycloakOS realm revenu-exchangeos + 14 clients M2M com client_secret rotation 30d via Vault SPI + 8 docs ISO 27000-27005 + 93 Annex A controls mapeados + gap analysis + internal audit checklist + ISO 27001 certification-ready.
+50 FX-IAM-* patterns + integracao nativa IdentityOS + KeycloakOS realm revenu-exchangeos + 14 clients M2M com client_secret rotation 30d via Vault SPI + 8 docs ISO 27000-27005 + 93 Annex A controls mapeados + gap analysis + internal audit checklist + ISO 27001 certification-ready.
 
 ## Acceptance Criteria
 
-- [ ] pkg/iam/{identos,keycloak,vault,rbac}/ shared lib
-- [ ] Identos gRPC integration funcional
+- [ ] pkg/iam/{identityos,keycloak,vault,rbac}/ shared lib
+- [ ] IdentityOS gRPC integration funcional
 - [ ] KeycloakOS realm + 14 clients provisionados via Terraform
 - [ ] client_secret rotation cron 30d funcional
 - [ ] 8 docs ISO 27000-27005 materializados em 08-security/

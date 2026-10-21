@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package exchangeos.v1;
 
-option go_package = "github.com/revenu-tech/exchangeos/proto/gen/exchangeos/v1;exchangeosv1";
+option go_package = "github.com/revenutech/exchangeos/proto/gen/exchangeos/v1;exchangeosv1";
 
 import "google/protobuf/timestamp.proto";
 import "exchangeos/v1/common.proto";
@@ -37,6 +37,12 @@ message CheckLimitRequest {
   TenantContext tenant = 1;
   string trade_id = 2;
   Money proposed_exposure = 3;
+  // Which limit to evaluate: COUNTERPARTY | CURRENCY | TENOR | DV01 | VAR.
+  string limit_type = 4;
+  // The entity the limit is scoped to — counterparty BIC, currency code, tenor
+  // code. Required: trade_id is not a limit scope, and using it means the limit
+  // is never found and therefore never enforced.
+  string scope = 5;
 }
 
 message CheckLimitResponse {

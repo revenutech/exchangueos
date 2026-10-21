@@ -8,7 +8,7 @@
 
 | Documento | Status | Descricao |
 |-----------|--------|-----------|
-| `iam-iso27000-coverage.md` | TODO | IAM Integration (Identos + KeycloakOS) + ISO 27000-27005 (§15 monolitico) |
+| `iam-iso27000-coverage.md` | TODO | IAM Integration (IdentityOS + KeycloakOS) + ISO 27000-27005 (§15 monolitico) |
 | `iso27000-fx-framework.md` | TODO | ISO/IEC 27000:2022 framework adoption + 6-layer stack + glossary |
 | `iso27001-fx-annex-a-mapping.md` | TODO | **93 ISO 27001:2022 Annex A controls** mapeados para ExchangeOS + evidence per control |
 | `iso27002-fx-controls-implementation.md` | TODO | ISO/IEC 27002:2022 implementation guidance + Go/Helm/Terraform snippets |
@@ -40,7 +40,7 @@
 
 ## IAM Stack
 
-- **Identos** (`:8084 HTTP / :9084 gRPC`) — AuthZ Policy + Sessions + Consent + Federation
+- **IdentityOS** (`:8084 HTTP / :9084 gRPC`) — AuthZ Policy + Sessions + Consent + Federation
 - **KeycloakOS** (v26.5.3) — Realm `revenu-exchangeos` + Organizations multi-tenancy + 14 clients M2M + 2 user clients
 - **Vault** (HCP managed) — client_secret rotation 30d + PKI cert 90d + KMS HSM
 - **KrakenD** — JWT validation no edge + JWKS cache 5min + Bloom filter revocation

@@ -1,8 +1,8 @@
 # ExchangeOS — CLAUDE.md (Livro de Regras do Projeto)
 
 > **Modulo:** ExchangeOS — Standalone FX Module (Revenu Platform)
-> **Ports:** `:8094 HTTP / :9094 gRPC`
-> **Stack:** Go 1.25 + CockroachDB + Kafka + Flink + GCP + ISO 20022 + Identos/KeycloakOS
+> **Ports:** `:8084 HTTP / :9084 gRPC`
+> **Stack:** Go 1.25 + CockroachDB + Kafka + Flink + GCP + ISO 20022 + IdentityOS/KeycloakOS
 
 ## Modular Memory Imports
 
@@ -96,7 +96,7 @@ Para tarefas complexas, **delegue para subagents especializados em paralelo**:
 | `ontology-shacl` | TTL v1.2.0, SHACL validation, FIBO alignment |
 | `database-crdb` | CockroachDB schemas, migrations, CDC, multi-CCY postings |
 | `kafka-flink` | Kafka topics, ACLs, Flink jobs, EDA patterns |
-| `iam-security` | Identos, KeycloakOS, RBAC, ISO 27001 |
+| `iam-security` | IdentityOS, KeycloakOS, RBAC, ISO 27001 |
 | `observability-otel` | OTel instrumentation, dashboards, SLI/SLO |
 | `testing-qa` | TDD, E2E, CRUD tests, security gates |
 | `devsecops-cicd` | GitHub Actions, SLSA L3, supply chain, Lefthook |

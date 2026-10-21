@@ -7,7 +7,7 @@ import (
 
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/modules/refdata/domain"
+	"github.com/revenutech/exchangeos/modules/refdata/domain"
 )
 
 func TestSpotRateBook_PutLookup(t *testing.T) {

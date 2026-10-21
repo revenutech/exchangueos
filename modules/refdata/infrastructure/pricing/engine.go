@@ -17,7 +17,7 @@ import (
 
 	"github.com/shopspring/decimal"
 
-	refdomain "github.com/revenu-tech/exchangeos/modules/refdata/domain"
+	refdomain "github.com/revenutech/exchangeos/modules/refdata/domain"
 )
 
 // SpreadPolicy returns the half-spread to apply for a given pair.

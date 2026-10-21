@@ -3,7 +3,7 @@ package pricing_test
 import (
 	"testing"
 
-	"github.com/revenu-tech/exchangeos/pkg/pricing"
+	"github.com/revenutech/exchangeos/pkg/pricing"
 )
 
 // BenchmarkForward_360 measures the CIP forward at the 360-basis hot path.

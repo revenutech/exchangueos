@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/revenu-tech/exchangeos/internal/config"
+	"github.com/revenutech/exchangeos/internal/config"
 )
 
 // New constructs a pgx connection pool from config.

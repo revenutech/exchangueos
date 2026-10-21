@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/revenu-tech/exchangeos/internal/dbtest"
-	"github.com/revenu-tech/exchangeos/modules/netreport/application"
-	"github.com/revenu-tech/exchangeos/modules/netreport/domain"
-	"github.com/revenu-tech/exchangeos/modules/netreport/infrastructure/postgres"
+	"github.com/revenutech/exchangeos/internal/dbtest"
+	"github.com/revenutech/exchangeos/modules/netreport/application"
+	"github.com/revenutech/exchangeos/modules/netreport/domain"
+	"github.com/revenutech/exchangeos/modules/netreport/infrastructure/postgres"
 )
 
 func newReport(t *testing.T, tenant, cycle uuid.UUID, ccy string, in, out string) *domain.NetReport {

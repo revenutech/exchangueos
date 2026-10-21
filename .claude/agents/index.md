@@ -33,7 +33,7 @@
 | Agent | Foco | Quando invocar |
 |-------|------|----------------|
 | **`bacen-compliance`** | DEC, SCE-IED, SCE-Credito, SCE-CBE, IOF, classificacao 95 codigos, SISCOAF, VASP, eFX | BACEN regulatory work |
-| **`iam-security`** | Identos integration, KeycloakOS realm + clients, ISO 27001 controls, OAuth2 client_credentials | IAM/security work |
+| **`iam-security`** | IdentityOS integration, KeycloakOS realm + clients, ISO 27001 controls, OAuth2 client_credentials | IAM/security work |
 
 ### Data Layer Agents
 

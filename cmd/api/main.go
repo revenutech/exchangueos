@@ -1,4 +1,4 @@
-// Package main — exchangeos-api: dual HTTP (:8094) + gRPC (:9094) server.
+// Package main — exchangeos-api: dual HTTP (:8084) + gRPC (:9084) server.
 //
 // Bootstraps: config → telemetry → DB pool → gRPC server → HTTP server → graceful shutdown.
 // Health endpoints: /healthz (liveness) + /readyz (readiness) + gRPC HealthService.
@@ -23,10 +23,10 @@ import (
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/revenu-tech/exchangeos/internal/adminapi"
-	"github.com/revenu-tech/exchangeos/internal/config"
-	"github.com/revenu-tech/exchangeos/internal/container"
-	"github.com/revenu-tech/exchangeos/internal/telemetry"
+	"github.com/revenutech/exchangeos/internal/adminapi"
+	"github.com/revenutech/exchangeos/internal/config"
+	"github.com/revenutech/exchangeos/internal/container"
+	"github.com/revenutech/exchangeos/internal/telemetry"
 )
 
 const (

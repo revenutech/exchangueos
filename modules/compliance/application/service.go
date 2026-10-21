@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/modules/compliance/domain"
-	"github.com/revenu-tech/exchangeos/pkg/bacen"
+	"github.com/revenutech/exchangeos/modules/compliance/domain"
+	"github.com/revenutech/exchangeos/pkg/bacen"
 )
 
 // Repositories — split per aggregate to keep each focused.
@@ -32,10 +32,38 @@ type ScreeningRepo interface {
 	Save(ctx context.Context, s *domain.ScreeningResult) error
 }
 
+// SanctionsScreener queries the watchlists (OFAC SDN, UN, EU, COAF) for a
+// counterparty and returns the list names that matched. An empty slice with a
+// nil error means "screened and clear" — which is a materially different claim
+// from "not screened", and only a real provider may make it.
+type SanctionsScreener interface {
+	Screen(ctx context.Context, bic, lei string) (hits []string, err error)
+}
+
 var (
 	ErrInvalidInput = errors.New("compliance-app: invalid input")
 	ErrNotFound     = errors.New("compliance-app: not found")
+
+	// ErrScreeningUnavailable is returned when no sanctions provider is wired.
+	ErrScreeningUnavailable = errors.New("compliance-app: sanctions screening unavailable")
 )
+
+// UnavailableScreener is the fail-closed default. It refuses to answer rather
+// than reporting a counterparty as clear.
+//
+// ScreenCounterparty used to build its result straight from the caller's input,
+// and the gRPC adapter never populated Hits — so every counterparty screened
+// clear at RiskLow without a single watchlist being consulted. Under RN_FX_039
+// (COS to SISCOAF) that is a false negative reported as a compliance pass.
+//
+// Swap this for a real provider at wiring time; until then screening errors out
+// loudly instead of silently clearing sanctioned parties.
+type UnavailableScreener struct{}
+
+// Screen implements SanctionsScreener.
+func (UnavailableScreener) Screen(context.Context, string, string) ([]string, error) {
+	return nil, ErrScreeningUnavailable
+}
 
 // Service exposes compliance use cases.
 type Service struct {
@@ -45,6 +73,7 @@ type Service struct {
 	iofRepo    IOFRepo
 	reportRepo ReportRepo
 	screenRepo ScreeningRepo
+	screener   SanctionsScreener
 }
 
 func NewService(
@@ -54,7 +83,12 @@ func NewService(
 	iofRepo IOFRepo,
 	reportRepo ReportRepo,
 	screenRepo ScreeningRepo,
+	screener SanctionsScreener,
 ) *Service {
+	// Nil is not "no screening" — it is the fail-closed default.
+	if screener == nil {
+		screener = UnavailableScreener{}
+	}
 	return &Service{
 		classifier: classifier,
 		iofCalc:    iofCalc,
@@ -62,6 +96,7 @@ func NewService(
 		iofRepo:    iofRepo,
 		reportRepo: reportRepo,
 		screenRepo: screenRepo,
+		screener:   screener,
 	}
 }
 
@@ -129,9 +164,23 @@ func (s *Service) SubmitBACENReport(ctx context.Context, in domain.NewBACENRepor
 	return r, nil
 }
 
-// ScreenCounterparty runs the screening (currently a stub — production replaces
-// with calls to OFAC/UN/EU/COAF list providers) and persists.
+// ScreenCounterparty consults the sanctions watchlists and persists the result.
+//
+// The hits come from the configured SanctionsScreener, never from the caller:
+// this used to build the result straight from NewScreeningInput, so a caller
+// that supplied no hits — which is exactly what the gRPC adapter did — got a
+// clear, RiskLow verdict with no watchlist consulted.
+//
+// A screening failure is returned, not swallowed. Without a verdict the
+// operation must not proceed, and a screening that did not happen must never be
+// recorded as a pass.
 func (s *Service) ScreenCounterparty(ctx context.Context, in domain.NewScreeningInput) (*domain.ScreeningResult, error) {
+	hits, err := s.screener.Screen(ctx, in.CounterpartyBIC, in.LEI)
+	if err != nil {
+		return nil, err
+	}
+	in.Hits = hits
+
 	res, err := domain.NewScreeningResult(in)
 	if err != nil {
 		return nil, err

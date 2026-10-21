@@ -35,7 +35,7 @@
 | CHAOS-05 | Drop 10% packets api ↔ Kafka | Outbox marks failed + retries succeed; no duplicate publishes | outbox_failed_total stable < 0.1% | HIGH |
 | CHAOS-06 | CRDB primary region failover | api fails-over to secondary in < RTO 4h | DR runbook validates | CRITICAL |
 | CHAOS-07 | Vault unavailable for 5min | api uses cached secrets; no auth failures | error_rate < 1% | HIGH |
-| CHAOS-08 | Identos OIDC discovery 503 | Token verification uses cached JWKS; existing sessions unaffected | auth_5xx < 0.1% | HIGH |
+| CHAOS-08 | IdentityOS OIDC discovery 503 | Token verification uses cached JWKS; existing sessions unaffected | auth_5xx < 0.1% | HIGH |
 | CHAOS-09 | PTAX feed (OLINDA) unreachable | api serves last-good PTAX (max 24h stale) + alerts ops | ptax_staleness_seconds < 86400 | MEDIUM |
 | CHAOS-10 | Kafka broker (1 of 3) killed | Producer retries succeed; in-sync replicas keep min.isr | publish_success_rate > 99.9% | HIGH |
 

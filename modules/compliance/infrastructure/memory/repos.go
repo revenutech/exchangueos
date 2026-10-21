@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/revenu-tech/exchangeos/modules/compliance/application"
-	"github.com/revenu-tech/exchangeos/modules/compliance/domain"
+	"github.com/revenutech/exchangeos/modules/compliance/application"
+	"github.com/revenutech/exchangeos/modules/compliance/domain"
 )
 
 type ClassificationRepo struct {

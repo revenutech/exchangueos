@@ -9,7 +9,7 @@ import (
 
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/revenu-tech/exchangeos/pkg/outbox"
+	"github.com/revenutech/exchangeos/pkg/outbox"
 )
 
 // Config parameterises the Publisher.

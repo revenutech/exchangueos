@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/modules/position/domain"
+	"github.com/revenutech/exchangeos/modules/position/domain"
 )
 
 type Repository interface {

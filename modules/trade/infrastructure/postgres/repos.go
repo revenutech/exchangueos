@@ -16,8 +16,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/modules/trade/application"
-	"github.com/revenu-tech/exchangeos/modules/trade/domain"
+	"github.com/revenutech/exchangeos/modules/trade/application"
+	"github.com/revenutech/exchangeos/modules/trade/domain"
 )
 
 type TradeRepo struct{ pool *pgxpool.Pool }

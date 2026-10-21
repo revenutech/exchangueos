@@ -95,21 +95,21 @@ func ValueDate(tenor Tenor, tradeDate time.Time, cal BusinessCalendar) (time.Tim
 	case Tenor3W:
 		return modifiedFollowing(spot.AddDate(0, 0, 21), cal), nil
 	case Tenor1M:
-		return modifiedFollowing(spot.AddDate(0, 1, 0), cal), nil
+		return modifiedFollowing(addMonths(spot, 1), cal), nil
 	case Tenor2M:
-		return modifiedFollowing(spot.AddDate(0, 2, 0), cal), nil
+		return modifiedFollowing(addMonths(spot, 2), cal), nil
 	case Tenor3M:
-		return modifiedFollowing(spot.AddDate(0, 3, 0), cal), nil
+		return modifiedFollowing(addMonths(spot, 3), cal), nil
 	case Tenor6M:
-		return modifiedFollowing(spot.AddDate(0, 6, 0), cal), nil
+		return modifiedFollowing(addMonths(spot, 6), cal), nil
 	case Tenor9M:
-		return modifiedFollowing(spot.AddDate(0, 9, 0), cal), nil
+		return modifiedFollowing(addMonths(spot, 9), cal), nil
 	case Tenor18M:
-		return modifiedFollowing(spot.AddDate(0, 18, 0), cal), nil
+		return modifiedFollowing(addMonths(spot, 18), cal), nil
 	case Tenor1Y:
-		return modifiedFollowing(spot.AddDate(1, 0, 0), cal), nil
+		return modifiedFollowing(addMonths(spot, 12), cal), nil
 	case Tenor2Y:
-		return modifiedFollowing(spot.AddDate(2, 0, 0), cal), nil
+		return modifiedFollowing(addMonths(spot, 24), cal), nil
 	default:
 		return time.Time{}, fmt.Errorf("%w: unsupported tenor %q", ErrInvalidInput, tenor)
 	}
@@ -139,6 +139,40 @@ func modifiedFollowing(d time.Time, cal BusinessCalendar) time.Time {
 		back = back.AddDate(0, 0, -1)
 	}
 	return back
+}
+
+// addMonths adds n calendar months to d, clamping to the last day of the target
+// month rather than spilling into the following one.
+//
+// time.Time.AddDate normalises overflow, which is wrong for FX tenors:
+// 2026-08-31 plus one month becomes 2026-10-01 because September has no 31st,
+// and 2026-01-31 plus one month becomes 2026-03-03. A 1M trade dealt on the
+// 31st values on the last day of the following month.
+//
+// The overflow also defeated modifiedFollowing entirely: it compares the rolled
+// date's month against the unadjusted date's month to decide whether to fall
+// back, and an unadjusted date that had already spilled into the next month made
+// that comparison meaningless.
+//
+// This is the "clamp to month end" part of the convention. The stricter
+// end-of-month rule — spot on the last BUSINESS day of a month values on the
+// last business day of the target month, e.g. 2026-08-28 (Fri, last BD of
+// August) rolling to 2026-09-30 rather than 2026-09-28 — is a separate,
+// counterparty-agreed flag and is deliberately not applied here.
+func addMonths(d time.Time, n int) time.Time {
+	day := d.Day()
+	// Anchor on day 1 so the month arithmetic itself can never overflow.
+	target := time.Date(d.Year(), d.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, n, 0)
+	if last := daysInMonth(target.Year(), target.Month()); day > last {
+		day = last
+	}
+	return time.Date(target.Year(), target.Month(), day, 0, 0, 0, 0, time.UTC)
+}
+
+// daysInMonth returns the number of days in the given month. Day 0 of the
+// following month is the last day of this one.
+func daysInMonth(y int, m time.Month) int {
+	return time.Date(y, m+1, 0, 0, 0, 0, 0, time.UTC).Day()
 }
 
 func truncateToDate(t time.Time) time.Time {

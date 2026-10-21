@@ -17,7 +17,7 @@ documented as design intents. Each contract document under this folder describes
 | [AccountOS](accountos.md)     | none (consumes only) | tenant.created.v1 / counterparty.created.v1 | Resolve tenant_id from API token | ✅ Wired (concept) |
 | [PaymentOS](paymentos.md)     | settlement.payin_requested.v1 | payment.settled.v1 | PvP coordination via CLS | 🟡 Spec |
 | [AuthorityOS](authorityos.md) | compliance.report_ready.v1 | regulator.policy_updated.v1 | SISCOAF + BACEN submission proxy | 🟡 Spec |
-| [Identos / KeycloakOS](identos.md) | none | identity.actor_disabled.v1 | OIDC validation per request | ✅ Wired |
+| [IdentityOS / KeycloakOS](identityos.md) | none | identity.actor_disabled.v1 | OIDC validation per request | ✅ Wired |
 | [RiskOS](riskos.md)           | risk.breach.v1 + position.snapshot.v1 | group_risk.limit_pressure.v1 | none initially | ⏳ Design |
 | [ComplOS](complos.md)         | compliance.cos_required.v1 | sanctions.list_updated.v1 + policy.bacen_code_added.v1 | SanctionsScreening + ComplianceQuery | ⏳ Design |
 | [TreasuryOS](treasuryos.md)   | settlement.payment_required.v1 + cls.payin_required.v1 | liquidity.unavailable.v1 + nostro.balance_snapshot.v1 + hedge.proposal.v1 | LiquidityQuery + PositionQuery | ⏳ Design |

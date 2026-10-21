@@ -12,9 +12,9 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/revenu-tech/exchangeos/modules/admin/application"
-	"github.com/revenu-tech/exchangeos/modules/admin/domain"
-	pb "github.com/revenu-tech/exchangeos/proto/gen/exchangeos/v1"
+	"github.com/revenutech/exchangeos/modules/admin/application"
+	"github.com/revenutech/exchangeos/modules/admin/domain"
+	pb "github.com/revenutech/exchangeos/proto/gen/exchangeos/v1"
 )
 
 type GRPCServer struct{ svc *application.Service }
@@ -51,12 +51,14 @@ func (s *GRPCServer) EmitSystemEvent(ctx context.Context, req *pb.EmitSystemEven
 }
 
 // GetServiceHealth — pb.AdminServiceServer
-func (s *GRPCServer) GetServiceHealth(_ context.Context, req *pb.GetServiceHealthRequest) (*pb.GetServiceHealthResponse, error) {
-	// Stub: always SERVING. Replaced by pkg/health.Registry aggregate when wired.
-	return &pb.GetServiceHealthResponse{
-		Status:  "SERVING",
-		Details: map[string]string{"component": req.GetComponent(), "note": "real registry wiring pending"},
-	}, nil
+//
+// Not implemented. It used to answer SERVING unconditionally, for any component
+// name, without consulting anything — a health probe that can never report a
+// problem is worse than no probe, because monitoring built on it reports green
+// through an outage.
+func (s *GRPCServer) GetServiceHealth(_ context.Context, _ *pb.GetServiceHealthRequest) (*pb.GetServiceHealthResponse, error) {
+	return nil, status.Error(codes.Unimplemented,
+		"service health aggregation is not wired; use the HTTP /health endpoint")
 }
 
 // TriggerEOD — pb.AdminServiceServer

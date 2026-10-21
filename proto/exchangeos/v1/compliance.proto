@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package exchangeos.v1;
 
-option go_package = "github.com/revenu-tech/exchangeos/proto/gen/exchangeos/v1;exchangeosv1";
+option go_package = "github.com/revenutech/exchangeos/proto/gen/exchangeos/v1;exchangeosv1";
 
 import "google/protobuf/timestamp.proto";
 import "exchangeos/v1/common.proto";
@@ -54,6 +54,10 @@ message ScreeningResult {
 message ClassifyOperationRequest {
   TenantContext tenant = 1;
   string trade_id = 2;
+  // Nature code (1 of the Circular 3.690 codes) OR a free-text hint the
+  // classifier resolves to one. Required: the server must never guess a nature
+  // code on the caller's behalf.
+  string code_or_hint = 3;
 }
 message ClassifyOperationResponse {
   OperationClassification classification = 1;
@@ -62,6 +66,11 @@ message ClassifyOperationResponse {
 message ComputeIOFRequest {
   TenantContext tenant = 1;
   string trade_id = 2;
+  // IOF operation type per Decreto 12.499/2025 (selects the aliquota band).
+  string operation_type = 3;
+  // Operation notional the IOF is levied on. Required: IOF is a tax, so the
+  // server must never substitute a default amount.
+  Money notional = 4;
 }
 message ComputeIOFResponse {
   IOFComputation iof = 1;

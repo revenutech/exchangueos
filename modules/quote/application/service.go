@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/modules/quote/domain"
+	"github.com/revenutech/exchangeos/modules/quote/domain"
 )
 
 // ─── Repository + collaborator interfaces ──────────────────────────────────
@@ -53,10 +53,10 @@ var (
 // ─── Service ───────────────────────────────────────────────────────────────
 
 type Service struct {
-	quotes    QuoteRepository
-	rfqs      RFQRepository
-	pricing   PricingEngine
-	publisher EventPublisher
+	quotes     QuoteRepository
+	rfqs       RFQRepository
+	pricing    PricingEngine
+	publisher  EventPublisher
 	defaultTTL time.Duration
 }
 
@@ -71,10 +71,10 @@ func NewService(q QuoteRepository, r RFQRepository, p PricingEngine, e EventPubl
 		ttl = 10 * time.Second
 	}
 	return &Service{
-		quotes:    q,
-		rfqs:      r,
-		pricing:   p,
-		publisher: e,
+		quotes:     q,
+		rfqs:       r,
+		pricing:    p,
+		publisher:  e,
 		defaultTTL: ttl,
 	}
 }
@@ -83,7 +83,13 @@ func NewService(q QuoteRepository, r RFQRepository, p PricingEngine, e EventPubl
 
 // GetQuoteRequest parameterises GetQuote.
 type GetQuoteRequest struct {
-	TenantID    uuid.UUID
+	TenantID uuid.UUID
+	// RequesterBIC — the party the price is quoted to.
+	RequesterBIC string
+	// ProviderBIC — the party quoting the price.
+	ProviderBIC string
+	// Side — the requester's direction on the base currency: BUY or SELL.
+	Side        domain.Side
 	BaseCCY     string
 	QuoteCCY    string
 	Notional    decimal.Decimal
@@ -118,16 +124,19 @@ func (s *Service) GetQuote(ctx context.Context, req GetQuoteRequest) (*domain.Qu
 	}
 	now := time.Now().UTC()
 	q, err := domain.NewQuote(domain.NewQuoteInput{
-		TenantID:    req.TenantID,
-		BaseCCY:     base,
-		QuoteCCY:    quote,
-		Notional:    req.Notional,
-		NotionalCCY: notCCY,
-		Bid:         bid,
-		Ask:         ask,
-		ValidFrom:   now,
-		ValidTo:     now.Add(ttl),
-		Venue:       req.Venue,
+		TenantID:     req.TenantID,
+		RequesterBIC: req.RequesterBIC,
+		ProviderBIC:  req.ProviderBIC,
+		Side:         req.Side,
+		BaseCCY:      base,
+		QuoteCCY:     quote,
+		Notional:     req.Notional,
+		NotionalCCY:  notCCY,
+		Bid:          bid,
+		Ask:          ask,
+		ValidFrom:    now,
+		ValidTo:      now.Add(ttl),
+		Venue:        req.Venue,
 	})
 	if err != nil {
 		return nil, err

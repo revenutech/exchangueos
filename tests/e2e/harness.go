@@ -8,7 +8,7 @@
 // Helpers focus on assertion ergonomics:
 //
 //   - Eventually(t, condition, timeout, interval) — polling assertion with deadline
-//   - NewClient() — http.Client targeting the local exchangeos-api on :8094
+//   - NewClient() — http.Client targeting the local exchangeos-api on :8084
 //   - SeedTenant(t) — POST or DB insert of a fresh tenant for the test
 //
 // NO time.Sleep — always use Eventually with explicit timeout.
@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	defaultBaseURL = "http://localhost:8094"
+	defaultBaseURL = "http://localhost:8084"
 	defaultTimeout = 30 * time.Second
 )
 

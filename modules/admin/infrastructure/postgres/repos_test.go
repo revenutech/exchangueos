@@ -13,10 +13,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/revenu-tech/exchangeos/internal/dbtest"
-	"github.com/revenu-tech/exchangeos/modules/admin/application"
-	"github.com/revenu-tech/exchangeos/modules/admin/domain"
-	"github.com/revenu-tech/exchangeos/modules/admin/infrastructure/postgres"
+	"github.com/revenutech/exchangeos/internal/dbtest"
+	"github.com/revenutech/exchangeos/modules/admin/application"
+	"github.com/revenutech/exchangeos/modules/admin/domain"
+	"github.com/revenutech/exchangeos/modules/admin/infrastructure/postgres"
 )
 
 func TestSystemEventRepo_InsertList(t *testing.T) {

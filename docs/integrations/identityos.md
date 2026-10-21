@@ -1,4 +1,4 @@
-# Integration — ExchangeOS ↔ Identos + KeycloakOS
+# Integration — ExchangeOS ↔ IdentityOS + KeycloakOS
 
 > Owner: IAM team
 > Compatible since: ExchangeOS v4.2.0 (config + env scaffolding)
@@ -6,7 +6,7 @@
 
 ## Purpose
 
-Identos is the Revenu Platform IAM control plane; KeycloakOS is the OIDC
+IdentityOS is the Revenu Platform IAM control plane; KeycloakOS is the OIDC
 identity provider. Every API request to ExchangeOS carries a JWT issued by
 KeycloakOS, validated at the KrakenD API gateway upstream of ExchangeOS.
 M2M client_secrets for 14 service identities are stored in Vault, rotated
@@ -46,7 +46,7 @@ Tenant access revoked at the platform level. ExchangeOS:
 - BookTrade rejects with `403 PERMISSION_DENIED`
 - Existing trades continue to settle (kill-switch is access-level, not data-level)
 
-## Sync RPCs (ExchangeOS → Identos)
+## Sync RPCs (ExchangeOS → IdentityOS)
 
 ```protobuf
 service IdentitySync {

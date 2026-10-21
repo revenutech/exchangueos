@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/revenu-tech/exchangeos/internal/dbtest"
-	"github.com/revenu-tech/exchangeos/modules/payin/application"
-	"github.com/revenu-tech/exchangeos/modules/payin/domain"
-	"github.com/revenu-tech/exchangeos/modules/payin/infrastructure/postgres"
+	"github.com/revenutech/exchangeos/internal/dbtest"
+	"github.com/revenutech/exchangeos/modules/payin/application"
+	"github.com/revenutech/exchangeos/modules/payin/domain"
+	"github.com/revenutech/exchangeos/modules/payin/infrastructure/postgres"
 )
 
 func newPending(t *testing.T, tenant, cycle uuid.UUID, ccy string) *domain.PayInInstruction {

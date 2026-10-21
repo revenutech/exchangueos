@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/revenu-tech/exchangeos/internal/dbtest"
-	"github.com/revenu-tech/exchangeos/modules/compliance/application"
-	"github.com/revenu-tech/exchangeos/modules/compliance/domain"
-	"github.com/revenu-tech/exchangeos/modules/compliance/infrastructure/postgres"
+	"github.com/revenutech/exchangeos/internal/dbtest"
+	"github.com/revenutech/exchangeos/modules/compliance/application"
+	"github.com/revenutech/exchangeos/modules/compliance/domain"
+	"github.com/revenutech/exchangeos/modules/compliance/infrastructure/postgres"
 )
 
 func TestClassificationRepo_RoundTrip(t *testing.T) {

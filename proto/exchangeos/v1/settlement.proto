@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package exchangeos.v1;
 
-option go_package = "github.com/revenu-tech/exchangeos/proto/gen/exchangeos/v1;exchangeosv1";
+option go_package = "github.com/revenutech/exchangeos/proto/gen/exchangeos/v1;exchangeosv1";
 
 import "google/protobuf/timestamp.proto";
 import "exchangeos/v1/common.proto";
@@ -71,6 +71,10 @@ message SubmitPayInResponse {
 message GetNetReportRequest {
   TenantContext tenant = 1;
   string cycle_id = 2;
+  // CLS settlement member the report is issued for (BIC). camt.088 carries it
+  // in <Mmbr>; a net report that does not say whose position it is cannot be
+  // acted on.
+  string member_bic = 3;
 }
 
 message GetNetReportResponse {

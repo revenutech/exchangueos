@@ -8,7 +8,7 @@ subject_ref:
   cnpj_sha256: ""    # if business — leave empty for individuals
   notes: ""          # any disambiguator (e.g. dual-citizenship case)
 verification:
-  method: identos-sms | notarised | gov-id-second-factor
+  method: identityos-sms | notarised | gov-id-second-factor
   verified_at: "YYYY-MM-DDTHH:MM:SS-03:00"
   verifier_actor_id: ""  # uuid of the DPO/officer who verified
   evidence_ref: ""       # secure storage URL for the ID copy (NEVER inline)

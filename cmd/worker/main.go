@@ -17,11 +17,11 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/revenu-tech/exchangeos/internal/config"
-	"github.com/revenu-tech/exchangeos/internal/db"
-	"github.com/revenu-tech/exchangeos/internal/telemetry"
-	"github.com/revenu-tech/exchangeos/pkg/outbox"
-	outboxpg "github.com/revenu-tech/exchangeos/pkg/outbox/postgres"
+	"github.com/revenutech/exchangeos/internal/config"
+	"github.com/revenutech/exchangeos/internal/db"
+	"github.com/revenutech/exchangeos/internal/telemetry"
+	"github.com/revenutech/exchangeos/pkg/outbox"
+	outboxpg "github.com/revenutech/exchangeos/pkg/outbox/postgres"
 )
 
 const (

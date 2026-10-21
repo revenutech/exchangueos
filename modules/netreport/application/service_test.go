@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/modules/netreport/application"
-	"github.com/revenu-tech/exchangeos/modules/netreport/domain"
-	"github.com/revenu-tech/exchangeos/modules/netreport/infrastructure/memory"
+	"github.com/revenutech/exchangeos/modules/netreport/application"
+	"github.com/revenutech/exchangeos/modules/netreport/domain"
+	"github.com/revenutech/exchangeos/modules/netreport/infrastructure/memory"
 )
 
 func dec(s string) decimal.Decimal { return decimal.RequireFromString(s) }

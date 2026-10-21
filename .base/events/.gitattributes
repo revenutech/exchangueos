@@ -1,0 +1,7 @@
+# GERADO por `msgrepo sync exchangeos`. Não edite.
+#
+# Esta pasta inteira é projeção do repositório central de mensagens
+# (ledgeros/.base/aasc/iso20022/). Marcar como gerada mantém o diff de
+# PR legível — sem `-diff`, para que o conteúdo continue inspecionável
+# quando houver divergência a investigar.
+* linguist-generated=true

@@ -20,7 +20,7 @@ import (
 
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/pkg/pricing"
+	"github.com/revenutech/exchangeos/pkg/pricing"
 )
 
 // DefaultBaseURL is the public OLINDA endpoint. Override in tests.

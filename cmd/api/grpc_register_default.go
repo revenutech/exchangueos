@@ -5,7 +5,7 @@ package main
 import (
 	"google.golang.org/grpc"
 
-	"github.com/revenu-tech/exchangeos/internal/container"
+	"github.com/revenutech/exchangeos/internal/container"
 )
 
 // registerGeneratedServices is a no-op when proto/gen has not been produced.

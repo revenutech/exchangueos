@@ -48,3 +48,5 @@ Predecessor + Successor links keep flows navigable.
 
 - ✅ trade/RFLW.024.001.01 (Book FX Spot via CLS) — representative
 - ⏳ 84 remaining flows scheduled across the 6 sub-folders
+
+> **Nota de frescor 2026-09-17 (auditoria).** O bloco Layout acima omite a subpasta `risk/`, que existe (`risk/RFLW.024.060.01.md`). Incluí-la no layout.

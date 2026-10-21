@@ -18,63 +18,63 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/revenu-tech/exchangeos/internal/config"
-	"github.com/revenu-tech/exchangeos/internal/db"
-	"github.com/revenu-tech/exchangeos/internal/eventbus"
+	"github.com/revenutech/exchangeos/internal/config"
+	"github.com/revenutech/exchangeos/internal/db"
+	"github.com/revenutech/exchangeos/internal/eventbus"
 
-	quoteapp "github.com/revenu-tech/exchangeos/modules/quote/application"
-	qdomain "github.com/revenu-tech/exchangeos/modules/quote/domain"
-	quotemem "github.com/revenu-tech/exchangeos/modules/quote/infrastructure/memory"
-	quotepg "github.com/revenu-tech/exchangeos/modules/quote/infrastructure/postgres"
+	quoteapp "github.com/revenutech/exchangeos/modules/quote/application"
+	qdomain "github.com/revenutech/exchangeos/modules/quote/domain"
+	quotemem "github.com/revenutech/exchangeos/modules/quote/infrastructure/memory"
+	quotepg "github.com/revenutech/exchangeos/modules/quote/infrastructure/postgres"
 
-	refapp "github.com/revenu-tech/exchangeos/modules/refdata/application"
-	refdomain "github.com/revenu-tech/exchangeos/modules/refdata/domain"
-	refmem "github.com/revenu-tech/exchangeos/modules/refdata/infrastructure/memory"
-	refpg "github.com/revenu-tech/exchangeos/modules/refdata/infrastructure/postgres"
-	refpricing "github.com/revenu-tech/exchangeos/modules/refdata/infrastructure/pricing"
+	refapp "github.com/revenutech/exchangeos/modules/refdata/application"
+	refdomain "github.com/revenutech/exchangeos/modules/refdata/domain"
+	refmem "github.com/revenutech/exchangeos/modules/refdata/infrastructure/memory"
+	refpg "github.com/revenutech/exchangeos/modules/refdata/infrastructure/postgres"
+	refpricing "github.com/revenutech/exchangeos/modules/refdata/infrastructure/pricing"
 
-	tradeapp "github.com/revenu-tech/exchangeos/modules/trade/application"
-	trademem "github.com/revenu-tech/exchangeos/modules/trade/infrastructure/memory"
-	tradepg "github.com/revenu-tech/exchangeos/modules/trade/infrastructure/postgres"
+	tradeapp "github.com/revenutech/exchangeos/modules/trade/application"
+	trademem "github.com/revenutech/exchangeos/modules/trade/infrastructure/memory"
+	tradepg "github.com/revenutech/exchangeos/modules/trade/infrastructure/postgres"
 
-	clsapp "github.com/revenu-tech/exchangeos/modules/cls_settlement/application"
-	clsmem "github.com/revenu-tech/exchangeos/modules/cls_settlement/infrastructure/memory"
+	clsapp "github.com/revenutech/exchangeos/modules/cls_settlement/application"
+	clsmem "github.com/revenutech/exchangeos/modules/cls_settlement/infrastructure/memory"
 
-	netapp "github.com/revenu-tech/exchangeos/modules/netreport/application"
-	netmem "github.com/revenu-tech/exchangeos/modules/netreport/infrastructure/memory"
-	netpg "github.com/revenu-tech/exchangeos/modules/netreport/infrastructure/postgres"
+	netapp "github.com/revenutech/exchangeos/modules/netreport/application"
+	netmem "github.com/revenutech/exchangeos/modules/netreport/infrastructure/memory"
+	netpg "github.com/revenutech/exchangeos/modules/netreport/infrastructure/postgres"
 
-	payapp "github.com/revenu-tech/exchangeos/modules/payin/application"
-	paymem "github.com/revenu-tech/exchangeos/modules/payin/infrastructure/memory"
-	paypg "github.com/revenu-tech/exchangeos/modules/payin/infrastructure/postgres"
+	payapp "github.com/revenutech/exchangeos/modules/payin/application"
+	paymem "github.com/revenutech/exchangeos/modules/payin/infrastructure/memory"
+	paypg "github.com/revenutech/exchangeos/modules/payin/infrastructure/postgres"
 
-	posapp "github.com/revenu-tech/exchangeos/modules/position/application"
-	posmem "github.com/revenu-tech/exchangeos/modules/position/infrastructure/memory"
-	pospg "github.com/revenu-tech/exchangeos/modules/position/infrastructure/postgres"
+	posapp "github.com/revenutech/exchangeos/modules/position/application"
+	posmem "github.com/revenutech/exchangeos/modules/position/infrastructure/memory"
+	pospg "github.com/revenutech/exchangeos/modules/position/infrastructure/postgres"
 
-	riskapp "github.com/revenu-tech/exchangeos/modules/risk/application"
-	riskmem "github.com/revenu-tech/exchangeos/modules/risk/infrastructure/memory"
-	riskpg "github.com/revenu-tech/exchangeos/modules/risk/infrastructure/postgres"
+	riskapp "github.com/revenutech/exchangeos/modules/risk/application"
+	riskmem "github.com/revenutech/exchangeos/modules/risk/infrastructure/memory"
+	riskpg "github.com/revenutech/exchangeos/modules/risk/infrastructure/postgres"
 
-	clspg "github.com/revenu-tech/exchangeos/modules/cls_settlement/infrastructure/postgres"
+	clspg "github.com/revenutech/exchangeos/modules/cls_settlement/infrastructure/postgres"
 
-	adminapp "github.com/revenu-tech/exchangeos/modules/admin/application"
-	adminmem "github.com/revenu-tech/exchangeos/modules/admin/infrastructure/memory"
-	adminpg "github.com/revenu-tech/exchangeos/modules/admin/infrastructure/postgres"
+	adminapp "github.com/revenutech/exchangeos/modules/admin/application"
+	adminmem "github.com/revenutech/exchangeos/modules/admin/infrastructure/memory"
+	adminpg "github.com/revenutech/exchangeos/modules/admin/infrastructure/postgres"
 
-	complapp "github.com/revenu-tech/exchangeos/modules/compliance/application"
-	complmem "github.com/revenu-tech/exchangeos/modules/compliance/infrastructure/memory"
-	complpg "github.com/revenu-tech/exchangeos/modules/compliance/infrastructure/postgres"
+	complapp "github.com/revenutech/exchangeos/modules/compliance/application"
+	complmem "github.com/revenutech/exchangeos/modules/compliance/infrastructure/memory"
+	complpg "github.com/revenutech/exchangeos/modules/compliance/infrastructure/postgres"
 
-	cfcapapp "github.com/revenu-tech/exchangeos/modules/cfets_capture/application"
-	cfcapmem "github.com/revenu-tech/exchangeos/modules/cfets_capture/infrastructure/memory"
-	cfcappg "github.com/revenu-tech/exchangeos/modules/cfets_capture/infrastructure/postgres"
+	cfcapapp "github.com/revenutech/exchangeos/modules/cfets_capture/application"
+	cfcapmem "github.com/revenutech/exchangeos/modules/cfets_capture/infrastructure/memory"
+	cfcappg "github.com/revenutech/exchangeos/modules/cfets_capture/infrastructure/postgres"
 
-	cfconapp "github.com/revenu-tech/exchangeos/modules/cfets_confirmation/application"
-	cfconmem "github.com/revenu-tech/exchangeos/modules/cfets_confirmation/infrastructure/memory"
-	cfconpg "github.com/revenu-tech/exchangeos/modules/cfets_confirmation/infrastructure/postgres"
+	cfconapp "github.com/revenutech/exchangeos/modules/cfets_confirmation/application"
+	cfconmem "github.com/revenutech/exchangeos/modules/cfets_confirmation/infrastructure/memory"
+	cfconpg "github.com/revenutech/exchangeos/modules/cfets_confirmation/infrastructure/postgres"
 
-	"github.com/revenu-tech/exchangeos/pkg/bacen"
+	"github.com/revenutech/exchangeos/pkg/bacen"
 )
 
 // Container holds all application services + their dependencies.
@@ -82,21 +82,21 @@ type Container struct {
 	Config *config.Config
 	Pool   *pgxpool.Pool // non-nil when Backend == "postgres"
 
-	RefData    *refapp.Service
-	Quote      *quoteapp.Service
-	Trade      *tradeapp.Service
-	Settlement *clsapp.Service
-	PayIn      *payapp.Service
-	NetReport  *netapp.Service
-	Risk       *riskapp.Service
-	Position   *posapp.Service
-	Compliance       *complapp.Service
-	Admin            *adminapp.Service
-	CFETSCapture     *cfcapapp.Service
+	RefData           *refapp.Service
+	Quote             *quoteapp.Service
+	Trade             *tradeapp.Service
+	Settlement        *clsapp.Service
+	PayIn             *payapp.Service
+	NetReport         *netapp.Service
+	Risk              *riskapp.Service
+	Position          *posapp.Service
+	Compliance        *complapp.Service
+	Admin             *adminapp.Service
+	CFETSCapture      *cfcapapp.Service
 	CFETSConfirmation *cfconapp.Service
-	Pricing          quoteapp.PricingEngine
-	SpotBook   *refdomain.SpotRateBook // exposed so worker feeders can publish rates
-	EventBus   *eventbus.Bus           // in-process pub/sub (temporary; Kafka outbox in MS-023g)
+	Pricing           quoteapp.PricingEngine
+	SpotBook          *refdomain.SpotRateBook // exposed so worker feeders can publish rates
+	EventBus          *eventbus.Bus           // in-process pub/sub (temporary; Kafka outbox in MS-023g)
 
 	// Memory-only handles kept for tests/bootstrap convenience (nil if backend != memory).
 	MemRefDataCurrencies *refmem.CurrencyRepo
@@ -165,16 +165,27 @@ func (c *Container) wireEventHandlers() {
 			if err != nil {
 				return tradeapp.AcceptedQuoteView{}, err
 			}
+			// Every field below comes off the aggregate. This adapter used to
+			// substitute literals for the three the Quote did not carry —
+			// BuyerBIC "DEUTDEFF", SellerBIC "CHASUS33", Venue "CLS" — and take
+			// q.Mid() as the deal rate because there was no side to choose
+			// bid-vs-ask with. The Quote now carries counterparties, side and
+			// venue, so nothing is inferred here.
+			//
+			// Buyer/seller and the deal rate are derived by the aggregate rather
+			// than assembled here: which party buys the base and whether the
+			// trade prints on the bid or the ask are both consequences of the
+			// side, and that rule belongs in the domain.
 			return tradeapp.AcceptedQuoteView{
 				TenantID:    q.TenantID(),
-				BuyerBIC:    "DEUTDEFF",  // TODO: carry counterparty BICs on the Quote aggregate
-				SellerBIC:   "CHASUS33",  // (placeholder; safe for dev)
+				BuyerBIC:    q.BuyerBIC(),
+				SellerBIC:   q.SellerBIC(),
 				BaseCCY:     q.BaseCCY(),
 				QuoteCCY:    q.QuoteCCY(),
 				NotionalCCY: q.NotionalCCY(),
 				Notional:    q.Notional(),
-				DealRate:    q.Mid(),
-				Venue:       "CLS",
+				DealRate:    q.DealRate(),
+				Venue:       q.Venue(),
 				AcceptedAt:  time.Now().UTC(),
 			}, nil
 		},
@@ -270,6 +281,9 @@ func (c *Container) wireComplianceAdmin() {
 		complmem.NewIOFRepo(),
 		complmem.NewReportRepo(),
 		complmem.NewScreeningRepo(),
+		// Fail-closed até que um provedor real de listas (OFAC/UN/EU/COAF)
+		// seja ligado: screening errors out em vez de liberar a contraparte.
+		complapp.UnavailableScreener{},
 	)
 	c.Admin = adminapp.NewService(adminmem.NewEventRepo(), adminmem.NewEODJobRepo())
 
@@ -330,6 +344,9 @@ func (c *Container) wireComplianceAdminPostgres(pool *pgxpool.Pool) {
 		complpg.NewIOFRepo(pool),
 		complpg.NewReportRepo(pool),
 		complpg.NewScreeningRepo(pool),
+		// Fail-closed até que um provedor real de listas (OFAC/UN/EU/COAF)
+		// seja ligado: screening errors out em vez de liberar a contraparte.
+		complapp.UnavailableScreener{},
 	)
 	c.Admin = adminapp.NewService(adminpg.NewEventRepo(pool), adminpg.NewEODJobRepo(pool))
 

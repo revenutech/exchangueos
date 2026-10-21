@@ -3,8 +3,8 @@ package eventbus
 import (
 	"context"
 
-	qdomain "github.com/revenu-tech/exchangeos/modules/quote/domain"
-	tdomain "github.com/revenu-tech/exchangeos/modules/trade/domain"
+	qdomain "github.com/revenutech/exchangeos/modules/quote/domain"
+	tdomain "github.com/revenutech/exchangeos/modules/trade/domain"
 )
 
 // QuotePublisher adapts the in-process Bus to quoteapp.EventPublisher.

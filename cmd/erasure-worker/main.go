@@ -32,7 +32,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/revenu-tech/exchangeos/internal/erasure"
+	"github.com/revenutech/exchangeos/internal/erasure"
 )
 
 // Required approver roles for --execute. Matches the AC for MS-024a:

@@ -8,8 +8,8 @@ import (
 
 	"github.com/shopspring/decimal"
 
-	refdomain "github.com/revenu-tech/exchangeos/modules/refdata/domain"
-	refpricing "github.com/revenu-tech/exchangeos/modules/refdata/infrastructure/pricing"
+	refdomain "github.com/revenutech/exchangeos/modules/refdata/domain"
+	refpricing "github.com/revenutech/exchangeos/modules/refdata/infrastructure/pricing"
 )
 
 func dec(s string) decimal.Decimal { return decimal.RequireFromString(s) }

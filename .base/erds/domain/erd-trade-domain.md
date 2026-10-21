@@ -82,7 +82,7 @@ erDiagram
     ACTORS {
         uuid    actor_id PK
         uuid    tenant_id FK
-        string  external_sub         "OIDC sub from Identos/Keycloak"
+        string  external_sub         "OIDC sub from IdentityOS/Keycloak"
         string  type                 "HUMAN | SERVICE"
         string  display_name
         string  status

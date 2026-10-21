@@ -3,7 +3,7 @@
 > **Versao:** `4.23.0` ([version.md](./version.md))
 > **Status:** 🚀 **MS-023 DELIVERED (26/26) — MS-024 IN PROGRESS: 4 delivered (024a/e/h/l), 9 backlog**. Sprint added: LGPD Art. 18 IV executor wired (`cmd/erasure-worker` + JSON Schema + pgx/audit/outbox adapters); 6 BCs migrated to postgres (full 14-BC durability); BACEN classifier 99.3% accuracy on 144-phrase golden corpus + CI drift guard; CRDB hub TLS cross-repo scaffold prepared locally (`feat/exchangeos-module` `b3d0689`, push pending cockroachdb remote config). 1 known gap on 024e (49 of 95 BACEN codes pending Compliance signoff). (CHANGELOG 4.23.0)
 > **Modulo:** ExchangeOS — Standalone FX Module
-> **Portas:** `:8094 HTTP / :9094 gRPC`
+> **Portas:** `:8084 HTTP / :9084 gRPC`
 > **Date:** 2026-06-18
 
 ## Visao Geral
@@ -24,7 +24,7 @@ ExchangeOS e o modulo canonico de **Foreign Exchange (FX)** da Revenu Platform �
 | [05](05-integrations/index.md) | **Integrations** | CLS Bank protocol, CFETS PTPP, SWIFT MT bridge, AccountOS + PaymentOS + 13 modulos native sync | [→](05-integrations/index.md) |
 | [06](06-infrastructure/index.md) | **Infrastructure** | Docker (distroless), K8s (GKE Autopilot), Terraform GCP, Vault, OTel, deploy local (shared CRDB hub TLS), cross-platform tooling | [→](06-infrastructure/index.md) |
 | [07](07-cicd/index.md) | **CI/CD** | GitHub Actions (8 workflows), Git flow, SLSA L3, Cosign keyless, pre-commit HARD enforcement, cost reporting | [→](07-cicd/index.md) |
-| [08](08-security/index.md) | **Security** | IAM (Identos + KeycloakOS + Vault SPI), 8 docs ISO 27000-27005, threat model STRIDE+DREAD, 93 Annex A controls mapeados | [→](08-security/index.md) |
+| [08](08-security/index.md) | **Security** | IAM (IdentityOS + KeycloakOS + Vault SPI), 8 docs ISO 27000-27005, threat model STRIDE+DREAD, 93 Annex A controls mapeados | [→](08-security/index.md) |
 | [09](09-compliance/index.md) | **Compliance** | BACEN Lei 14.286/2021 + 8 Resolucoes (277-561) + Circ 3.978 PLD/FT + Circ 3.690 (95 codigos) + IOF Decreto 12.499 + VASP + eFX 2026 | [→](09-compliance/index.md) |
 | [10](10-quality/index.md) | **Quality** | TDD workflow Red-Green-Refactor, ~290 CRUD tests, 10 E2E cenarios, 30 security gates locais, SLI/SLO, performance baseline | [→](10-quality/index.md) |
 | [11](11-sdd/index.md) | **SDD** | Spec-Driven Development sub-framework (out-of-scope MVP) | [→](11-sdd/index.md) |

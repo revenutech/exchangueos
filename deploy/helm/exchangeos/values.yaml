@@ -16,8 +16,8 @@ binaries:
       repository: exchangeos-api
       tag: latest
     ports:
-      http: 8094
-      grpc: 9094
+      http: 8084
+      grpc: 9084
     resources:
       requests: { cpu: 200m, memory: 256Mi }
       limits:   { cpu: 2,    memory: 1Gi }
@@ -121,7 +121,7 @@ serviceAccount:
 observability:
   prometheus:
     scrape: true
-    port: 8094
+    port: 8084
     path: /metrics
 
 # Argo Rollouts canary spec (used by templates/rollout.yaml when binaries.api.runAs == "rollout").

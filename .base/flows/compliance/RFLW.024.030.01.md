@@ -86,3 +86,5 @@ flowchart LR
 - Metric `compliance.iof.computed` histogram (label: op_type)
 - Metric `compliance.screening.hits` counter (label: risk_level)
 - Alert: ScreeningResult HIGH → PagerDuty critical
+
+> **Nota de frescor 2026-09-17 (auditoria).** O número "95 nature codes (Circ 3.690)" diverge da fonte de verdade em código: `data/bacen/nature-codes-circ-3690-v20260101.csv` tem 46 linhas e `pkg/bacen/codes_full.go` declara `// Count: 46` (46 entradas em `AllNatureCodes`). O repo é internamente inconsistente (`doc.go`/`classifier.go` também dizem 95). Reconciliar: ou o catálogo está incompleto (46) e o CSV deve ser regenerado com os 95 da Circ 3.690, ou o número 95 está errado — pende do dono do domínio.

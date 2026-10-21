@@ -4,10 +4,10 @@ version: '3'
 # Mirror via Makefile delegation + PowerShell scripts (FX-XOS-* patterns).
 
 vars:
-  MODULE: github.com/revenu-tech/exchangeos
+  MODULE: github.com/revenutech/exchangeos
   GO_VERSION: 1.25.1
-  HTTP_PORT: 8094
-  GRPC_PORT: 9094
+  HTTP_PORT: 8084
+  GRPC_PORT: 9084
   CRDB_HUB: cockroachdb/modules/exchangeos
   IMAGE_REGISTRY: gcr.io/revenu-platform
   IMAGE_TAG:
@@ -106,7 +106,7 @@ tasks:
   # Run (local)
   # ─────────────────────────────────────────────────────────────
   run:api:
-    desc: Run API server (HTTP :8094 + gRPC :9094)
+    desc: Run API server (HTTP :8084 + gRPC :9084)
     deps: [build:api]
     cmds:
       - ./bin/exchangeos-api

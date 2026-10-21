@@ -12,7 +12,7 @@ keywords:
   - cockroachdb
 home: https://revenu.tech/exchangeos
 sources:
-  - https://github.com/revenu-tech/exchangeos
+  - https://github.com/revenutech/exchangeos
 maintainers:
   - name: Platform Team
     email: tech@revenu.com.br

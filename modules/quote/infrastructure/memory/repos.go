@@ -7,15 +7,15 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/revenu-tech/exchangeos/modules/quote/application"
-	"github.com/revenu-tech/exchangeos/modules/quote/domain"
+	"github.com/revenutech/exchangeos/modules/quote/application"
+	"github.com/revenutech/exchangeos/modules/quote/domain"
 )
 
 // ─── QuoteRepo ─────────────────────────────────────────────────────────────
 
 type QuoteRepo struct {
-	mu    sync.RWMutex
-	byID  map[uuid.UUID]*domain.Quote
+	mu   sync.RWMutex
+	byID map[uuid.UUID]*domain.Quote
 }
 
 func NewQuoteRepo() *QuoteRepo { return &QuoteRepo{byID: make(map[uuid.UUID]*domain.Quote)} }

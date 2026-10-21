@@ -85,6 +85,6 @@ task db:reset CONFIRM=yes # destructive — last resort only
 | Vault | Security ops | Critical — secrets unreadable |
 | Kafka cluster | Platform messaging | Degraded — outbox queues build up |
 | KrakenD API gateway | Platform networking | Critical — entry point |
-| Identos + KeycloakOS | IAM team | Critical — auth fails |
+| IdentityOS + KeycloakOS | IAM team | Critical — auth fails |
 | OTel Collector → Tempo/Mimir/Loki | Observability | Degraded — flying blind |
 | GCP CloudDNS | Platform networking | Critical — DNS resolution fails |

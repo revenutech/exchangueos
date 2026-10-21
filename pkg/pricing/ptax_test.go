@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/revenu-tech/exchangeos/pkg/pricing"
+	"github.com/revenutech/exchangeos/pkg/pricing"
 )
 
 func validPTAX(t *testing.T) pricing.PTAX {

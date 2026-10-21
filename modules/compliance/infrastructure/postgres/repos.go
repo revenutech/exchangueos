@@ -26,8 +26,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/modules/compliance/application"
-	"github.com/revenu-tech/exchangeos/modules/compliance/domain"
+	"github.com/revenutech/exchangeos/modules/compliance/application"
+	"github.com/revenutech/exchangeos/modules/compliance/domain"
 )
 
 // Compile-time interface satisfaction checks.

@@ -51,10 +51,10 @@ COPY --from=builder /out/healthcheck /app/healthcheck
 # Distroless nonroot UID/GID = 65532
 USER nonroot:nonroot
 
-EXPOSE 8094 9094
+EXPOSE 8084 9084
 
 ENV EXCHANGEOS_ENV=dev \
-    EXCHANGEOS_HTTP_PORT=8094 \
-    EXCHANGEOS_GRPC_PORT=9094
+    EXCHANGEOS_HTTP_PORT=8084 \
+    EXCHANGEOS_GRPC_PORT=9084
 
 ENTRYPOINT ["/app/exchangeos-api"]

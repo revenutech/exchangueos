@@ -12,7 +12,7 @@
 
 ## Why this milestone
 
-`cmd/cred-rotator/` has a skeleton + the 14-secret catalogue is documented in `docs/integrations/identos.md`. The actual monthly rotation loop against Vault — generate new client_secret, push to Vault, push to Identos/KeycloakOS, signal pods to reload via SIGHUP or rolling restart, alert on failure — is not implemented.
+`cmd/cred-rotator/` has a skeleton + the 14-secret catalogue is documented in `docs/integrations/identityos.md`. The actual monthly rotation loop against Vault — generate new client_secret, push to Vault, push to IdentityOS/KeycloakOS, signal pods to reload via SIGHUP or rolling restart, alert on failure — is not implemented.
 
 ## Description
 
@@ -45,6 +45,6 @@ Build the real cron-driven rotator that orchestrates monthly OAuth2 `client_secr
 
 ## Cross-References
 
-- `docs/integrations/identos.md` — 14-secret catalogue
+- `docs/integrations/identityos.md` — 14-secret catalogue
 - `docs/security/iso27001-controls-mapping.md` controls 5.16, 5.17, 8.5
 - `docs/security/sod-matrix.md` — automated rotation actor role

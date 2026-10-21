@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/revenu-tech/exchangeos/modules/cls_settlement/domain"
+	"github.com/revenutech/exchangeos/modules/cls_settlement/domain"
 )
 
 func TestOpenCycle_AnchorDeadlinesToCET(t *testing.T) {

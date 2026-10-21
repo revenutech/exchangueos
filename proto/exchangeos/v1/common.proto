@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package exchangeos.v1;
 
-option go_package = "github.com/revenu-tech/exchangeos/proto/gen/exchangeos/v1;exchangeosv1";
+option go_package = "github.com/revenutech/exchangeos/proto/gen/exchangeos/v1;exchangeosv1";
 
 import "google/protobuf/timestamp.proto";
 

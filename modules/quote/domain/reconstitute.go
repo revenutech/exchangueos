@@ -14,6 +14,8 @@ import (
 // ReconstituteQuote rebuilds a Quote with all persisted state including version + id.
 func ReconstituteQuote(
 	id, tenantID uuid.UUID,
+	requesterBIC, providerBIC string,
+	side Side,
 	baseCCY, quoteCCY string,
 	notional decimal.Decimal,
 	notionalCCY string,
@@ -23,18 +25,21 @@ func ReconstituteQuote(
 	version int,
 ) *Quote {
 	return &Quote{
-		id:          id,
-		tenantID:    tenantID,
-		baseCCY:     baseCCY,
-		quoteCCY:    quoteCCY,
-		notional:    notional,
-		notionalCCY: notionalCCY,
-		bid:         bid,
-		ask:         ask,
-		validFrom:   validFrom.UTC(),
-		validTo:     validTo.UTC(),
-		venue:       venue,
-		version:     version,
+		id:           id,
+		tenantID:     tenantID,
+		requesterBIC: requesterBIC,
+		providerBIC:  providerBIC,
+		side:         side,
+		baseCCY:      baseCCY,
+		quoteCCY:     quoteCCY,
+		notional:     notional,
+		notionalCCY:  notionalCCY,
+		bid:          bid,
+		ask:          ask,
+		validFrom:    validFrom.UTC(),
+		validTo:      validTo.UTC(),
+		venue:        venue,
+		version:      version,
 	}
 }
 

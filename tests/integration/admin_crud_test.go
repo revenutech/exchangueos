@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const defaultBase = "http://localhost:8094"
+const defaultBase = "http://localhost:8084"
 
 func baseURL() string {
 	if v := os.Getenv("EXCHANGEOS_BASE_URL"); v != "" {

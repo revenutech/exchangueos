@@ -19,7 +19,7 @@
 | `riskos-orchestrator.md` | TODO | RiskOS integration (credit limit + NOP + VaR) |
 | `complos-orchestrator.md` | TODO | ComplOS integration (sanctions + AML) |
 | `treasuryos-orchestrator.md` | TODO | TreasuryOS integration (nostro + exposure) |
-| `identos-orchestrator.md` | TODO | Identos integration (AuthZ Policy + 9 RPCs) |
+| `identityos-orchestrator.md` | TODO | IdentityOS integration (AuthZ Policy + 9 RPCs) |
 | `keycloakos-orchestrator.md` | TODO | KeycloakOS integration (realm + 14 clients + Vault SPI) |
 | `onboardos-integration.md` | TODO | OnboardOS Kafka events subscribe (kyc.completed) |
 | `billingos-integration.md` | TODO | BillingOS Kafka events publish (trade.confirmed) |

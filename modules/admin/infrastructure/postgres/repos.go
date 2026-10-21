@@ -15,8 +15,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/revenu-tech/exchangeos/modules/admin/application"
-	"github.com/revenu-tech/exchangeos/modules/admin/domain"
+	"github.com/revenutech/exchangeos/modules/admin/application"
+	"github.com/revenutech/exchangeos/modules/admin/domain"
 )
 
 var (

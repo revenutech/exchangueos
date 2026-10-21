@@ -17,8 +17,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
 
-	"github.com/revenu-tech/exchangeos/modules/netreport/application"
-	"github.com/revenu-tech/exchangeos/modules/netreport/domain"
+	"github.com/revenutech/exchangeos/modules/netreport/application"
+	"github.com/revenutech/exchangeos/modules/netreport/domain"
 )
 
 var _ application.Repository = (*NetReportRepo)(nil)

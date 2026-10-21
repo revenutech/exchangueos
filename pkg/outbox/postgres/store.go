@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/revenu-tech/exchangeos/pkg/outbox"
+	"github.com/revenutech/exchangeos/pkg/outbox"
 )
 
 type Store struct{ pool *pgxpool.Pool }

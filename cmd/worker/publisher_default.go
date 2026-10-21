@@ -7,7 +7,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/revenu-tech/exchangeos/pkg/outbox"
+	"github.com/revenutech/exchangeos/pkg/outbox"
 )
 
 // newPublisher (default tag): logs each publish and returns nil. Use -tags kafka

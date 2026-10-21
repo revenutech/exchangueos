@@ -5,15 +5,16 @@ package api
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/revenu-tech/exchangeos/modules/risk/application"
-	"github.com/revenu-tech/exchangeos/modules/risk/domain"
-	pb "github.com/revenu-tech/exchangeos/proto/gen/exchangeos/v1"
+	"github.com/revenutech/exchangeos/modules/risk/application"
+	"github.com/revenutech/exchangeos/modules/risk/domain"
+	pb "github.com/revenutech/exchangeos/proto/gen/exchangeos/v1"
 )
 
 type GRPCServer struct {
@@ -35,16 +36,29 @@ func (s *GRPCServer) CheckLimit(ctx context.Context, req *pb.CheckLimitRequest) 
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "proposed_exposure.amount: %v", err)
 	}
-	// Default to LimitCounterparty / scope = trade_id placeholder; proto carries no scope yet.
-	// Real wiring should derive scope from trade context — TODO when proto adds limit_type/scope fields.
-	res, err := s.svc.CheckLimit(ctx, tid, domain.LimitCounterparty, req.GetTradeId(), exposure)
+	// limit_type and scope used to be hardcoded to LimitCounterparty and the
+	// trade_id. A trade id is not a limit scope — limits are configured per
+	// counterparty BIC, currency or tenor — so repo.Find never matched and the
+	// check returned NotFound for every call. RN_FX_015 was not enforced through
+	// this RPC at all.
+	limitType, err := parseLimitType(req.GetLimitType())
+	if err != nil {
+		return nil, err
+	}
+	scope := strings.TrimSpace(req.GetScope())
+	if scope == "" {
+		return nil, status.Error(codes.InvalidArgument,
+			"scope is required (counterparty BIC, currency or tenor the limit applies to)")
+	}
+
+	res, err := s.svc.CheckLimit(ctx, tid, limitType, scope, exposure)
 	if err != nil {
 		return nil, mapErr(err)
 	}
 	return &pb.CheckLimitResponse{
-		Allowed:         res.Allowed,
-		BreachedLimits:  res.BreachedLimits,
-		Explanation:     res.Explanation,
+		Allowed:        res.Allowed,
+		BreachedLimits: res.BreachedLimits,
+		Explanation:    res.Explanation,
 	}, nil
 }
 
@@ -126,5 +140,28 @@ func mapErr(err error) error {
 		return status.Error(codes.ResourceExhausted, err.Error())
 	default:
 		return status.Error(codes.Internal, err.Error())
+	}
+}
+
+// parseLimitType maps the wire value onto a domain LimitType. An unrecognised
+// value is rejected rather than defaulted: silently checking the wrong limit is
+// worse than refusing the call.
+func parseLimitType(v string) (domain.LimitType, error) {
+	switch domain.LimitType(strings.ToUpper(strings.TrimSpace(v))) {
+	case domain.LimitCounterparty:
+		return domain.LimitCounterparty, nil
+	case domain.LimitCurrency:
+		return domain.LimitCurrency, nil
+	case domain.LimitTenor:
+		return domain.LimitTenor, nil
+	case domain.LimitDV01:
+		return domain.LimitDV01, nil
+	case domain.LimitVaR:
+		return domain.LimitVaR, nil
+	case "":
+		return "", status.Error(codes.InvalidArgument,
+			"limit_type is required (COUNTERPARTY, CURRENCY, TENOR, DV01 or VAR)")
+	default:
+		return "", status.Errorf(codes.InvalidArgument, "unknown limit_type %q", v)
 	}
 }

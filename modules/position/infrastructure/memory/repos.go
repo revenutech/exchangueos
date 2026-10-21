@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/revenu-tech/exchangeos/modules/position/application"
-	"github.com/revenu-tech/exchangeos/modules/position/domain"
+	"github.com/revenutech/exchangeos/modules/position/application"
+	"github.com/revenutech/exchangeos/modules/position/domain"
 )
 
 type repoKey struct {
