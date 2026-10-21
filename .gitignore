@@ -8,9 +8,9 @@ coverage.*
 *.exe
 # `go build ./cmd/X` (sem -o) deixa o binário na raiz com o nome do
 # diretório — o Taskfile escreve em bin/exchangeos-X, mas o build cru não
-# passa por lá. Já achamos api/erasure-worker/migrator/worker TRACKED no
-# índice (13–33 MB cada); cobertos aqui para não repetir, mas ainda
-# precisam sair do índice (decisão do dono, `git rm --cached`).
+# passa por lá. api/erasure-worker/migrator/worker chegaram a estar TRACKED
+# no índice (13–33 MB cada); saíram com `git rm --cached` (decisão do dono,
+# 2026-10-21) e ficam cobertos aqui para não repetir.
 /api
 /worker
 /migrator
