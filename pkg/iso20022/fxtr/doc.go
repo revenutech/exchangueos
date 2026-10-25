@@ -3,7 +3,7 @@
 // Coverage status (MS-023a):
 //
 //	fxtr.008.001.07  ✅ FXTradeNotificationV07         (CLS settlement queue ack)
-//	fxtr.013.001.04  ✅ FXTradePositionStatementV04    (CLS per-CCY positions)
+//	fxtr.013.001.03  ✅ ForeignExchangeTradeWithdrawalNotificationV03 (CLS withdrawal)
 //	fxtr.014.001.05  ✅ FXTradeCaptureConfirmationV05  (CLS — primary spot/forward)
 //	fxtr.015.001.05  ✅ FXTradeAmendmentConfirmationV05 (CLS)
 //	fxtr.016.001.05  ✅ FXTradeCancellationConfirmationV05 (CLS)
