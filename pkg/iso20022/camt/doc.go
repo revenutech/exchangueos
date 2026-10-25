@@ -5,7 +5,8 @@
 //	camt.061.001.01  PayInScheduleV01           — CLS PayIn obligations per CCY
 //	camt.062.001.01  PayInScheduleAckV01        — member ack of PayIn schedule
 //	camt.063.001.01  PayInScheduleCxlV01        — schedule cancellation
-//	camt.088.001.02  NetReportV02               — end-of-cycle net settlement summary
+//	camt.088.001.03  NetReportV03               — end-of-cycle net settlement summary (official schema)
+//	camt.088.001.02  NetReportV02               — NON-CONFORMANT, kept as anchor; see camt.088 block below
 package camt
 
 import (

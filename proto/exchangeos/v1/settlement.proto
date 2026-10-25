@@ -71,9 +71,9 @@ message SubmitPayInResponse {
 message GetNetReportRequest {
   TenantContext tenant = 1;
   string cycle_id = 2;
-  // CLS settlement member the report is issued for (BIC). camt.088 carries it
-  // in <Mmbr>; a net report that does not say whose position it is cannot be
-  // acted on.
+  // CLS settlement member the report is issued for (BIC). camt.088.001.03
+  // carries it as <NetSvcPtcptId><AnyBIC>; a net report that does not say
+  // whose position it is cannot be acted on.
   string member_bic = 3;
 }
 
