@@ -23,9 +23,9 @@ func Default() *Registry {
 	r.MustRegister(Descriptor{Organisation: OrgCLS, Domain: BusinessFXTR, MessageDef: "008", Variant: "001", Version: "07",
 		XSDSourceURL: "https://www.iso20022.org/sites/default/files/documents/messages/fxtr/schemas/fxtr.008.001.07.xsd",
 		Description:  "Foreign Exchange Trade Notification (CLS settlement queue)"})
-	r.MustRegister(Descriptor{Organisation: OrgCLS, Domain: BusinessFXTR, MessageDef: "013", Variant: "001", Version: "04",
-		XSDSourceURL: "https://www.iso20022.org/sites/default/files/documents/messages/fxtr/schemas/fxtr.013.001.04.xsd",
-		Description:  "Trade Position Statement (CLS)"})
+	r.MustRegister(Descriptor{Organisation: OrgCLS, Domain: BusinessFXTR, MessageDef: "013", Variant: "001", Version: "03",
+		XSDSourceURL: "https://www.iso20022.org/sites/default/files/documents/messages/fxtr/schemas/fxtr.013.001.03.xsd",
+		Description:  "Trade Withdrawal Notification (CLS)"})
 	r.MustRegister(Descriptor{Organisation: OrgCLS, Domain: BusinessFXTR, MessageDef: "014", Variant: "001", Version: "05",
 		XSDSourceURL: "https://www.iso20022.org/sites/default/files/documents/messages/fxtr/schemas/fxtr.014.001.05.xsd",
 		Description:  "FX Trade Capture Confirmation (CLS) — primary spot/forward confirmation"})

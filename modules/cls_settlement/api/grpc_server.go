@@ -1,5 +1,3 @@
-//go:build grpcgen
-
 package api
 
 import (

@@ -156,23 +156,24 @@ func buildGRPC(cfg *config.Config, logger *zap.Logger, di *container.Container) 
 		reflection.Register(srv)
 	}
 
-	// Bounded-context service registration. Gated by build tag `grpcgen`:
-	//   default build (no tag)         → no-op (grpc_register_default.go)
-	//   build with -tags grpcgen       → registers all generated services (grpc_register_proto.go)
+	// Bounded-context service registration. Mix of unconditional + build-gated:
+	//   always                         → SettlementService (grpc_register_settlement.go)
+	//   default build (no tag)         → no-op for the rest (grpc_register_default.go)
+	//   build with -tags grpcgen       → registers the other 7 services (grpc_register_proto.go)
 	// Requires `task proto:gen` to have produced proto/gen/exchangeos/v1/*.pb.go.
+	registerSettlementService(srv, di)
 	registerGeneratedServices(srv, di)
 
 	logger.Info("grpc services registered",
 		zap.Bool("reflection", cfg.GRPC.Reflection),
 		zap.String("note", "use -tags grpcgen after `task proto:gen` to bind bounded-context services"),
 	)
-	// Tracking (registered when grpcgen tag is on):
 	// Tracking:
-	//   MS-023b — QuoteServiceServer, RefDataServiceServer
-	//   MS-023c — TradeServiceServer
-	//   MS-023d — SettlementServiceServer
-	//   MS-023e — RiskServiceServer, PositionServiceServer
-	//   MS-023f — ComplianceServiceServer, AdminServiceServer
+	//   MS-023b — QuoteServiceServer, RefDataServiceServer (behind -tags grpcgen)
+	//   MS-023c — TradeServiceServer (behind -tags grpcgen)
+	//   MS-023d — SettlementServiceServer (unconditional since MS-079 7.5)
+	//   MS-023e — RiskServiceServer, PositionServiceServer (behind -tags grpcgen)
+	//   MS-023f — ComplianceServiceServer, AdminServiceServer (behind -tags grpcgen)
 	return srv, ln, nil
 }
 
@@ -205,12 +206,12 @@ func buildHTTP(cfg *config.Config, logger *zap.Logger, di *container.Container) 
 		out := make([]gin.H, 0, len(list))
 		for _, cur := range list {
 			out = append(out, gin.H{
-				"code":            cur.Code(),
-				"name":            cur.Name(),
-				"minor_units":     cur.MinorUnits(),
-				"cls_eligible":    cur.IsCLSEligible(),
-				"cfets_eligible":  cur.IsCFETSEligible(),
-				"active":          cur.IsActive(),
+				"code":           cur.Code(),
+				"name":           cur.Name(),
+				"minor_units":    cur.MinorUnits(),
+				"cls_eligible":   cur.IsCLSEligible(),
+				"cfets_eligible": cur.IsCFETSEligible(),
+				"active":         cur.IsActive(),
 			})
 		}
 		c.JSON(http.StatusOK, gin.H{"currencies": out, "count": len(out)})
@@ -229,19 +230,19 @@ func buildHTTP(cfg *config.Config, logger *zap.Logger, di *container.Container) 
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
-			"trade_id":         t.ID(),
-			"tenant_id":        t.TenantID(),
-			"status":           t.Status(),
-			"venue":            t.Venue(),
-			"type":             t.Type(),
-			"bought_currency":  t.BoughtCurrency(),
-			"bought_amount":    t.BoughtAmount().String(),
-			"sold_currency":    t.SoldCurrency(),
-			"sold_amount":      t.SoldAmount().String(),
-			"deal_rate":        t.DealRate().String(),
-			"trade_date":       t.TradeDate(),
-			"value_date":       t.ValueDate(),
-			"version":          t.Version(),
+			"trade_id":        t.ID(),
+			"tenant_id":       t.TenantID(),
+			"status":          t.Status(),
+			"venue":           t.Venue(),
+			"type":            t.Type(),
+			"bought_currency": t.BoughtCurrency(),
+			"bought_amount":   t.BoughtAmount().String(),
+			"sold_currency":   t.SoldCurrency(),
+			"sold_amount":     t.SoldAmount().String(),
+			"deal_rate":       t.DealRate().String(),
+			"trade_date":      t.TradeDate(),
+			"value_date":      t.ValueDate(),
+			"version":         t.Version(),
 		})
 	})
 
