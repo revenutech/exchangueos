@@ -13,6 +13,12 @@
 - `active/` — Milestones in progress (max 2 ativos por sprint window)
 - `delivered/` — Completed milestones (immutable, audit trail)
 
+## Cross-repo milestones (PLN-N13)
+
+Milestones de propriedade de outro módulo cuja entrega vive no código do exchangeos. O ✅ nasce no plano central do módulo dono; aqui só a referência cruzada.
+
+- `ledgeros:RPLN.050.001.01` **MS-079 7.5 parte 2** — camt.088 passa a emitir o schema real V03 pelo `GetNetReport`. Merge local em `develop`: `3d9958b` (2026-10-26).
+
 ## Milestone File Convention
 
 Cada arquivo segue:
