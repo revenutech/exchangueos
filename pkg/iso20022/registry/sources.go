@@ -98,8 +98,8 @@ func Default() *Registry {
 	r.MustRegister(Descriptor{Organisation: OrgCLS, Domain: BusinessCAMT, MessageDef: "063", Variant: "001", Version: "01",
 		XSDSourceURL: "https://www.iso20022.org/sites/default/files/documents/messages/camt/schemas/camt.063.001.01.xsd",
 		Description:  "camt.063 — PayIn Schedule Cancellation"})
-	r.MustRegister(Descriptor{Organisation: OrgCLS, Domain: BusinessCAMT, MessageDef: "088", Variant: "001", Version: "02",
-		XSDSourceURL: "https://www.iso20022.org/sites/default/files/documents/messages/camt/schemas/camt.088.001.02.xsd",
+	r.MustRegister(Descriptor{Organisation: OrgCLS, Domain: BusinessCAMT, MessageDef: "088", Variant: "001", Version: "03",
+		XSDSourceURL: "https://www.iso20022.org/sites/default/files/documents/messages/camt/schemas/camt.088.001.03.xsd",
 		Description:  "camt.088 — Net Report (CLS settlement summary)"})
 
 	// ── reda CLS (2) ────────────────────────────────────────────────────

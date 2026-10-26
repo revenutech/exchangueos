@@ -2,9 +2,7 @@ package api
 
 import (
 	"context"
-	"encoding/xml"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -17,10 +15,8 @@ import (
 	clsapp "github.com/revenutech/exchangeos/modules/cls_settlement/application"
 	clsdomain "github.com/revenutech/exchangeos/modules/cls_settlement/domain"
 	netapp "github.com/revenutech/exchangeos/modules/netreport/application"
-	netdomain "github.com/revenutech/exchangeos/modules/netreport/domain"
 	payapp "github.com/revenutech/exchangeos/modules/payin/application"
 	paydomain "github.com/revenutech/exchangeos/modules/payin/domain"
-	"github.com/revenutech/exchangeos/pkg/iso20022/camt"
 	pb "github.com/revenutech/exchangeos/proto/gen/exchangeos/v1"
 )
 
@@ -95,27 +91,17 @@ func (s *GRPCServer) SubmitPayIn(ctx context.Context, req *pb.SubmitPayInRequest
 
 // GetNetReport — pb.SettlementServiceServer.
 //
-// MS-079 7.5 — interim block (part 1). The in-tree `camt.NetReportV02` and
-// its renderer `renderNetReportLines` are fabrications: none of the field
-// names (`RptId`, `ClsCyclId`, `Mmbr`, `GnrtnDtTm`, `NetLine`/`GrssPayIn`/
-// `GrssPayOut`/`NetSttlm`/`TradCnt`) exist in the official ISO 20022
-// camt.088.001.02 or .03 schemas. See `.cache/xsd/camt.088.001.03.xsd`
-// (sha256 495c686343e29c58b8a9e47dbefc18091be9572981053b5f6f4001b281d28072)
-// for the real schema: NetRptData (MsgId/CreDtTm/NetgCutOffTm/RptDt/ValDt),
-// NetSvcPtcptId, NetSvcCtrPtyId, NetOblgtn[1..∞], SplmtryData[0..∞].
-//
-// Three required V03 fields — NetgCutOffTm, RptDt, ValDt — are not carried
-// by `modules/netreport/domain/netreport.NetReport`. Rather than ship an
-// XML body that lies about which message it is (the pattern vetoed in
-// `.claude/rules/identificadores-de-mensagem.md`), this RPC refuses with
-// `codes.FailedPrecondition` until MS-079 7.5 part 2 augments the domain.
-// The fabricated V02 types and renderer are intentionally kept (marked
-// non-conformant) so git history and tests continue to anchor the fix.
-func (s *GRPCServer) GetNetReport(_ context.Context, req *pb.GetNetReportRequest) (*pb.GetNetReportResponse, error) {
+// Emits a camt.088.001.03 NetReport by joining the CLS cycle (which carries
+// NetgCutOffTm/RptDt/ValDt as PIN3 deadline + CycleDate) with the per-currency
+// NetReport aggregates for that cycle. The join lives here, in the application
+// layer, to keep `netreport/domain` single-currency and single-cycle; see
+// `renderNetReportV03` for the body.
+func (s *GRPCServer) GetNetReport(ctx context.Context, req *pb.GetNetReportRequest) (*pb.GetNetReportResponse, error) {
 	if _, err := parseTenant(req.GetTenant()); err != nil {
 		return nil, err
 	}
-	if _, err := uuid.Parse(req.GetCycleId()); err != nil {
+	cycleID, err := uuid.Parse(req.GetCycleId())
+	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cycle_id: %v", err)
 	}
 	memberBIC := strings.ToUpper(strings.TrimSpace(req.GetMemberBic()))
@@ -123,8 +109,26 @@ func (s *GRPCServer) GetNetReport(_ context.Context, req *pb.GetNetReportRequest
 		return nil, status.Error(codes.InvalidArgument, "member_bic must be 8 or 11 characters")
 	}
 
-	return nil, status.Error(codes.FailedPrecondition,
-		"camt.088.001.03 pendente: domínio sem NetgCutOffTm/RptDt/ValDt")
+	cycle, err := s.Cycles.GetCycle(ctx, cycleID)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	reports, err := s.NetReports.ListByCycle(ctx, cycleID)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	if len(reports) == 0 {
+		return nil, status.Errorf(codes.NotFound, "no net report lines for cycle %s", cycleID)
+	}
+
+	body, err := renderNetReportV03(cycle, reports, memberBIC)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &pb.GetNetReportResponse{
+		ReportXml:   body,
+		GeneratedAt: timestamppb.New(reports[0].GeneratedAt()),
+	}, nil
 }
 
 // CloseCycle — pb.SettlementServiceServer (advances PAY_IN_WINDOW → SETTLING → CLOSED).
@@ -198,58 +202,6 @@ func toPBPayIn(p *paydomain.PayInInstruction) *pb.PayInInstruction {
 		out.SubmittedAt = timestamppb.New(p.SubmittedAt())
 	}
 	return out
-}
-
-// renderNetReportLines is NON-CONFORMANT with the official ISO 20022
-// camt.088 schemas (neither .001.02 nor .001.03). The field names it writes —
-// RptId, ClsCyclId, Mmbr, GnrtnDtTm, NetLine, GrssPayIn, GrssPayOut, NetSttlm,
-// TradCnt — do not appear anywhere in the real XSDs; the body is a fabrication
-// with a fake namespace label.
-//
-// It is kept, unreachable from `GetNetReport` since MS-079 7.5 part 1, so the
-// git history anchoring the fix (this commit + the parallel fxtr.013 fix in
-// 23515bb) stays legible and future diff tooling can show what it replaces.
-// Part 2 of MS-079 7.5 will delete it together with the `camt.NetReportV02`
-// type and emit the real `camt.NetReportV03` once the netreport domain carries
-// NetgCutOffTm, RptDt and ValDt.
-//
-// DO NOT CALL. New callers must use the forthcoming V03 emitter.
-func renderNetReportLines(reports []*netdomain.NetReport, memberBIC string) (string, error) {
-	if len(reports) == 0 {
-		return "", fmt.Errorf("no net report lines for the requested cycle")
-	}
-
-	first := reports[0]
-	rpt := camt.NetReportV02{
-		ReportID: first.ID().String(),
-		CycleID:  first.CycleID().String(),
-		Member:   camt.PartyID{BICFI: memberBIC},
-		GeneratedAt: camt.ISODateTime{
-			Value: first.GeneratedAt().UTC().Format(time.RFC3339),
-		},
-		Lines: make([]camt.NetLine, 0, len(reports)),
-	}
-
-	for _, r := range reports {
-		if r.CycleID() != first.CycleID() {
-			return "", fmt.Errorf("net report lines span multiple cycles (%s and %s)",
-				first.CycleID(), r.CycleID())
-		}
-		ccy := r.Currency()
-		rpt.Lines = append(rpt.Lines, camt.NetLine{
-			Currency:      ccy,
-			GrossPayIn:    camt.Amount{Currency: ccy, Value: r.GrossPayIn()},
-			GrossPayOut:   camt.Amount{Currency: ccy, Value: r.GrossPayOut()},
-			NetSettlement: camt.Amount{Currency: ccy, Value: r.NetSettlement()},
-			TradeCount:    r.TradeCount(),
-		})
-	}
-
-	out, err := xml.Marshal(rpt)
-	if err != nil {
-		return "", fmt.Errorf("marshal camt.088 net report: %w", err)
-	}
-	return xml.Header + string(out), nil
 }
 
 func mapErr(err error) error {
