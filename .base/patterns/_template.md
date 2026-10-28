@@ -8,8 +8,8 @@
 **Correção:** <os FIX que restauram este padrão, por exemplo `FIX-006 (RFIX.053.006.01, ledgeros) — Concorrência otimista`; ou «—». O RFIX fica fora da precedência (O162)>
 
 <!--
-Template do ADR-018 (RADR.091.018.01). As dez secções abaixo são obrigatórias e ficam por esta ordem.
-Um padrão descreve, não obriga (RN_CTX_027): sem título «Regra:» e sem «deve»/«nunca»/«sempre»/«must».
+Template do `RADR.091.018.01` (cognee-revenu). As dez secções abaixo são obrigatórias e ficam por esta ordem.
+Um padrão descreve, não obriga (`RRUL.091.027.01`, cognee-revenu): sem título «Regra:» e sem «deve»/«nunca»/«sempre»/«must».
 O que tem de ser seguido escreve-se como regra RRUL que obriga este padrão, e lista-se em «Regras que obrigam».
 -->
 
@@ -37,7 +37,7 @@ O que tem de ser seguido escreve-se como regra RRUL que obriga este padrão, e l
 
 ## Exemplo real
 
-<!-- RN_CTX_026: medido no código, nunca de memória. Um exemplo sem chamador de produção marca-se «sem chamador». -->
+<!-- `RRUL.091.026.01` (cognee-revenu): medido no código, nunca de memória. Um exemplo sem chamador de produção marca-se «sem chamador». -->
 
 | Repo | Caminho | Símbolo | sha | Chamadores de produção |
 |---|---|---|---|---|
