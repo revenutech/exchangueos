@@ -37,7 +37,8 @@ exos:BCBCambio  a exos:ReportType ; rdfs:label "BCB-CAMBIO"@en .
 exos:ScreeningResult a owl:Class ;
     rdfs:label "Sanctions Screening Result"@en .
 
-exos:RiskLevel a owl:Class .
+exos:RiskLevel a owl:Class ;
+    rdfs:label "Sanctions Screening Risk Level"@en, "Nível de Risco de Triagem de Sanções"@pt .
 exos:Low    a exos:RiskLevel ; rdfs:label "LOW"@en .
 exos:Medium a exos:RiskLevel ; rdfs:label "MEDIUM"@en .
 exos:High   a exos:RiskLevel ; rdfs:label "HIGH (RN_FX_039 — SISCOAF COS required)"@en .
