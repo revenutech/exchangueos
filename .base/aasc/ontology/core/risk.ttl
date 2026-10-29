@@ -14,7 +14,8 @@
 exos:Limit a owl:Class ;
     rdfs:label "Trading Limit"@en .
 
-exos:LimitType a owl:Class .
+exos:LimitType a owl:Class ;
+    rdfs:label "FX Trading Limit Type"@en, "Tipo de Limite de Trading FX"@pt .
 exos:Counterparty a exos:LimitType ; rdfs:label "COUNTERPARTY"@en .
 exos:Currency     a exos:LimitType ; rdfs:label "CURRENCY"@en .
 exos:Tenor        a exos:LimitType ; rdfs:label "TENOR"@en .
