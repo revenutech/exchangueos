@@ -1,52 +1,61 @@
 # MS-024d — Live Sanctions Providers (OFAC / UN / EU / COAF)
 
-| Field | Value |
-|-------|-------|
-| **Code** | MS-024d |
-| **Name** | live-sanctions-providers |
-| **Phase** | F-OPS-PROD |
-| **Sprint** | 2 of MS-024 cycle |
-| **Status** | BACKLOG |
-| **Owner** | Compliance + Platform |
-| **Dependencies** | ComplOS coordination (eventually consumes this) |
+**Code:** `RMLS.024.???.01` ⚠️ FFF aguarda decisão do dono em § 3.6 do CONVENTIONS 1.6.0 (DDD 024 auto-alocado fora do registro).
+**Status:** BACKLOG
+**Owner:** Compliance + Platform
+**Fonte original:** `.base/plans/milestones/backlog/MS-024d-live-sanctions-providers.md` (shape 1.1.0, substituída por este arquivo)
 
-## Why this milestone
+## Por quê
 
-Current screening uses an in-process stub returning empty matches. The 4 authoritative lists (OFAC SDN, UN 1267 Consolidated, EU restrictive measures, COAF) must be fetched, parsed, normalised, and made queryable with fuzzy matching. Without this, screening is theatre.
+A triagem atual usa stub in-process que devolve zero matches. As 4 listas autoritativas (OFAC SDN, UN 1267 Consolidated, EU restrictive measures, COAF) devem ser baixadas, parseadas, normalizadas e consultáveis com fuzzy matching. Sem isto, triagem é teatro.
 
-## Description
+## Descrição
 
-Implement 4 list providers behind a common `SanctionsProvider` interface + a hot cache + a refresh cron. Each provider parses its native format (OFAC XML, UN XML, EU CSV, COAF XLSX), normalises into a canonical `SanctionsEntry`, and exposes `Match(name, doc, country)` with configurable name-similarity threshold (Jaro-Winkler default 0.85).
+Implementar 4 providers por trás de uma interface comum `SanctionsProvider` + cache quente + cron de refresh. Cada provider parseia seu formato nativo (OFAC XML, UN XML, EU CSV, COAF XLSX), normaliza em `SanctionsEntry` canônico e expõe `Match(name, doc, country)` com threshold configurável (Jaro-Winkler 0.85 default).
 
-## Acceptance Criteria
+## Fase 1 — Implementação
 
-- [ ] `pkg/sanctions/provider.go` interface `Refresh(ctx) (asOf time.Time, count int, err error)` + `Match(query MatchQuery) ([]Hit, error)`
-- [ ] 4 providers: `ofac/`, `un/`, `eu/`, `coaf/` each with `Provider.go` + golden parsing test
-- [ ] `pkg/sanctions/cache.go` in-memory inverted index + Jaro-Winkler scorer
-- [ ] `cmd/sanctions-refresher/` cron binary refreshing all 4 lists hourly with stagger
-- [ ] Freshness SLO: each list refreshed within 24h or alert; emits `sanctions_list_age_seconds{list}` metric
-- [ ] Hit logging: every match (even sub-threshold) logged as audit event for COS workflow
-- [ ] Fallback to last cached snapshot if upstream unreachable (max 24h staleness)
-- [ ] Integration test against fixture XML/CSV/XLSX captured 2026-Q2
-- [ ] Compliance domain `ScreenCounterparty` now consumes real providers via DI
-- [ ] Documented vendor + URL + auth method per list in `docs/security/sanctions-sources.md`
-- [ ] Update STRIDE threat model: list-poisoning threat + verification (signed sources)
+### Etapa 1.1 — Interface + cache
 
-## Deliverables
+- **1.1** `RTSK.024.???.01` ✏️ Interface `SanctionsProvider` com `Refresh(ctx)` + `Match(query MatchQuery)`. *Aceite:* interface compila, godoc completa. *Entrega:* `pkg/sanctions/provider.go`. *Escopo:* `pkg/sanctions/`. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.2** `RTSK.024.???.01` ✏️ Cache in-memory com inverted index + scorer Jaro-Winkler. *Aceite:* 100k entradas indexadas em < 2s, Match p99 < 10ms. *Entrega:* `pkg/sanctions/cache.go`, `pkg/sanctions/jarowinkler.go` (ou import `github.com/xrash/smetrics`). *Escopo:* `pkg/sanctions/`. *Depende:* 1.1. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
 
-- `pkg/sanctions/provider.go` interface + types
-- `pkg/sanctions/{ofac,un,eu,coaf}/provider.go`
-- `pkg/sanctions/cache.go`
-- `pkg/sanctions/jarowinkler.go` (or import `github.com/xrash/smetrics`)
-- `cmd/sanctions-refresher/main.go`
-- `deploy/helm/exchangeos/templates/sanctions-refresher-cronjob.yaml`
-- `docs/security/sanctions-sources.md`
-- `tests/integration/sanctions_test.go`
-- Updated `modules/compliance/application/service.go` to inject `SanctionsProvider`
+### Etapa 1.2 — Providers (4 fontes)
 
-## Cross-References
+- **1.3** `RTSK.024.???.01` ✏️ Provider OFAC (XML SDN). *Aceite:* parse round-trip contra fixture 2026-Q2 + golden test passa. *Entrega:* `pkg/sanctions/ofac/provider.go`. *Escopo:* `pkg/sanctions/ofac/`. *Depende:* 1.1. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.4** `RTSK.024.???.01` ✏️ Provider UN (XML 1267). *Aceite:* parse + golden test. *Entrega:* `pkg/sanctions/un/provider.go`. *Escopo:* `pkg/sanctions/un/`. *Depende:* 1.1. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.5** `RTSK.024.???.01` ✏️ Provider EU (CSV restrictive measures). *Aceite:* parse + golden test. *Entrega:* `pkg/sanctions/eu/provider.go`. *Escopo:* `pkg/sanctions/eu/`. *Depende:* 1.1. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.6** `RTSK.024.???.01` ✏️ Provider COAF (XLSX). *Aceite:* parse + golden test. *Entrega:* `pkg/sanctions/coaf/provider.go`. *Escopo:* `pkg/sanctions/coaf/`. *Depende:* 1.1. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
 
-- `docs/integrations/complos.md` — eventual replacement by ComplOS
+### Etapa 1.3 — Refresh + freshness
+
+- **1.7** `RTSK.024.???.01` ✏️ Binário `cmd/sanctions-refresher/` atualiza 4 listas em stagger horário. *Aceite:* binário aceita `--providers all|ofac|un|eu|coaf`, executa refresh e logs duração. *Entrega:* `cmd/sanctions-refresher/main.go`. *Escopo:* `cmd/sanctions-refresher/`. *Depende:* 1.3, 1.4, 1.5, 1.6. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.8** `RTSK.024.???.01` ✏️ SLO de frescor: alerta se lista > 24h sem refresh. *Aceite:* métrica `sanctions_list_age_seconds{list}` exposta, alerta ao ultrapassar 86400. *Entrega:* instrumentação + regra em `deploy/helm/`. *Escopo:* `cmd/sanctions-refresher/`, `deploy/helm/`. *Depende:* 1.7. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.9** `RTSK.024.???.01` ✏️ Fallback para snapshot cacheado quando upstream inalcançável (max 24h stale). *Aceite:* indisponibilidade de upstream não derruba Match; snapshot > 24h bloqueia e alerta. *Entrega:* lógica em `cmd/sanctions-refresher/`. *Escopo:* `cmd/sanctions-refresher/`. *Depende:* 1.7. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.10** `RTSK.024.???.01` ✏️ Helm CronJob `sanctions-refresher-cronjob.yaml` (hourly). *Aceite:* manifesto renderiza, agenda aplica. *Entrega:* `deploy/helm/exchangeos/templates/sanctions-refresher-cronjob.yaml`. *Escopo:* `deploy/helm/exchangeos/`. *Depende:* 1.7. *Espera:* Baremetal — pipeline do Helm. [registro](../registro/README.md)
+
+### Etapa 1.4 — Auditoria + integração compliance
+
+- **1.11** `RTSK.024.???.01` ✏️ Logging de hits (inclusive sub-threshold) como audit event para fluxo COS. *Aceite:* todo match gera `audit_event(type='SANCTIONS_HIT', ...)` com score + fonte. *Entrega:* instrumentação em `pkg/sanctions/cache.go`. *Escopo:* `pkg/sanctions/`, `pkg/audit/`. *Depende:* 1.2. *Espera:* DPO — revisão de retenção de audit. [registro](../registro/README.md)
+- **1.12** `RTSK.024.???.01` ✏️ Compliance `ScreenCounterparty` consome providers reais via DI. *Aceite:* chamada bate em 4 providers, hit maior score ganha. *Entrega:* `modules/compliance/application/service.go` atualizado. *Escopo:* `modules/compliance/application/`. *Depende:* 1.2. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+
+### Etapa 1.5 — Documentação + ameaça
+
+- **1.13** `RTSK.024.???.01` ✏️ Documentar vendor + URL + método de auth por lista. *Aceite:* `docs/security/sanctions-sources.md` com 4 seções e credencial em Vault path. *Entrega:* `docs/security/sanctions-sources.md`. *Escopo:* `docs/security/`. *Depende:* 1.3-1.6. *Espera:* dono — definição de contratos com vendors. [registro](../registro/README.md)
+- **1.14** `RTSK.024.???.01` ✏️ STRIDE: adicionar ameaça de list-poisoning + verificação (fontes assinadas). *Aceite:* modelo atualizado com mitigação (checksum ou signature verify). *Entrega:* `docs/security/threat-model.md`. *Escopo:* `docs/security/`. *Depende:* 1.13. *Espera:* dono — definição de signatário confiável. [registro](../registro/README.md)
+- **1.15** `RTSK.024.???.01` ✏️ Teste de integração contra fixture XML/CSV/XLSX capturados 2026-Q2. *Aceite:* 4 providers parseiam fixture e Match encontra entry conhecido. *Entrega:* `tests/integration/sanctions_test.go`. *Escopo:* `tests/integration/`. *Depende:* 1.3-1.6, 1.12. *Espera:* gate — testes sem banco. [registro](../registro/README.md)
+
+## Fase 2 — Aceite
+
+- **2.1** `RTSK.024.???.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 ciclo horário de refresh em staging sem falha + 1 hit conhecido reproduzido por fixture. *Entrega:* relatório em `registro/ms-024d/`. *Escopo:* módulo inteiro + staging. *Espera:* gate — rodada N2. [registro](../registro/README.md)
+
+## Fase 3 — Fechamento
+
+- **3.1** `RTSK.024.???.01` ✏️ Mover MS para `delivered/` e atualizar `milestones/index.md`. *Aceite:* MS em `delivered/`, índice sem referência em backlog. *Entrega:* commit de fechamento. *Escopo:* `.base/plans/milestones/`. *Espera:* dono — aprovação final. [registro](../registro/README.md)
+
+## Referências
+
+- `docs/integrations/complos.md` — substituição eventual por ComplOS
 - `modules/compliance/domain/screening.go` — RN_FX_039 SISCOAF COS
-- ISO 27001 control 5.7 (threat intelligence)
+- ISO 27001 controle 5.7 (threat intelligence)
 - BACEN Circ 3.978 (CCS PLD-FT)
