@@ -1,56 +1,63 @@
-# MS-024f — BACEN Submission Adapters (DEC + SCE-IED + SCE-Credito + SCE-CBE)
+# MS-024f — BACEN Submission Adapters (DEC + SCE-IED + SCE-Crédito + SCE-CBE)
 
-| Field | Value |
-|-------|-------|
-| **Code** | MS-024f |
-| **Name** | bacen-submission-adapters |
-| **Phase** | F-OPS-PROD |
-| **Sprint** | 3 of MS-024 cycle |
-| **Status** | BACKLOG |
-| **Owner** | Compliance + Platform |
-| **Dependencies** | MS-024e (nature codes), MS-024c (creds for BACEN gateway), MS-024h (postgres repos) |
+**Code:** `RMLS.024.???.01` ⚠️ FFF aguarda decisão do dono em § 3.6 do CONVENTIONS 1.6.0 (DDD 024 auto-alocado fora do registro).
+**Status:** BACKLOG
+**Owner:** Compliance + Platform
+**Fonte original:** `.base/plans/milestones/backlog/MS-024f-bacen-submission-adapters.md` (shape 1.1.0, substituída por este arquivo)
 
-## Why this milestone
+## Por quê
 
-Compliance domain classes for DEC + SCE-IED + SCE-Credito + SCE-CBE exist in `modules/compliance/domain/`. **Actual submission** to the BACEN gateway (RDR-S / SCE / DEC web service) is not implemented — `bacen_reports.status` only ever progresses to PENDING in tests. Real-world ExchangeOS needs to ship payloads to BACEN within regulatory deadlines.
+Classes de domínio para DEC + SCE-IED + SCE-Crédito + SCE-CBE existem em `modules/compliance/domain/`. Submissão real ao gateway BACEN (RDR-S / SCE / DEC) não está implementada — `bacen_reports.status` só progride a PENDING em testes. ExchangeOS real precisa enviar payloads à BACEN dentro dos prazos.
 
-## Description
+## Descrição
 
-Build 4 outbound adapters under `pkg/bacen/submission/` (one per filing type) implementing the BACEN gateway protocol (mTLS + signed XML + dated submission window). Wire into `modules/compliance/application` so `SubmitBACENReport` transitions PENDING → SUBMITTED → ACCEPTED/REJECTED via real API calls.
+Construir 4 adaptadores outbound em `pkg/bacen/submission/` (um por tipo de filing) implementando o protocolo do gateway BACEN (mTLS + XML assinado + janela de submissão datada). Ligar em `modules/compliance/application` para que `SubmitBACENReport` transite PENDING → SUBMITTED → ACCEPTED/REJECTED via API real.
 
-## Acceptance Criteria
+## Fase 1 — Implementação
 
-- [ ] `pkg/bacen/submission/dec.go` — DEC (Declaração Eletrônica de Câmbio) submitter (Lei 14.286/2021, > USD 10K threshold)
-- [ ] `pkg/bacen/submission/sce_ied.go` — SCE-IED (Investimento Estrangeiro Direto) submitter — 30 day registration window
-- [ ] `pkg/bacen/submission/sce_credito.go` — SCE-Crédito (sucessor RDE-ROF, external credit) submitter
-- [ ] `pkg/bacen/submission/sce_cbe.go` — SCE-CBE (Capitais Brasileiros no Exterior) submitter
-- [ ] Common interface `Submitter.Submit(ctx, payload) (protocolID string, err error)` + `Query(ctx, protocolID) (Status, err)`
-- [ ] mTLS client config via Vault-sourced cert
-- [ ] XML payload generated from existing `BACENReport` aggregate (no hand-crafted XML in adapters — round-trip through `pkg/iso20022` style marshaller)
-- [ ] XML signature (XAdES-BES) per BACEN technical spec
-- [ ] Retry with exponential backoff + circuit breaker (5xx for > 60s → open)
-- [ ] Mock BACEN gateway in `tests/integration/bacen_mock_server.go` for CI
-- [ ] Integration test: submit one of each report type → poll status → assert ACCEPTED
-- [ ] Helm sidecar / network policy for BACEN gateway egress (whitelisted IP)
-- [ ] Compliance `SubmitBACENReport` use-case wired to real submitter via DI
-- [ ] Metrics: `bacen_submission_total{type,status}` + `bacen_submission_duration_seconds{type}` + `bacen_submission_failed_total{type,reason}`
-- [ ] Runbook covering common rejections + how to amend + resubmit
+### Etapa 1.1 — Cliente comum + marshal
 
-## Deliverables
+- **1.1** `RTSK.024.???.01` ✏️ Interface `Submitter.Submit(ctx, payload)` + `Query(ctx, protocolID)`. *Aceite:* interface compila, 2 métodos documentados. *Entrega:* `pkg/bacen/submission/submitter.go`. *Escopo:* `pkg/bacen/submission/`. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.2** `RTSK.024.???.01` ✏️ Cliente mTLS com cert via Vault. *Aceite:* conexão estabelecida contra mock, 4xx/5xx tratados sem crash. *Entrega:* `pkg/bacen/submission/client.go`. *Escopo:* `pkg/bacen/submission/`. *Depende:* 1.1. *Espera:* dono — provisionamento da cert do BACEN. [registro](../registro/README.md)
+- **1.3** `RTSK.024.???.01` ✏️ Marshal `BACENReport` aggregate → XML (sem XML hand-crafted). *Aceite:* round-trip parse-marshal valida 1 fixture de cada tipo. *Entrega:* `pkg/bacen/submission/marshal.go`. *Escopo:* `pkg/bacen/submission/`. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.4** `RTSK.024.???.01` ✏️ Assinatura XML XAdES-BES por spec técnica BACEN. *Aceite:* XML assinado validado por verificador externo (xmlsectool). *Entrega:* seção em `client.go`. *Escopo:* `pkg/bacen/submission/`. *Depende:* 1.3. *Espera:* dono — definição do certificado de assinatura. [registro](../registro/README.md)
+- **1.5** `RTSK.024.???.01` ✏️ Retry exponencial + circuit breaker (5xx > 60s → open). *Aceite:* 3 retries em 5xx transiente; breaker abre e fecha conforme política. *Entrega:* seção em `client.go`. *Escopo:* `pkg/bacen/submission/`. *Depende:* 1.2. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
 
-- `pkg/bacen/submission/{dec,sce_ied,sce_credito,sce_cbe}.go`
-- `pkg/bacen/submission/client.go` (mTLS + XAdES)
-- `pkg/bacen/submission/marshal.go` (aggregate → XML)
-- `tests/integration/bacen_mock_server.go`
-- `tests/integration/bacen_submission_test.go`
-- `deploy/k8s/network-policies/bacen-egress.yaml`
-- `docs/operations/bacen-runbook.md`
+### Etapa 1.2 — Adaptadores por tipo
 
-## Cross-References
+- **1.6** `RTSK.024.???.01` ✏️ Submitter DEC (Lei 14.286/2021, > USD 10K). *Aceite:* 1 payload DEC submetido ao mock devolve protocolID. *Entrega:* `pkg/bacen/submission/dec.go`. *Escopo:* `pkg/bacen/submission/`. *Depende:* 1.1, 1.3, 1.4. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.7** `RTSK.024.???.01` ✏️ Submitter SCE-IED (registro em 30 dias). *Aceite:* payload SCE-IED aceito pelo mock, janela de 30 dias respeitada. *Entrega:* `pkg/bacen/submission/sce_ied.go`. *Escopo:* `pkg/bacen/submission/`. *Depende:* 1.1, 1.3, 1.4. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.8** `RTSK.024.???.01` ✏️ Submitter SCE-Crédito (sucessor RDE-ROF). *Aceite:* payload aceito pelo mock. *Entrega:* `pkg/bacen/submission/sce_credito.go`. *Escopo:* `pkg/bacen/submission/`. *Depende:* 1.1, 1.3, 1.4. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.9** `RTSK.024.???.01` ✏️ Submitter SCE-CBE. *Aceite:* payload aceito pelo mock. *Entrega:* `pkg/bacen/submission/sce_cbe.go`. *Escopo:* `pkg/bacen/submission/`. *Depende:* 1.1, 1.3, 1.4. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+
+### Etapa 1.3 — Infra + wiring
+
+- **1.10** `RTSK.024.???.01` ✏️ `SubmitBACENReport` ligado ao submitter real via DI. *Aceite:* teste unitário injeta mock e valida transição PENDING → SUBMITTED. *Entrega:* `modules/compliance/application/service.go` atualizado. *Escopo:* `modules/compliance/application/`. *Depende:* 1.6-1.9. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.11** `RTSK.024.???.01` ✏️ Network policy / sidecar Helm para egress BACEN (IP whitelisted). *Aceite:* manifesto aplica, teste de conectividade valida. *Entrega:* `deploy/k8s/network-policies/bacen-egress.yaml`. *Escopo:* `deploy/k8s/`. *Espera:* Baremetal — whitelist do IP BACEN. [registro](../registro/README.md)
+
+### Etapa 1.4 — Observabilidade + runbook
+
+- **1.12** `RTSK.024.???.01` ✏️ Métricas `bacen_submission_total{type,status}`, `bacen_submission_duration_seconds{type}`, `bacen_submission_failed_total{type,reason}`. *Aceite:* 3 métricas expostas, series por tipo. *Entrega:* instrumentação em `client.go`. *Escopo:* `pkg/bacen/submission/`. *Depende:* 1.5. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.13** `RTSK.024.???.01` ✏️ Runbook: rejeições comuns + como emendar + resubmeter. *Aceite:* runbook cobre os 5 motivos de rejeição mais citados pela BACEN. *Entrega:* `docs/operations/bacen-runbook.md`. *Escopo:* `docs/operations/`. *Depende:* 1.10. *Espera:* jurídico — validação do procedimento de emenda. [registro](../registro/README.md)
+
+### Etapa 1.5 — Testes
+
+- **1.14** `RTSK.024.???.01` ✏️ Mock BACEN gateway em `tests/integration/bacen_mock_server.go` para CI. *Aceite:* mock aceita DEC/SCE-* e devolve protocolID + status. *Entrega:* `tests/integration/bacen_mock_server.go`. *Escopo:* `tests/integration/`. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.15** `RTSK.024.???.01` ✏️ Teste de integração: submeter 1 de cada tipo → poll → ACCEPTED. *Aceite:* 4 submissões bem-sucedidas em < 15s total. *Entrega:* `tests/integration/bacen_submission_test.go`. *Escopo:* `tests/integration/`. *Depende:* 1.10, 1.14. *Espera:* gate — testes com banco. [registro](../registro/README.md)
+
+## Fase 2 — Aceite
+
+- **2.1** `RTSK.024.???.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 submissão real a sandbox BACEN de cada tipo com resposta ACCEPTED em < 60s. *Entrega:* relatório em `registro/ms-024f/`. *Escopo:* módulo inteiro + staging + sandbox BACEN. *Espera:* gate — rodada N2. [registro](../registro/README.md)
+
+## Fase 3 — Fechamento
+
+- **3.1** `RTSK.024.???.01` ✏️ Mover MS para `delivered/` e atualizar `milestones/index.md`. *Aceite:* MS em `delivered/`, índice sem referência em backlog. *Entrega:* commit de fechamento. *Escopo:* `.base/plans/milestones/`. *Espera:* dono — aprovação final. [registro](../registro/README.md)
+
+## Referências
 
 - Lei 14.286/2021 + Res BCB 277-561
 - `modules/compliance/domain/bacen_report.go`
-- `pkg/iso20022/` marshaller pattern
-- ISO 27001 control 5.31 (legal/statutory/regulatory)
-- MS-024e (nature codes feed into DEC)
-- MS-024g (SISCOAF parallel filing)
+- Padrão marshal em `pkg/iso20022/`
+- ISO 27001 controle 5.31 (legal/statutory/regulatory)
+- MS-024e (códigos de natureza alimentam DEC)
+- MS-024g (filing SISCOAF paralelo)
