@@ -1,9 +1,9 @@
 # MS-024k — Pattern Catalogue Build-out (850 patterns)
 
-**Code:** `RMLS.024.???.01` ⚠️ FFF aguarda decisão do dono em § 3.6 do CONVENTIONS 1.6.0 (DDD 024 auto-alocado fora do registro).
+**Code:** `RMLS.024.???.01` ⚠️ M aguarda a Baremetal alocar o número das sub-letras (decisão do dono em 2026-11-07 de registrar 024 e atribuir M numérico; CONVENTIONS 1.6.0 § 3.2 + § 3.6).
 **Status:** BACKLOG
 **Owner:** Distributed — one pattern per code review
-**Fonte original:** `.base/plans/milestones/backlog/MS-024k-pattern-catalogue-buildout.md` (shape 1.1.0, substituída por este arquivo)
+**Fonte original (shape 1.1.0, preservada em 2026-11-07):** [registro/ms-024k/plano-original-shape-1.1.0.md](../registro/ms-024k/plano-original-shape-1.1.0.md)
 
 ## Por quê
 
