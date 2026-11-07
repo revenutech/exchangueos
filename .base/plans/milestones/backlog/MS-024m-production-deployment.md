@@ -1,78 +1,74 @@
 # MS-024m — Production Deployment (GKE + Litmus + Chaos Mesh + ArgoCD live)
 
-| Field | Value |
-|-------|-------|
-| **Code** | MS-024m |
-| **Name** | production-deployment |
-| **Phase** | F-OPS-PROD |
-| **Sprint** | 4 of MS-024 cycle (close-out milestone) |
-| **Status** | BACKLOG |
-| **Owner** | Platform |
-| **Dependencies** | MS-024l (CRDB hub), MS-024c (creds), MS-024h (postgres repos), MS-024a/b (workers) — most of the cycle |
+**Code:** `RMLS.024.???.01` ⚠️ FFF aguarda decisão do dono em § 3.6 do CONVENTIONS 1.6.0 (DDD 024 auto-alocado fora do registro).
+**Status:** BACKLOG
+**Owner:** Platform
+**Fonte original:** `.base/plans/milestones/backlog/MS-024m-production-deployment.md` (shape 1.1.0, substituída por este arquivo)
 
-## Why this milestone
+## Por quê
 
-All deployment artefacts exist (Helm + Terraform GKE module + ArgoCD Application + Argo Rollouts canary + cert-manager + SLSA L3 + Vault seed + chaos manifests). **None have been applied to a real cluster.** Without this, the system is shelf-ware. This milestone closes the gap from "design done" to "running production with traffic".
+Todos os artefatos de deploy existem (Helm + Terraform GKE + ArgoCD Application + Argo Rollouts canary + cert-manager + SLSA L3 + Vault seed + manifestos de chaos). Nenhum aplicado a cluster real. Sem isso, o sistema é shelf-ware. Esta MS fecha o gap de "design done" para "running production with traffic".
 
-## Description
+## Descrição
 
-Provision the production GCP project + GKE Autopilot cluster + supporting infra via Terraform, deploy via ArgoCD pull, run smoke + load + chaos against staging first, then promote to production via canary. Includes Litmus + Chaos Mesh install for the chaos program (MS-024k indirectly).
+Provisionar projeto GCP de produção + cluster GKE Autopilot + infra de apoio via Terraform, deploy via ArgoCD pull, rodar smoke + load + chaos contra staging primeiro, promover a produção via canary. Inclui install de Litmus + Chaos Mesh para o programa de chaos (MS-024k indireto).
 
-## Acceptance Criteria
+## Fase 1 — Implementação
 
-### Infra (Terraform applied)
-- [ ] `deploy/terraform/environments/production/` `terraform apply` succeeds
-- [ ] GKE Autopilot cluster up (1.29+) with WIF enabled
-- [ ] VPC + Cloud NAT + private cluster + master authorized networks restricted
-- [ ] CMEK enabled on etcd via Cloud KMS HSM key
-- [ ] Binary Authorization policy applied (only signed images)
-- [ ] GCS archive bucket created with lifecycle policy
-- [ ] Budgets module applied with production threshold
+### Etapa 1.1 — Infra (Terraform)
 
-### Cluster bootstrap
-- [ ] cert-manager installed + ClusterIssuer applied (LE prod + staging)
-- [ ] ArgoCD installed + `application.yaml` + `AppProject` applied
-- [ ] Argo Rollouts controller installed
-- [ ] Litmus operator + Chaos Mesh installed in dedicated namespaces with RBAC restricted to chaos-runner SA
-- [ ] External Secrets Operator installed + Vault auth/kubernetes bound
-- [ ] Vault production cluster reachable + `scripts/vault-seed.sh` executed for prod path
+- **1.1** `RTSK.024.???.01` ✏️ `terraform apply` sobre `deploy/terraform/environments/production/`. *Aceite:* apply termina sem drift. *Entrega:* state em workspace. *Escopo:* `deploy/terraform/environments/production/`. *Espera:* dono — provisionamento do projeto GCP. [registro](../registro/README.md)
+- **1.2** `RTSK.024.???.01` ✏️ Cluster GKE Autopilot 1.29+ com WIF enabled. *Aceite:* `kubectl cluster-info` responde + WIF pool configurado. *Entrega:* módulo Terraform. *Escopo:* `deploy/terraform/`. *Depende:* 1.1. *Espera:* Baremetal — infra. [registro](../registro/README.md)
+- **1.3** `RTSK.024.???.01` ✏️ VPC + Cloud NAT + private cluster + master authorized networks restringido. *Aceite:* `terraform plan` zero diffs, acesso ao master apenas da bastion. *Entrega:* módulo Terraform. *Escopo:* `deploy/terraform/`. *Depende:* 1.1. *Espera:* Baremetal — infra. [registro](../registro/README.md)
+- **1.4** `RTSK.024.???.01` ✏️ CMEK em etcd via Cloud KMS HSM. *Aceite:* chave HSM criada, GKE usa CMEK. *Entrega:* módulo Terraform. *Escopo:* `deploy/terraform/`. *Depende:* 1.1. *Espera:* dono — definição da política de chave. [registro](../registro/README.md)
+- **1.5** `RTSK.024.???.01` ✏️ Binary Authorization policy aplicada (só imagens assinadas). *Aceite:* imagem não-assinada é rejeitada em teste. *Entrega:* `deploy/terraform/binauthz.tf`. *Escopo:* `deploy/terraform/`. *Depende:* 1.1. *Espera:* dono — definição do signatário. [registro](../registro/README.md)
+- **1.6** `RTSK.024.???.01` ✏️ Bucket GCS archive com lifecycle policy. *Aceite:* bucket criado com lifecycle de 2 anos (Nearline → Coldline → Archive). *Entrega:* `deploy/terraform/storage.tf`. *Escopo:* `deploy/terraform/`. *Depende:* 1.1. *Espera:* Baremetal — infra. [registro](../registro/README.md)
+- **1.7** `RTSK.024.???.01` ✏️ Budget module aplicado com threshold de produção. *Aceite:* alerta em 80% + 100% configurado. *Entrega:* `deploy/terraform/budgets.tf`. *Escopo:* `deploy/terraform/`. *Depende:* 1.1. *Espera:* dono — definição de thresholds. [registro](../registro/README.md)
 
-### Workload
-- [ ] ArgoCD syncs ExchangeOS Application — all pods reach Ready
-- [ ] Helm release `exchangeos` deployed (api + worker + migrator job completes + cls-cycle + eod + mq-bridge + cred-rotator)
-- [ ] Migrator job completed for migrations 000001-current
-- [ ] All 14 BC services responding to gRPC + REST health probes
-- [ ] Prometheus scraping all targets + Grafana dashboards (delivery + SLO + FinOps) showing data
+### Etapa 1.2 — Bootstrap do cluster
 
-### Validation
-- [ ] `task smoke:prod` returns 0 (all 7 checks pass)
-- [ ] `k6 run tests/load/k6-trade-book.js` against staging meets SLO thresholds
-- [ ] One full canary rollout 10→30→60→100 from clean state with Prometheus AnalysisTemplate gates green
-- [ ] CHAOS-01 + CHAOS-02 run successfully in staging via Litmus
-- [ ] DR runbook restore-from-backup drill executed + RTO/RPO measured
+- **1.8** `RTSK.024.???.01` ✏️ cert-manager + ClusterIssuer LE (prod+staging). *Aceite:* 1 certificado emitido em cada issuer. *Entrega:* manifestos em `deploy/bootstrap/`. *Escopo:* `deploy/bootstrap/`. *Depende:* 1.2. *Espera:* Baremetal — pipeline do bootstrap. [registro](../registro/README.md)
+- **1.9** `RTSK.024.???.01` ✏️ ArgoCD + `application.yaml` + `AppProject`. *Aceite:* ArgoCD UI acessível, project criado. *Entrega:* `deploy/argocd/`. *Escopo:* `deploy/argocd/`. *Depende:* 1.2, 1.8. *Espera:* Baremetal — pipeline do bootstrap. [registro](../registro/README.md)
+- **1.10** `RTSK.024.???.01` ✏️ Argo Rollouts controller. *Aceite:* controller rodando, CRDs disponíveis. *Entrega:* manifesto em `deploy/argocd/`. *Escopo:* `deploy/argocd/`. *Depende:* 1.9. *Espera:* Baremetal — pipeline do bootstrap. [registro](../registro/README.md)
+- **1.11** `RTSK.024.???.01` ✏️ Litmus + Chaos Mesh em namespaces dedicados com RBAC restrito a `chaos-runner` SA. *Aceite:* chaos SA pode listar workloads, nenhuma outra. *Entrega:* `deploy/chaos/`. *Escopo:* `deploy/chaos/`. *Depende:* 1.2. *Espera:* dono — aprovação do programa de chaos. [registro](../registro/README.md)
+- **1.12** `RTSK.024.???.01` ✏️ External Secrets Operator + Vault auth/kubernetes bind. *Aceite:* 1 secret externa referenciada por ESO rende em ConfigMap/Secret. *Entrega:* `deploy/eso/`. *Escopo:* `deploy/eso/`. *Depende:* 1.2. *Espera:* Baremetal — Vault de produção. [registro](../registro/README.md)
+- **1.13** `RTSK.024.???.01` ✏️ Vault produção alcançável + `scripts/vault-seed.sh` executado para path prod. *Aceite:* 14 secrets do catálogo gravadas em prod path. *Entrega:* execução de `scripts/vault-seed.sh prod`. *Escopo:* `scripts/`. *Depende:* 1.12, MS-024c. *Espera:* dono — provisionamento do Vault de produção. [registro](../registro/README.md)
 
-### Operational handover
-- [ ] On-call rotation enrolled in PagerDuty `exchangeos-api-prod`
-- [ ] Runbook index links validated
-- [ ] First chaos day scheduled
-- [ ] First quarterly cost review scheduled
-- [ ] First quarterly LGPD retention review scheduled
-- [ ] First DR drill scheduled
+### Etapa 1.3 — Workload
 
-## Deliverables
+- **1.14** `RTSK.024.???.01` ✏️ ArgoCD sync da Application ExchangeOS — todos os pods Ready. *Aceite:* sync verde, `kubectl get pods` 100% Running. *Entrega:* evento ArgoCD. *Escopo:* cluster de produção. *Depende:* 1.9, 1.13. *Espera:* Baremetal — ArgoCD. [registro](../registro/README.md)
+- **1.15** `RTSK.024.???.01` ✏️ Helm release `exchangeos` deployado (api + worker + migrator job + cls-cycle + eod + mq-bridge + cred-rotator). *Aceite:* 7 componentes Running/Completed. *Entrega:* Helm release. *Escopo:* cluster de produção. *Depende:* 1.14. *Espera:* Baremetal — ArgoCD. [registro](../registro/README.md)
+- **1.16** `RTSK.024.???.01` ✏️ Migrator job completo para migrações 000001-current. *Aceite:* `migrator` termina com código 0, versão bate. *Entrega:* evento de job. *Escopo:* cluster de produção. *Depende:* 1.15. *Espera:* gate — migrações. [registro](../registro/README.md)
+- **1.17** `RTSK.024.???.01` ✏️ 14 serviços BC respondem a gRPC + REST health probes. *Aceite:* `/healthz` e `/readyz` 200 em 14 BCs. *Entrega:* evidência de probes. *Escopo:* cluster de produção. *Depende:* 1.15. *Espera:* sessão dona — validação. [registro](../registro/README.md)
+- **1.18** `RTSK.024.???.01` ✏️ Prometheus raspa todos targets + Grafana dashboards (delivery + SLO + FinOps) com dados. *Aceite:* 3 dashboards com séries ativas. *Entrega:* evidência de dashboard. *Escopo:* observabilidade. *Depende:* 1.17. *Espera:* sessão dona — validação. [registro](../registro/README.md)
 
-- Production GCP project state in Terraform Cloud workspace (or GCS backend) with applied resources
-- ArgoCD UI URL + Slack screenshot of first successful sync
-- Smoke + load + canary + chaos run reports archived in `.audit-bundles/prod-bringup-YYYYMMDD/`
-- Updated `docs/operations/go-live-checklist.md` — all rows ✅ signed-off
-- Public status page updated (if applicable)
-- Engineering newsletter post about go-live
+### Etapa 1.4 — Validação
 
-## Cross-References
+- **1.19** `RTSK.024.???.01` ✏️ `task smoke:prod` retorna 0 (7 checks pass). *Aceite:* script completo verde. *Entrega:* log em `.audit-bundles/prod-bringup-YYYYMMDD/smoke.log`. *Escopo:* cluster de produção. *Depende:* 1.17. *Espera:* gate — smoke. [registro](../registro/README.md)
+- **1.20** `RTSK.024.???.01` ✏️ `k6 run tests/load/k6-trade-book.js` contra staging atende SLO. *Aceite:* p95 trade-book < limite SLO. *Entrega:* relatório k6. *Escopo:* staging. *Espera:* gate — load. [registro](../registro/README.md)
+- **1.21** `RTSK.024.???.01` ✏️ 1 canary rollout 10→30→60→100 com AnalysisTemplate Prometheus verde. *Aceite:* rollout completa sem rollback automático. *Entrega:* evento ArgoRollouts. *Escopo:* cluster de produção. *Depende:* 1.15. *Espera:* gate — canary. [registro](../registro/README.md)
+- **1.22** `RTSK.024.???.01` ✏️ CHAOS-01 + CHAOS-02 em staging via Litmus. *Aceite:* 2 experimentos completam sem derrubar SLO. *Entrega:* relatórios Litmus. *Escopo:* staging. *Depende:* 1.11. *Espera:* gate — chaos. [registro](../registro/README.md)
+- **1.23** `RTSK.024.???.01` ✏️ Drill de restore-from-backup + RTO/RPO medidos. *Aceite:* restore bem-sucedido em janela < RTO acordado. *Entrega:* relatório em `.audit-bundles/`. *Escopo:* DR. *Espera:* gate — DR drill. [registro](../registro/README.md)
 
-- `docs/operations/go-live-checklist.md` — primary checklist this milestone closes
-- `docs/operations/canary-runbook.md` — canary procedure
+### Etapa 1.5 — Handover operacional
+
+- **1.24** `RTSK.024.???.01` ✏️ On-call enrolled em PagerDuty `exchangeos-api-prod`. *Aceite:* rotation configurada, 1 teste de alerta recebido. *Entrega:* configuração PagerDuty. *Escopo:* PagerDuty. *Espera:* dono — definição da rotation. [registro](../registro/README.md)
+- **1.25** `RTSK.024.???.01` ✏️ Runbook index validado (todos os links resolvem). *Aceite:* verificador link-checker 0 falhas em `docs/operations/`. *Entrega:* evidência. *Escopo:* `docs/operations/`. *Espera:* sessão dona — validação. [registro](../registro/README.md)
+- **1.26** `RTSK.024.???.01` ✏️ Primeiro chaos day agendado + primeira revisão trimestral de custo + primeira revisão LGPD + primeiro DR drill. *Aceite:* 4 eventos no calendário com responsável. *Entrega:* convites de calendário. *Escopo:* calendário. *Espera:* dono — agenda. [registro](../registro/README.md)
+
+## Fase 2 — Aceite
+
+- **2.1** `RTSK.024.???.01` ✏️ Rodar aceite da MS. *Aceite:* todas as tarefas da Fase 1 cumpridas + `docs/operations/go-live-checklist.md` com todas as linhas ✅ assinadas + sistema serve 1 trade real. *Entrega:* `.audit-bundles/prod-bringup-YYYYMMDD/` completo + checklist. *Escopo:* módulo inteiro + produção. *Espera:* gate — rodada N2 + canary. [registro](../registro/README.md)
+
+## Fase 3 — Fechamento
+
+- **3.1** `RTSK.024.???.01` ✏️ Mover MS para `delivered/` e atualizar `milestones/index.md`. *Aceite:* MS em `delivered/`, índice sem referência em backlog, newsletter interna publicada. *Entrega:* commit de fechamento + post. *Escopo:* `.base/plans/milestones/`. *Espera:* dono — aprovação final. [registro](../registro/README.md)
+
+## Referências
+
+- `docs/operations/go-live-checklist.md` — checklist primário que esta MS fecha
+- `docs/operations/canary-runbook.md` — procedimento canary
 - `docs/security/dr-runbook.md` — restore drill
-- `docs/security/chaos/chaos-day-runbook.md` — first chaos day kickoff
-- All earlier MS-024* milestones (most are prerequisites)
-- This milestone closes the "production-ready end-to-end" gap; success criterion = system serves real trades
+- `docs/security/chaos/chaos-day-runbook.md` — chaos day kickoff
+- Todas as MS-024* anteriores (maioria é pré-requisito)
+- Critério de sucesso: sistema serve trades reais
