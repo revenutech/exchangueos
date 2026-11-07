@@ -1,6 +1,6 @@
 # MS-024c — Credential Rotator (loop real)
 
-**Code:** `RMLS.024.???.01` ⚠️ M aguarda a Baremetal alocar o número das sub-letras (decisão do dono em 2026-11-07 de registrar 024 e atribuir M numérico; CONVENTIONS 1.6.0 § 3.2 + § 3.6).
+**Code:** `RMLS.024.011.01` M alocado pela Baremetal em 2026-11-07 (§ 3.3.5 do CONVENTIONS 1.7.0, ainda não em `main`): M=11; registro do DDD 024 em curso.
 **Status:** BACKLOG
 **Owner:** Security + Platform
 **Fonte original (shape 1.1.0, preservada em 2026-11-07):** [registro/ms-024c/plano-original-shape-1.1.0.md](../registro/ms-024c/plano-original-shape-1.1.0.md)
@@ -17,44 +17,44 @@ Construir o rotator real dirigido por cron que orquestra rotação mensal de `cl
 
 ### Etapa 1.1 — Catálogo + orquestrador
 
-- **1.1** `RTSK.024.???.01` ✏️ Criar `config/secrets-catalog.yaml` listando 14 clientes M2M + paths Vault + backends IdP. *Aceite:* YAML valida contra schema, 14 entradas. *Entrega:* `config/secrets-catalog.yaml`. *Escopo:* `config/`. *Espera:* dono — definição final dos 14 clientes. [registro](../registro/README.md)
-- **1.2** `RTSK.024.???.01` ✏️ Lock distribuído via Vault `kv/locks/cred-rotator/<secret>`. *Aceite:* lock impede rotação concorrente do mesmo secret, libera em sucesso ou falha. *Entrega:* `internal/credrotator/vault.go` (seção lock). *Escopo:* `internal/credrotator/`. *Espera:* dono — provisionamento do Vault. [registro](../registro/README.md)
-- **1.3** `RTSK.024.???.01` ✏️ Orquestrador `lock + rotate + verify + restart` por secret. *Aceite:* fluxo completo rodado em dry-run sem efeitos colaterais. *Entrega:* `internal/credrotator/orchestrator.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.1, 1.2. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.1** `RTSK.024.1101.01` ✏️ Criar `config/secrets-catalog.yaml` listando 14 clientes M2M + paths Vault + backends IdP. *Aceite:* YAML valida contra schema, 14 entradas. *Entrega:* `config/secrets-catalog.yaml`. *Escopo:* `config/`. *Espera:* dono — definição final dos 14 clientes. [registro](../registro/README.md)
+- **1.2** `RTSK.024.1102.01` ✏️ Lock distribuído via Vault `kv/locks/cred-rotator/<secret>`. *Aceite:* lock impede rotação concorrente do mesmo secret, libera em sucesso ou falha. *Entrega:* `internal/credrotator/vault.go` (seção lock). *Escopo:* `internal/credrotator/`. *Espera:* dono — provisionamento do Vault. [registro](../registro/README.md)
+- **1.3** `RTSK.024.1103.01` ✏️ Orquestrador `lock + rotate + verify + restart` por secret. *Aceite:* fluxo completo rodado em dry-run sem efeitos colaterais. *Entrega:* `internal/credrotator/orchestrator.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.1, 1.2. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
 
 ### Etapa 1.2 — Backends (Keycloak + Vault)
 
-- **1.4** `RTSK.024.???.01` ✏️ Atualizar `client_secret` via Keycloak admin API. *Aceite:* chamada bem-sucedida reflete-se em listagem via API; falha 4xx não corrompe estado. *Entrega:* `internal/credrotator/keycloak.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.1. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
-- **1.5** `RTSK.024.???.01` ✏️ Gerar cryptorandom 32 bytes + escrever em Vault + arquivar versão anterior por 24h. *Aceite:* nova versão gravada, versão anterior lida por sample reader, auto-expira em 24h. *Entrega:* `internal/credrotator/vault.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.2. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
-- **1.6** `RTSK.024.???.01` ✏️ Verificar alcance da nova secret via role de leitura amostra. *Aceite:* read role lê a nova versão antes de confirmar sucesso. *Entrega:* passo em `orchestrator.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.4, 1.5. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.4** `RTSK.024.1104.01` ✏️ Atualizar `client_secret` via Keycloak admin API. *Aceite:* chamada bem-sucedida reflete-se em listagem via API; falha 4xx não corrompe estado. *Entrega:* `internal/credrotator/keycloak.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.1. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.5** `RTSK.024.1105.01` ✏️ Gerar cryptorandom 32 bytes + escrever em Vault + arquivar versão anterior por 24h. *Aceite:* nova versão gravada, versão anterior lida por sample reader, auto-expira em 24h. *Entrega:* `internal/credrotator/vault.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.2. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.6** `RTSK.024.1106.01` ✏️ Verificar alcance da nova secret via role de leitura amostra. *Aceite:* read role lê a nova versão antes de confirmar sucesso. *Entrega:* passo em `orchestrator.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.4, 1.5. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
 
 ### Etapa 1.3 — Rollout + modo de operação
 
-- **1.7** `RTSK.024.???.01` ✏️ Rolling restart via `kubectl rollout restart` após rotação. *Aceite:* restart aplicado só nos consumidores do secret (lista no catálogo); configurável per-secret. *Entrega:* passo em `orchestrator.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.6. *Espera:* Baremetal — kubeconfig do runner. [registro](../registro/README.md)
-- **1.8** `RTSK.024.???.01` ✏️ Modo `--dry-run` executa tudo exceto write no IdP. *Aceite:* dry-run gera plano completo e não altera KeycloakOS/Vault. *Entrega:* flag em `cmd/cred-rotator/main.go`. *Escopo:* `cmd/cred-rotator/`. *Depende:* 1.3. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.7** `RTSK.024.1107.01` ✏️ Rolling restart via `kubectl rollout restart` após rotação. *Aceite:* restart aplicado só nos consumidores do secret (lista no catálogo); configurável per-secret. *Entrega:* passo em `orchestrator.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.6. *Espera:* Baremetal — kubeconfig do runner. [registro](../registro/README.md)
+- **1.8** `RTSK.024.1108.01` ✏️ Modo `--dry-run` executa tudo exceto write no IdP. *Aceite:* dry-run gera plano completo e não altera KeycloakOS/Vault. *Entrega:* flag em `cmd/cred-rotator/main.go`. *Escopo:* `cmd/cred-rotator/`. *Depende:* 1.3. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
 
 ### Etapa 1.4 — Auditoria + alerta
 
-- **1.9** `RTSK.024.???.01` ✏️ Emitir `audit_event(type='SECRET_ROTATED', secret_id, previous_hash, new_hash, rotated_at, actor='cred-rotator')`. *Aceite:* evento gerado em cada rotação, SHA256 dos secrets como hash. *Entrega:* publisher em `orchestrator.go`. *Escopo:* `internal/credrotator/`, `pkg/audit/`. *Depende:* 1.6. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
-- **1.10** `RTSK.024.???.01` ✏️ Notificação Slack em sucesso + page em falha. *Aceite:* mensagem em `#exchangeos-security` por sucesso; PagerDuty incident por falha. *Entrega:* integração em `orchestrator.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.3. *Espera:* dono — credenciais Slack + PagerDuty. [registro](../registro/README.md)
-- **1.11** `RTSK.024.???.01` ✏️ Métrica `secret_rotation_last_success_timestamp{secret}`. *Aceite:* métrica exposta, 14 series ativas. *Entrega:* instrumentação em `cmd/cred-rotator/`. *Escopo:* `cmd/cred-rotator/`. *Depende:* 1.9. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.9** `RTSK.024.1109.01` ✏️ Emitir `audit_event(type='SECRET_ROTATED', secret_id, previous_hash, new_hash, rotated_at, actor='cred-rotator')`. *Aceite:* evento gerado em cada rotação, SHA256 dos secrets como hash. *Entrega:* publisher em `orchestrator.go`. *Escopo:* `internal/credrotator/`, `pkg/audit/`. *Depende:* 1.6. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.10** `RTSK.024.1110.01` ✏️ Notificação Slack em sucesso + page em falha. *Aceite:* mensagem em `#exchangeos-security` por sucesso; PagerDuty incident por falha. *Entrega:* integração em `orchestrator.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.3. *Espera:* dono — credenciais Slack + PagerDuty. [registro](../registro/README.md)
+- **1.11** `RTSK.024.1111.01` ✏️ Métrica `secret_rotation_last_success_timestamp{secret}`. *Aceite:* métrica exposta, 14 series ativas. *Entrega:* instrumentação em `cmd/cred-rotator/`. *Escopo:* `cmd/cred-rotator/`. *Depende:* 1.9. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
 
 ### Etapa 1.5 — Deploy + rollback
 
-- **1.12** `RTSK.024.???.01` ✏️ Helm CronJob `cred-rotator-cronjob.yaml` agendado mensal (dia 1, 03:00 UTC). *Aceite:* manifesto renderiza, agenda aplica. *Entrega:* `deploy/helm/exchangeos/templates/cred-rotator-cronjob.yaml`. *Escopo:* `deploy/helm/exchangeos/`. *Depende:* 1.3. *Espera:* Baremetal — pipeline do Helm. [registro](../registro/README.md)
-- **1.13** `RTSK.024.???.01` ✏️ Script `scripts/cred-rollback.sh <secret>` para rollback emergencial. *Aceite:* script restaura versão anterior em < 1 min. *Entrega:* `scripts/cred-rollback.sh`. *Escopo:* `scripts/`. *Depende:* 1.5. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
-- **1.14** `RTSK.024.???.01` ✏️ Entrada de runbook cobrindo rollback emergencial. *Aceite:* runbook aponta para 1.13 e explica fluxo 4-eyes. *Entrega:* seção em `docs/operations/runbook-cred-rotator.md`. *Escopo:* `docs/operations/`. *Depende:* 1.13. *Espera:* jurídico — revisão de procedimento emergencial. [registro](../registro/README.md)
+- **1.12** `RTSK.024.1112.01` ✏️ Helm CronJob `cred-rotator-cronjob.yaml` agendado mensal (dia 1, 03:00 UTC). *Aceite:* manifesto renderiza, agenda aplica. *Entrega:* `deploy/helm/exchangeos/templates/cred-rotator-cronjob.yaml`. *Escopo:* `deploy/helm/exchangeos/`. *Depende:* 1.3. *Espera:* Baremetal — pipeline do Helm. [registro](../registro/README.md)
+- **1.13** `RTSK.024.1113.01` ✏️ Script `scripts/cred-rollback.sh <secret>` para rollback emergencial. *Aceite:* script restaura versão anterior em < 1 min. *Entrega:* `scripts/cred-rollback.sh`. *Escopo:* `scripts/`. *Depende:* 1.5. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.14** `RTSK.024.1114.01` ✏️ Entrada de runbook cobrindo rollback emergencial. *Aceite:* runbook aponta para 1.13 e explica fluxo 4-eyes. *Entrega:* seção em `docs/operations/runbook-cred-rotator.md`. *Escopo:* `docs/operations/`. *Depende:* 1.13. *Espera:* jurídico — revisão de procedimento emergencial. [registro](../registro/README.md)
 
 ### Etapa 1.6 — Testes
 
-- **1.15** `RTSK.024.???.01` ✏️ Teste de integração contra testcontainer KeycloakOS + Vault dev-server. *Aceite:* teste roda rotação completa de 1 secret e valida idempotência em re-run. *Entrega:* `tests/integration/cred_rotator_test.go`. *Escopo:* `tests/integration/`. *Depende:* 1.6. *Espera:* gate — testes com banco. [registro](../registro/README.md)
+- **1.15** `RTSK.024.1115.01` ✏️ Teste de integração contra testcontainer KeycloakOS + Vault dev-server. *Aceite:* teste roda rotação completa de 1 secret e valida idempotência em re-run. *Entrega:* `tests/integration/cred_rotator_test.go`. *Escopo:* `tests/integration/`. *Depende:* 1.6. *Espera:* gate — testes com banco. [registro](../registro/README.md)
 
 ## Fase 2 — Aceite
 
-- **2.1** `RTSK.024.???.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 rotação mensal real em staging sem incidente + rollback testado uma vez. *Entrega:* relatório em `registro/ms-024c/`. *Escopo:* módulo inteiro + staging. *Espera:* gate — rodada N2. [registro](../registro/README.md)
+- **2.1** `RTSK.024.1116.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 rotação mensal real em staging sem incidente + rollback testado uma vez. *Entrega:* relatório em `registro/ms-024c/`. *Escopo:* módulo inteiro + staging. *Espera:* gate — rodada N2. [registro](../registro/README.md)
 
 ## Fase 3 — Fechamento
 
-- **3.1** `RTSK.024.???.01` ✏️ Mover MS para `delivered/` e atualizar `milestones/index.md`. *Aceite:* MS em `delivered/`, índice sem referência em backlog. *Entrega:* commit de fechamento. *Escopo:* `.base/plans/milestones/`. *Espera:* dono — aprovação final. [registro](../registro/README.md)
+- **3.1** `RTSK.024.1117.01` ✏️ Mover MS para `delivered/` e atualizar `milestones/index.md`. *Aceite:* MS em `delivered/`, índice sem referência em backlog. *Entrega:* commit de fechamento. *Escopo:* `.base/plans/milestones/`. *Espera:* dono — aprovação final. [registro](../registro/README.md)
 
 ## Referências
 
