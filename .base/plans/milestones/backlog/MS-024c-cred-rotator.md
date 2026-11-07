@@ -1,50 +1,63 @@
-# MS-024c — Credential Rotator (real loop)
+# MS-024c — Credential Rotator (loop real)
 
-| Field | Value |
-|-------|-------|
-| **Code** | MS-024c |
-| **Name** | cred-rotator |
-| **Phase** | F-OPS-PROD |
-| **Sprint** | 1 of MS-024 cycle |
-| **Status** | BACKLOG |
-| **Owner** | Security + Platform |
-| **Dependencies** | Vault production deployment |
+**Code:** `RMLS.024.011.01` M alocado pela Baremetal em 2026-11-07 (§ 3.3.5 do CONVENTIONS 1.7.0, ainda não em `main`): M=11; registro do DDD 024 em curso.
+**Status:** BACKLOG
+**Owner:** Security + Platform
+**Fonte original (shape 1.1.0, preservada em 2026-11-07):** [registro/ms-024c/plano-original-shape-1.1.0.md](../registro/ms-024c/plano-original-shape-1.1.0.md)
 
-## Why this milestone
+## Por quê
 
-`cmd/cred-rotator/` has a skeleton + the 14-secret catalogue is documented in `docs/integrations/identityos.md`. The actual monthly rotation loop against Vault — generate new client_secret, push to Vault, push to IdentityOS/KeycloakOS, signal pods to reload via SIGHUP or rolling restart, alert on failure — is not implemented.
+`cmd/cred-rotator/` tem esqueleto + catálogo de 14 secrets documentado em `docs/integrations/identityos.md`. O loop mensal real contra Vault (gerar `client_secret`, empurrar ao Vault, empurrar à IdentityOS/KeycloakOS, sinalizar pods para recarga via SIGHUP ou rolling restart, alertar em falha) não está implementado.
 
-## Description
+## Descrição
 
-Build the real cron-driven rotator that orchestrates monthly OAuth2 `client_secret` rotation for the 14 M2M clients used by ExchangeOS + sibling integrations. Must be idempotent, observable, and capable of unattended operation under WIF identity.
+Construir o rotator real dirigido por cron que orquestra rotação mensal de `client_secret` OAuth2 para os 14 clientes M2M usados por ExchangeOS + integrações irmãs. Deve ser idempotente, observável e capaz de operação sem assistência sob identidade WIF.
 
-## Acceptance Criteria
+## Fase 1 — Implementação
 
-- [ ] `cmd/cred-rotator/main.go` driven by config `secrets-catalog.yaml` listing 14 M2M clients + their Vault paths + IdP backends
-- [ ] Per-secret operation: generate 32-byte cryptorandom, update KeycloakOS via admin API, write to Vault, verify reachable from a sample read role, archive previous secret for 24h emergency rollback
-- [ ] Rolling pod restart of consumers via `kubectl rollout restart` after successful rotation (configurable per-secret)
-- [ ] Dry-run mode that does everything except the IdP write
-- [ ] Locking via Vault `kv/locks/cred-rotator/<secret>` to prevent concurrent rotations
-- [ ] Emits `audit_event(type='SECRET_ROTATED', secret_id, previous_hash, new_hash, rotated_at, actor='cred-rotator')`
-- [ ] Slack notification to `#exchangeos-security` on success + page on failure
-- [ ] Helm CronJob template `templates/cred-rotator-cronjob.yaml` scheduled monthly (1st of month, 03:00 UTC)
-- [ ] Integration test against KeycloakOS testcontainer + Vault dev-server
-- [ ] Metric `secret_rotation_last_success_timestamp{secret}` for alerting on miss
-- [ ] Runbook entry covering emergency rollback (`scripts/cred-rollback.sh <secret>`)
+### Etapa 1.1 — Catálogo + orquestrador
 
-## Deliverables
+- **1.1** `RTSK.024.1101.01` ✏️ Criar `config/secrets-catalog.yaml` listando 14 clientes M2M + paths Vault + backends IdP. *Aceite:* YAML valida contra schema, 14 entradas. *Entrega:* `config/secrets-catalog.yaml`. *Escopo:* `config/`. *Espera:* dono — definição final dos 14 clientes. [registro](../registro/README.md)
+- **1.2** `RTSK.024.1102.01` ✏️ Lock distribuído via Vault `kv/locks/cred-rotator/<secret>`. *Aceite:* lock impede rotação concorrente do mesmo secret, libera em sucesso ou falha. *Entrega:* `internal/credrotator/vault.go` (seção lock). *Escopo:* `internal/credrotator/`. *Espera:* dono — provisionamento do Vault. [registro](../registro/README.md)
+- **1.3** `RTSK.024.1103.01` ✏️ Orquestrador `lock + rotate + verify + restart` por secret. *Aceite:* fluxo completo rodado em dry-run sem efeitos colaterais. *Entrega:* `internal/credrotator/orchestrator.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.1, 1.2. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
 
-- `cmd/cred-rotator/main.go`
-- `internal/credrotator/keycloak.go`
-- `internal/credrotator/vault.go`
-- `internal/credrotator/orchestrator.go` (lock + rotate + verify + restart)
-- `config/secrets-catalog.yaml`
-- `scripts/cred-rollback.sh`
-- `deploy/helm/exchangeos/templates/cred-rotator-cronjob.yaml`
-- `tests/integration/cred_rotator_test.go`
+### Etapa 1.2 — Backends (Keycloak + Vault)
 
-## Cross-References
+- **1.4** `RTSK.024.1104.01` ✏️ Atualizar `client_secret` via Keycloak admin API. *Aceite:* chamada bem-sucedida reflete-se em listagem via API; falha 4xx não corrompe estado. *Entrega:* `internal/credrotator/keycloak.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.1. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.5** `RTSK.024.1105.01` ✏️ Gerar cryptorandom 32 bytes + escrever em Vault + arquivar versão anterior por 24h. *Aceite:* nova versão gravada, versão anterior lida por sample reader, auto-expira em 24h. *Entrega:* `internal/credrotator/vault.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.2. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.6** `RTSK.024.1106.01` ✏️ Verificar alcance da nova secret via role de leitura amostra. *Aceite:* read role lê a nova versão antes de confirmar sucesso. *Entrega:* passo em `orchestrator.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.4, 1.5. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
 
-- `docs/integrations/identityos.md` — 14-secret catalogue
-- `docs/security/iso27001-controls-mapping.md` controls 5.16, 5.17, 8.5
-- `docs/security/sod-matrix.md` — automated rotation actor role
+### Etapa 1.3 — Rollout + modo de operação
+
+- **1.7** `RTSK.024.1107.01` ✏️ Rolling restart via `kubectl rollout restart` após rotação. *Aceite:* restart aplicado só nos consumidores do secret (lista no catálogo); configurável per-secret. *Entrega:* passo em `orchestrator.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.6. *Espera:* Baremetal — kubeconfig do runner. [registro](../registro/README.md)
+- **1.8** `RTSK.024.1108.01` ✏️ Modo `--dry-run` executa tudo exceto write no IdP. *Aceite:* dry-run gera plano completo e não altera KeycloakOS/Vault. *Entrega:* flag em `cmd/cred-rotator/main.go`. *Escopo:* `cmd/cred-rotator/`. *Depende:* 1.3. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+
+### Etapa 1.4 — Auditoria + alerta
+
+- **1.9** `RTSK.024.1109.01` ✏️ Emitir `audit_event(type='SECRET_ROTATED', secret_id, previous_hash, new_hash, rotated_at, actor='cred-rotator')`. *Aceite:* evento gerado em cada rotação, SHA256 dos secrets como hash. *Entrega:* publisher em `orchestrator.go`. *Escopo:* `internal/credrotator/`, `pkg/audit/`. *Depende:* 1.6. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.10** `RTSK.024.1110.01` ✏️ Notificação Slack em sucesso + page em falha. *Aceite:* mensagem em `#exchangeos-security` por sucesso; PagerDuty incident por falha. *Entrega:* integração em `orchestrator.go`. *Escopo:* `internal/credrotator/`. *Depende:* 1.3. *Espera:* dono — credenciais Slack + PagerDuty. [registro](../registro/README.md)
+- **1.11** `RTSK.024.1111.01` ✏️ Métrica `secret_rotation_last_success_timestamp{secret}`. *Aceite:* métrica exposta, 14 series ativas. *Entrega:* instrumentação em `cmd/cred-rotator/`. *Escopo:* `cmd/cred-rotator/`. *Depende:* 1.9. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+
+### Etapa 1.5 — Deploy + rollback
+
+- **1.12** `RTSK.024.1112.01` ✏️ Helm CronJob `cred-rotator-cronjob.yaml` agendado mensal (dia 1, 03:00 UTC). *Aceite:* manifesto renderiza, agenda aplica. *Entrega:* `deploy/helm/exchangeos/templates/cred-rotator-cronjob.yaml`. *Escopo:* `deploy/helm/exchangeos/`. *Depende:* 1.3. *Espera:* Baremetal — pipeline do Helm. [registro](../registro/README.md)
+- **1.13** `RTSK.024.1113.01` ✏️ Script `scripts/cred-rollback.sh <secret>` para rollback emergencial. *Aceite:* script restaura versão anterior em < 1 min. *Entrega:* `scripts/cred-rollback.sh`. *Escopo:* `scripts/`. *Depende:* 1.5. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.14** `RTSK.024.1114.01` ✏️ Entrada de runbook cobrindo rollback emergencial. *Aceite:* runbook aponta para 1.13 e explica fluxo 4-eyes. *Entrega:* seção em `docs/operations/runbook-cred-rotator.md`. *Escopo:* `docs/operations/`. *Depende:* 1.13. *Espera:* jurídico — revisão de procedimento emergencial. [registro](../registro/README.md)
+
+### Etapa 1.6 — Testes
+
+- **1.15** `RTSK.024.1115.01` ✏️ Teste de integração contra testcontainer KeycloakOS + Vault dev-server. *Aceite:* teste roda rotação completa de 1 secret e valida idempotência em re-run. *Entrega:* `tests/integration/cred_rotator_test.go`. *Escopo:* `tests/integration/`. *Depende:* 1.6. *Espera:* gate — testes com banco. [registro](../registro/README.md)
+
+## Fase 2 — Aceite
+
+- **2.1** `RTSK.024.1116.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 rotação mensal real em staging sem incidente + rollback testado uma vez. *Entrega:* relatório em `registro/ms-024c/`. *Escopo:* módulo inteiro + staging. *Espera:* gate — rodada N2. [registro](../registro/README.md)
+
+## Fase 3 — Fechamento
+
+- **3.1** `RTSK.024.1117.01` ✏️ Mover MS para `delivered/` e atualizar `milestones/index.md`. *Aceite:* MS em `delivered/`, índice sem referência em backlog. *Entrega:* commit de fechamento. *Escopo:* `.base/plans/milestones/`. *Espera:* dono — aprovação final. [registro](../registro/README.md)
+
+## Referências
+
+- `docs/integrations/identityos.md` — catálogo dos 14 secrets
+- `docs/security/iso27001-controls-mapping.md` controles 5.16, 5.17, 8.5
+- `docs/security/sod-matrix.md` — papel do ator de rotação automática
