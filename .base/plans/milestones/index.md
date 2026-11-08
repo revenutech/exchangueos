@@ -5,7 +5,7 @@
 >
 > **Ciclos:**
 > - **MS-023a..x** (26 milestones) — **DELIVERED** — planning + scaffolding + foundations
-> - **MS-024a..m** (13 milestones) — **BACKLOG** — production-hardening: close the gap from "design done" to "running production with traffic"
+> - **MS-024a..n** (14 milestones; MS-024n **DELIVERED** em 2026-11-08, demais **BACKLOG**) — production-hardening: close the gap from "design done" to "running production with traffic"
 
 ## Folder Convention
 
@@ -61,7 +61,7 @@ Ver [`roadmap/status-dashboard.md`](../roadmap/status-dashboard.md) para tabela 
 
 26 milestones MS-023a..x + 2 sub-milestones (MS-023d2, MS-023f2). All in `delivered/`.
 
-### Cycle MS-024 — Production hardening (BACKLOG, 13 milestones)
+### Cycle MS-024 — Production hardening (14 milestones; MS-024n DELIVERED 2026-11-08, demais BACKLOG)
 
 Mapping each milestone to the gap it closes from the v4.19.0 honesty review:
 
@@ -80,6 +80,7 @@ Mapping each milestone to the gap it closes from the v4.19.0 honesty review:
 | MS-024k | Pattern Catalogue Build-out | 823 of 850 placeholders to fill |
 | MS-024l | CRDB Hub TLS Cross-repo PR | PR never opened |
 | MS-024m | Production Deployment | GKE + Litmus + Chaos Mesh + ArgoCD never live |
+| MS-024n | Vuln-fix: `klauspost/compress` GO-2026-6865 | indirect bump v1.17.9 → v1.20.2 (DELIVERED 2026-11-08) |
 
 ### MS-023 file inventory (in `delivered/`)
 
@@ -111,6 +112,12 @@ Mapping each milestone to the gap it closes from the v4.19.0 honesty review:
 | delivered/ | MS-023v | `MS-023v-integration-verification-gap-closure.md` |
 | delivered/ | MS-023w | `MS-023w-cross-platform-tooling.md` |
 | delivered/ | MS-023x | `MS-023x-precommit-hard-enforcement.md` |
+
+### MS-024 file inventory (in `delivered/`)
+
+| Folder | Code | File |
+|--------|------|------|
+| delivered/ | MS-024n | `MS-024n-vuln-klauspost-compress.md` |
 
 ### MS-024 file inventory (in `backlog/`)
 
