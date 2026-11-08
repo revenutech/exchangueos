@@ -14,6 +14,24 @@ Tarefa `RTSK.024.1718.01` (MS-024k 1.16), 2026-11-08.
   - `.base/rules/` (14): `CHANGELOG.md`, `CONVENTIONS.md`, `VERSION`, `cfets.md`, `comp.md`, `eod.md`, `gov.md`, `quote.md`, `refdata.md`, `risk.md`, `sett2.md`, `settle.md`, `trade.md`, `index.md` (união).
   - `.base/plans/00-governance/index.md` (1).
   - `CLAUDE.md` (1).
+- **o que a revisão substantiva encontrou (comparação arquivo-a-arquivo contra `baremetal/.base/plans/CONVENTIONS.md` § 3.3.5 e os espelhos `treasuryos/.base/{adrs,rules,flows}/`):**
+  - `.base/adrs/CONVENTIONS.md` — espelha `baremetal/.base/adrs/` e `onboardos-revenu/.base/adrs/README.md` § «O que exige uma ADR». Coerente com `RULE-008` (doc explica, não decide). **OK.**
+  - `.base/adrs/CHANGELOG.md` — abre em `v1.1.0 (2026-10-23)` registrando `ADR-009`; a seção `v1.0.0 (2026-10-22)` fecha-se 1 linha abaixo com as 8 ADRs iniciais. **OK.**
+  - `.base/adrs/VERSION` — **débito encontrado: `1.0.0` diverge do CHANGELOG (`v1.1.0`)**. Corrigido neste commit: `VERSION ← 1.1.0`.
+  - `.base/adrs/TEMPLATE.md` — define 5 seções (`## Contexto`, `## Decisão`, `## Consequências`, `## Alternativas consideradas`, `## Verificação`) + bloco de convenções do `**Status:** X` em UPPER-CASE do vocabulário fechado. É o template de ADR do baremetal; não se confunde com o `TEMPLATE.md` de `patterns/` (6 seções), que serve a padrões, não a decisões. **OK.**
+  - `.base/adrs/ADR-009-...md` — `**Status:** DRAFT — …` no início de linha, formato exigido pelo TEMPLATE.md (linha 4). Alias `ADR-009`, code `RADR.024.009.01`, data `2026-10-23`. 221 linhas. **OK.**
+  - `.base/flows/CONVENTIONS.md` — espelha `baremetal/.base/flows/`, `ledgeros/.base/flows/` e `treasuryos/.base/flows/`. Registro de domínios disjunto declarado (`024` + `220`–`249`). **OK.**
+  - `.base/flows/CHANGELOG.md` + `.base/flows/VERSION` — ambos em `1.0.0` e sincronizados. **OK.**
+  - `.base/flows/README.md` **removido** — delete intencional: o índice passa a ser `index.md`, pela convenção. Nada mais o referencia dentro do módulo. **OK.**
+  - `.base/rules/CONVENTIONS.md` — espelha `baremetal/.base/rules/` e `treasuryos/.base/rules/`. Define 10 subdomínios com file + domain assignment (`GOV` 024, `TRADE` 221, `QUOTE` 222, `SETTLE` 223, `CFETS` 224, `SETT2` 225, `REFDATA` 226, `RISK` 227, `COMP` 228, `EOD` 229). **OK.**
+  - `.base/rules/CHANGELOG.md` + `.base/rules/VERSION` — ambos em `1.0.0` e sincronizados. **OK.**
+  - `.base/rules/{trade,comp,gov,settle,refdata,risk}.md` — cada um abre com `# RN_<AREA> — <título>` e descreve aliases `RN_FX_NNN` com status; estrutura casa com as 11 regras no `index.md`. **OK.**
+  - `.base/rules/{quote,sett2,cfets,eod}.md` — abertos com cabeçalho e marcados `Catálogo vazio em 2026-10-22`; são lugares reservados para RN_QUOTE_001, RN_SETT2_001, RN_CFETS_001, RN_EOD_001. **OK** (não há regra a preencher hoje; corpo vazio é intencional, não é débito).
+  - `.base/plans/00-governance/index.md` — dif de 54 linhas, apontando a antiga tabela de ADRs para o novo catálogo `.base/adrs/`. **OK.**
+  - `CLAUDE.md` — acrescenta um bloco citando `.base/adrs/`, `.base/rules/`, `.base/flows/` depois dos imports `@.claude/context/*` e esclarece a diferença entre `.claude/rules/` (plataforma) e `.base/rules/` (módulo). Coerente com o cherry-pick. **OK.**
+- **débitos nomeados contra a convenção da `.base/` do baremetal:**
+  1. `.base/adrs/VERSION` estava `1.0.0` e o CHANGELOG abriu `v1.1.0` em 2026-10-23. **Corrigido neste mesmo commit.**
+  2. Nenhum outro débito encontrado.
 - **autorização:** Core em 2026-11-08: «a fase B está certa, e a união dos 3 índices ficou bem anotada. Nível da 1.16: confirmado, a prova leve que você propôs serve».
 - **prova leve (régua do Core para a 1.16, confirmada em 2026-11-08):**
   1. `grep -lE '^(<<<<<<<|=======|>>>>>>>)' <27 arquivos>` — vazio (nenhum marcador de conflito residual).
@@ -24,7 +42,7 @@ Tarefa `RTSK.024.1718.01` (MS-024k 1.16), 2026-11-08.
   - `grep -rn 'CLAUDE\.md' --include='*.go' modules/ pkg/ cmd/ internal/` — vazio.
   - `grep -rn 'embed.*\.base\|embed.*CLAUDE' --include='*.go' .` — vazio (nenhum `//go:embed` aponta pra `.base/` ou `CLAUDE.md`).
   - Conclusão: nenhum pacote Go do exchangeos lê `.base/` nem `CLAUDE.md` em runtime; não há pacote Go a incluir numa prova ampliada desta linha.
-- **débitos nomeados contra a convenção da `.base/` do baremetal:** nenhum. Os três índices absorvem as 3 frases da HEAD sem violar o shape 1.1.0 (ADR imutável após aceita, fluxo aplica regra/ADR, fundamento de regra é ADR ou padrão). Os arquivos de rules, flows e adrs novos vieram do padrão canônico.
+- **os três índices** absorvem as 3 frases da HEAD sem violar o shape 1.1.0 (ADR imutável após aceita, fluxo aplica regra/ADR, fundamento de regra é ADR ou padrão). Os arquivos de rules, flows e adrs novos vieram do padrão canônico.
 - **remoto:** push/PR/CD esperam o baremetal remoto. Fica tudo em `develop` local, pela regra do dono (v3.427.0).
 
 ```prova
