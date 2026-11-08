@@ -1,6 +1,6 @@
 # MS-024c — Credential Rotator (loop real)
 
-**Code:** `RMLS.024.011.01` M alocado pela Baremetal em 2026-11-07 (§ 3.3.5 do CONVENTIONS 1.7.0, ainda não em `main`): M=11; registro do DDD 024 em curso.
+**Code:** `RMLS.024.011.01` M alocado pela Baremetal em 2026-11-07 (§ 3.3.5 da CONVENTIONS, em `main` desde a 1.9.0): M=11; registro do DDD 024 em curso.
 **Status:** BACKLOG
 **Owner:** Security + Platform
 **Fonte original (shape 1.1.0, preservada em 2026-11-07):** [registro/ms-024c/plano-original-shape-1.1.0.md](../registro/ms-024c/plano-original-shape-1.1.0.md)
