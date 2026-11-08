@@ -18,6 +18,6 @@ Tarefa `RTSK.024.1717.01` (MS-024k 1.15), 2026-11-08.
 
 ```prova
 n0: grep do .base/patterns/index.md acha sintaxe, ADR-019 e RFIX
-integracao: develop <sha-pós-merge>
+integracao: develop ad909032b1a91341361a51499cd0b56bc63b2f99
 revisor: n/a — não toca dinheiro, tenant, assinatura nem PII
 ```
