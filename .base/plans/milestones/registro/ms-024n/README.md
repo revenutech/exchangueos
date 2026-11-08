@@ -28,3 +28,28 @@ O `833b684` da TreasuryOS é final; conteúdo não muda. A receita literal da 1.
 - `govulncheck ./...` deve passar a «No vulnerabilities found» no recorte `GO-2026-6865`
 
 Lado do modelo: TreasuryOS v1.19.1 → v1.20.2. Lado do exchangeos: v1.17.9 → v1.20.2 (indireto em `go.mod:50`). O salto é maior; isso é esperado.
+
+## Depende satisfeita — 2026-11-08
+
+`treasuryos RTSK 280.1307.01` (MS-033 1.5): merge local feito na develop da TreasuryOS. Evidência:
+
+- Head da develop da TreasuryOS pós-merge: `b09e2156dc0063a22fdf534f54850dc7dd2f5cd9` (sem push)
+- Commit modelo permanente: `833b684` (imutável)
+- Status na develop deles: build OK + `govulncheck` em «No vulnerabilities found»
+- Liberação explícita: «a sua MS-024n pode seguir»
+
+A 1.1 fica agora bloqueada apenas pelo M da Baremetal (destrava a numeração RTSK/RMLS). Estado segue em `✏️` enquanto os códigos forem placeholder.
+
+## M alocado pela Baremetal — 2026-11-08
+
+M=19 confirmado para a MS-024n (§ 3.3.5 do CONVENTIONS 1.7.0). Códigos finais:
+
+- RMLS: `RMLS.024.019.01`
+- RTSK (FFF = M×100 + seq):
+  - 1.1 → `RTSK.024.1901.01`
+  - 2.1 → `RTSK.024.1902.01`
+  - 3.1 → `RTSK.024.1903.01`
+
+Baremetal conferiu que M=19 está livre em todos os `.base/` sob `~/projects`, em todos os ramos locais do exchangeos e nos PRs abertos do baremetal. Registro vive no ramo de plano local da Baremetal `e268a2f4` (sem push).
+
+Com Depende satisfeita + códigos numerados, a 1.1 passa de `✏️` → `⬜` pela DoR. Próximo bloqueio: autorização do dono para rodar o bump real em `go.mod`/`go.sum`. Peer orientação (Core) não substitui — mudança de código de produção exige palavra do dono, mesmo em merge local sem push.

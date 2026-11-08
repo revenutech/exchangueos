@@ -1,6 +1,6 @@
 # MS-024n — Vuln-fix: `klauspost/compress` GO-2026-6865
 
-**Code:** RMLS a numerar (pelo domínio) — M a alocar pela Baremetal (§ 3.3.5 do CONVENTIONS 1.7.0, ainda não em `main`).
+**Code:** `RMLS.024.019.01` M alocado pela Baremetal em 2026-11-08 (§ 3.3.5 do CONVENTIONS 1.7.0, ainda não em `main`): M=19; ramo de plano da Baremetal `e268a2f4` (sem push).
 **Status:** BACKLOG
 **Owner:** Platform
 **Origem:** criada em 2026-11-08 por decisão do Core (select do dono); espelha o upgrade modelo da TreasuryOS MS-033 1.5 (`RTSK.280.1307.01`, commit `833b684` em `fix/ms033-compress`). Sem shape 1.1.0 anterior.
@@ -17,15 +17,15 @@ Subir `github.com/klauspost/compress` de v1.17.9 para v1.20.2 em um único commi
 
 ### Etapa 1.1 — Upgrade
 
-- **1.1** `RTSK a numerar (pelo domínio)` ✏️ Subir `github.com/klauspost/compress` de v1.17.9 para v1.20.2 em commit isolado (só `go.mod` + `go.sum`). *Aceite:* `govulncheck ./...` sem `GO-2026-6865` + bateria pela fila verde no head do commit. *Entrega:* diff em `go.mod` e `go.sum`, commit único, merge local sem push. *Escopo:* `go.mod`, `go.sum`. *Depende:* `treasuryos RTSK 280.1307.01`. *Espera:* TreasuryOS — head do commit modelo. [registro](../registro/ms-024n/README.md)
+- **1.1** `RTSK.024.1901.01` ⬜ Subir `github.com/klauspost/compress` de v1.17.9 para v1.20.2 em commit isolado (só `go.mod` + `go.sum`). *Aceite:* `govulncheck ./...` sem `GO-2026-6865` + bateria pela fila verde no head do commit. *Entrega:* diff em `go.mod` e `go.sum`, commit único, merge local sem push. *Escopo:* `go.mod`, `go.sum`. *Depende:* `treasuryos RTSK 280.1307.01` — satisfeita em 2026-11-08 (develop TreasuryOS `b09e2156`). *Espera:* dono — autorização para executar o bump real em `go.mod`/`go.sum`. [registro](../registro/ms-024n/README.md)
 
 ## Fase 2 — Aceite
 
-- **2.1** `RTSK a numerar (pelo domínio)` ✏️ Rodar aceite da MS. *Aceite:* 1.1 verde + `govulncheck ./...` limpo do achado + bateria pela fila verde. *Entrega:* relatório em `registro/ms-024n/`. *Escopo:* módulo inteiro. *Depende:* 1.1. *Espera:* gate — bateria pela fila. [registro](../registro/ms-024n/README.md)
+- **2.1** `RTSK.024.1902.01` ✏️ Rodar aceite da MS. *Aceite:* 1.1 verde + `govulncheck ./...` limpo do achado + bateria pela fila verde. *Entrega:* relatório em `registro/ms-024n/`. *Escopo:* módulo inteiro. *Depende:* 1.1. *Espera:* gate — bateria pela fila. [registro](../registro/ms-024n/README.md)
 
 ## Fase 3 — Fechamento
 
-- **3.1** `RTSK a numerar (pelo domínio)` ✏️ Mover MS para `delivered/` e atualizar `milestones/index.md`. *Aceite:* MS em `delivered/`, índice sem referência em backlog. *Entrega:* commit de fechamento. *Escopo:* `.base/plans/milestones/`. *Depende:* 2.1. *Espera:* dono — aprovação final. [registro](../registro/ms-024n/README.md)
+- **3.1** `RTSK.024.1903.01` ✏️ Mover MS para `delivered/` e atualizar `milestones/index.md`. *Aceite:* MS em `delivered/`, índice sem referência em backlog. *Entrega:* commit de fechamento. *Escopo:* `.base/plans/milestones/`. *Depende:* 2.1. *Espera:* dono — aprovação final. [registro](../registro/ms-024n/README.md)
 
 ## Referências
 
