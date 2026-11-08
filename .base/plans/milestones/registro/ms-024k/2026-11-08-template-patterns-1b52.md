@@ -19,6 +19,6 @@ Tarefa `RTSK.024.1701.01` (MS-024k 1.1), 2026-11-08.
 ```prova
 n1: e491f0a80e5d98a28bfa53a7d17c84f42f06cddf conferir-linhas+gitleaks 2026-11-08T12:25:30Z
 n2: pendente
-integracao: develop <sha-pós-merge>
+integracao: develop d47f2a393ecf7d338f01796f275d6abf76773262
 revisor: n/a — não toca dinheiro, tenant, assinatura nem PII
 ```
