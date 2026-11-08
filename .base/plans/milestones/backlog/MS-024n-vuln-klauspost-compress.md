@@ -1,6 +1,6 @@
 # MS-024n — Vuln-fix: `klauspost/compress` GO-2026-6865
 
-**Code:** `RMLS.024.019.01` M alocado pela Baremetal em 2026-11-08 (§ 3.3.5 do CONVENTIONS 1.7.0, ainda não em `main`): M=19; ramo de plano da Baremetal `e268a2f4` (sem push).
+**Code:** `RMLS.024.019.01` M alocado pela Baremetal em 2026-11-08 (§ 3.3.5 da CONVENTIONS; a linha da 024n está no ramo de plano da Baremetal `e268a2f4`, sem push — a tabela 024b..m já está em `main` em CONVENTIONS 1.9.0).
 **Status:** BACKLOG
 **Owner:** Platform
 **Origem:** criada em 2026-11-08 por decisão do Core (select do dono); espelha o upgrade modelo da TreasuryOS MS-033 1.5 (`RTSK.280.1307.01`, commit `833b684` em `fix/ms033-compress`). Sem shape 1.1.0 anterior.
@@ -17,7 +17,7 @@ Subir `github.com/klauspost/compress` de v1.17.9 para v1.20.2 em um único commi
 
 ### Etapa 1.1 — Upgrade
 
-- **1.1** `RTSK.024.1901.01` ⬜ Subir `github.com/klauspost/compress` de v1.17.9 para v1.20.2 em commit isolado (só `go.mod` + `go.sum`). *Aceite:* `govulncheck ./...` sem `GO-2026-6865` + bateria pela fila verde no head do commit. *Entrega:* diff em `go.mod` e `go.sum`, commit único, merge local sem push. *Escopo:* `go.mod`, `go.sum`. *Depende:* `treasuryos RTSK 280.1307.01` — satisfeita em 2026-11-08 (develop TreasuryOS `b09e2156`). *Espera:* dono — autorização para executar o bump real em `go.mod`/`go.sum`. [registro](../registro/ms-024n/README.md)
+- **1.1** `RTSK.024.1901.01` ⬜ Subir `github.com/klauspost/compress` de v1.17.9 para v1.20.2 em commit isolado (só `go.mod` + `go.sum`). *Aceite:* `govulncheck ./...` sem `GO-2026-6865` + bateria pela fila verde no head do commit. *Entrega:* diff em `go.mod` e `go.sum`, commit único, merge local sem push. *Escopo:* `go.mod`, `go.sum`. *Depende:* `treasuryos RTSK 280.1307.01` — satisfeita em 2026-11-08 (develop TreasuryOS `b09e2156`). *Espera:* gate — bateria pela fila. [registro](../registro/ms-024n/README.md)
 
 ## Fase 2 — Aceite
 
