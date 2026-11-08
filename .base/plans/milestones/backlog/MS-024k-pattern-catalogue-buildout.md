@@ -40,6 +40,7 @@ Converter os 823 placeholders em entradas reais ao longo do ciclo MS-024, usando
 ### Etapa 1.4 — Governança
 
 - **1.14** `RTSK.024.1714.01` ✏️ Pattern-review trimestral (1h) para retirar deprecated + promover úteis. *Aceite:* 1 sessão realizada com notas em `patterns/reviews/`. *Entrega:* notas de review. *Escopo:* `patterns/reviews/`. *Espera:* dono — agenda da sessão. [registro](../registro/README.md)
+- **1.15** `RTSK.024.1717.01` ✅ Registrar sintaxe `cognee-revenu:PTN-NNN`, precedência (fundação→ontologia→ADR→padrão→regra→fluxo, cognee-revenu:ADR-019) e catálogo `RFIX` fora da precedência (ledgeros dom. 053, cognee-revenu:O162) em `.base/patterns/index.md`. *Aceite:* `grep` acha os 3 conceitos no `.base/patterns/index.md`. *Entrega:* `.base/patterns/index.md` (pela união dos 2 commits de `docs/padroes-do-contexto`). *Escopo:* `.base/patterns/`. [registro](../registro/ms-024k/README.md)
 
 ## Fase 2 — Aceite
 
