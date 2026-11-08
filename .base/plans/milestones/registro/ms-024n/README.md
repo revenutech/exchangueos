@@ -18,11 +18,12 @@ O `GO-2026-6865` já consta nesse snapshot. Se o DB tiver avançado na hora da e
 
 ## Técnica do modelo (congelada pela TreasuryOS em 2026-11-08)
 
-O `833b684` da TreasuryOS é final; conteúdo não muda. A receita literal da 1.1 do exchangeos é:
+O `833b684` da TreasuryOS é final; conteúdo não muda. A receita literal da 1.1 do exchangeos (corrigida pelo Core em 2026-11-08 — alinhada ao modelo `833b684` e à identityos) é:
 
 - `go get github.com/klauspost/compress@v1.20.2`
-- `go mod tidy`
+- **sem** `go mod tidy` — se o tidy mexer em outra coisa, sai do escopo
 - commit único só com `go.mod` + `go.sum`; nenhum outro caminho entra
+- diff esperado: linha do `klauspost/compress` em `go.mod` + linhas dele em `go.sum`, nada mais
 - `archive/` fica **fora de escopo** (os `go.mod` de `archive/` do modelo não foram tocados; aqui o exchangeos não tem `archive/`, mas a regra é a mesma — só o `go.mod` raiz)
 - bateria de 16 passos pela fila deve fechar verde
 - `govulncheck ./...` deve passar a «No vulnerabilities found» no recorte `GO-2026-6865`
@@ -42,7 +43,7 @@ A 1.1 fica agora bloqueada apenas pelo M da Baremetal (destrava a numeração RT
 
 ## M alocado pela Baremetal — 2026-11-08
 
-M=19 confirmado para a MS-024n (§ 3.3.5 do CONVENTIONS 1.7.0). Códigos finais:
+M=19 confirmado para a MS-024n (§ 3.3.5 da CONVENTIONS). Códigos finais:
 
 - RMLS: `RMLS.024.019.01`
 - RTSK (FFF = M×100 + seq):
@@ -50,6 +51,6 @@ M=19 confirmado para a MS-024n (§ 3.3.5 do CONVENTIONS 1.7.0). Códigos finais:
   - 2.1 → `RTSK.024.1902.01`
   - 3.1 → `RTSK.024.1903.01`
 
-Baremetal conferiu que M=19 está livre em todos os `.base/` sob `~/projects`, em todos os ramos locais do exchangeos e nos PRs abertos do baremetal. Registro vive no ramo de plano local da Baremetal `e268a2f4` (sem push).
+Baremetal conferiu que M=19 está livre em todos os `.base/` sob `~/projects`, em todos os ramos locais do exchangeos e nos PRs abertos do baremetal. A tabela de M do 024 (024b..024m) já está em `main` do baremetal em **CONVENTIONS 1.9.0**; só a linha da 024n está no ramo de plano local `e268a2f4` (sem push).
 
-Com Depende satisfeita + códigos numerados, a 1.1 passa de `✏️` → `⬜` pela DoR. Próximo bloqueio: autorização do dono para rodar o bump real em `go.mod`/`go.sum`. Peer orientação (Core) não substitui — mudança de código de produção exige palavra do dono, mesmo em merge local sem push.
+Com Depende satisfeita + códigos numerados, a 1.1 passa de `✏️` → `⬜` pela DoR. Execução autorizada pelo Core em 2026-11-08 («a decisão do dono — uma tarefa por módulo, depois do modelo — já cobre isso»). `Espera:` na 1.1 vira «gate — bateria pela fila».
