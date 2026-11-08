@@ -15,3 +15,16 @@ Para a 1.1 valer como espelho fiel do modelo, a execução usa a mesma base que 
 - DB `govulncheck`: `https://vuln.go.dev`, snapshot de **2026-11-05 23:49:57 UTC**
 
 O `GO-2026-6865` já consta nesse snapshot. Se o DB tiver avançado na hora da execução, achados novos não-`compress` ficam em registro próprio (não contaminam o aceite desta tarefa, que está escopada em um achado).
+
+## Técnica do modelo (congelada pela TreasuryOS em 2026-11-08)
+
+O `833b684` da TreasuryOS é final; conteúdo não muda. A receita literal da 1.1 do exchangeos é:
+
+- `go get github.com/klauspost/compress@v1.20.2`
+- `go mod tidy`
+- commit único só com `go.mod` + `go.sum`; nenhum outro caminho entra
+- `archive/` fica **fora de escopo** (os `go.mod` de `archive/` do modelo não foram tocados; aqui o exchangeos não tem `archive/`, mas a regra é a mesma — só o `go.mod` raiz)
+- bateria de 16 passos pela fila deve fechar verde
+- `govulncheck ./...` deve passar a «No vulnerabilities found» no recorte `GO-2026-6865`
+
+Lado do modelo: TreasuryOS v1.19.1 → v1.20.2. Lado do exchangeos: v1.17.9 → v1.20.2 (indireto em `go.mod:50`). O salto é maior; isso é esperado.
