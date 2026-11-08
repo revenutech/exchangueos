@@ -1,8 +1,8 @@
 ---
 data: 2026-11-08
 tarefa: 1.16
-estado: ✅
-evidencia: 27 arquivos do cherry-pick fd18a75 (commit local 2695b9e, merge c78784f) passam a prova leve na develop; nenhum pacote Go do exchangeos lê .base/ nem CLAUDE.md
+estado: ☑️
+evidencia: 27 arquivos do cherry-pick fd18a75 (commit local 2695b9e, merge c78784f) passam a prova leve na develop; nenhum pacote Go do exchangeos lê .base/ nem CLAUDE.md; N1 leve verde, N2 do head pendente
 pr:
 ---
 Tarefa `RTSK.024.1718.01` (MS-024k 1.16), 2026-11-08.
@@ -28,8 +28,8 @@ Tarefa `RTSK.024.1718.01` (MS-024k 1.16), 2026-11-08.
 - **remoto:** push/PR/CD esperam o baremetal remoto. Fica tudo em `develop` local, pela regra do dono (v3.427.0).
 
 ```prova
-n0: grep -c '<<<<<<<\|=======\|>>>>>>>' nos 27 arquivos do cherry-pick = 0
-n1: c78784f7dca6735a447cafccae9ee84205f126ea conferir-linhas 151/0×6/2 + gitleaks no-leaks + sem leitor Go (comentário em modules/trade/domain/doc.go:15 não é leitura) 2026-11-08T21:53:54Z
+n1: c78784f7dca6735a447cafccae9ee84205f126ea verde — grep de marcadores vazio nos 27 arquivos, gitleaks protect no-leaks no diff 2695b9e^..c78784f, conferir-linhas 151/0×6/2 longas, nenhum pacote Go lê `.base/` nem `CLAUDE.md` (`modules/trade/domain/doc.go:15` é comentário) 2026-11-08T21:53:54Z
 integracao: develop c78784f7dca6735a447cafccae9ee84205f126ea
+n2: pendente — aguarda a fila do gate pesado no head atual
 revisor: n/a — não toca dinheiro, tenant, assinatura nem PII
 ```

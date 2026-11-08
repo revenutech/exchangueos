@@ -1,8 +1,8 @@
 ---
 data: 2026-11-08
 tarefa: 1.15
-estado: ✅
-evidencia: .base/patterns/index.md contém sintaxe, precedência e RFIX; união dos 2 commits trazidos do ramo docs/padroes-do-contexto
+estado: ☑️
+evidencia: .base/patterns/index.md contém sintaxe, precedência e RFIX; união dos 2 commits trazidos do ramo docs/padroes-do-contexto; N1 leve verde, N2 do head pendente
 pr:
 ---
 Tarefa `RTSK.024.1717.01` (MS-024k 1.15), 2026-11-08.
@@ -17,7 +17,8 @@ Tarefa `RTSK.024.1717.01` (MS-024k 1.15), 2026-11-08.
 - **remoto:** push/PR/CD esperam o baremetal remoto. Fica tudo em `develop` local.
 
 ```prova
-n0: grep do .base/patterns/index.md acha sintaxe, ADR-019 e RFIX
+n1: ad909032b1a91341361a51499cd0b56bc63b2f99 verde — grep do .base/patterns/index.md acha sintaxe, ADR-019 e RFIX; gitleaks protect no-leaks; conferir-linhas sem linha aberta nova
 integracao: develop ad909032b1a91341361a51499cd0b56bc63b2f99
+n2: pendente — aguarda a fila do gate pesado no head atual
 revisor: n/a — não toca dinheiro, tenant, assinatura nem PII
 ```
