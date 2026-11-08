@@ -108,3 +108,23 @@ aliases: CVE-2026-116591, GHSA-fpmh-frq8-7rj8
 published / modified: 2026-11-05T22:54:32Z
 affected.ranges: introduced=0, fixed=1.20.2
 ```
+
+## Cobertura da chain franz-go → compress nos testes do exchangeos
+
+Pedido Core em 2026-11-08 (após o merge da 1.1): se há testes de integração com Kafka que exercitem o publisher franz-go em runtime, rodar pela fila antes do 3.1; se não há, registrar.
+
+Varredura no head `fae6c56`:
+
+- Importes de `franz-go` ou `twmb/franz` em arquivos `*_test.go`: **zero**.
+- Importes de `pkg/outbox/kafka` ou `kgo.` em arquivos `*_test.go`: **zero**.
+- Conteúdo do próprio `pkg/outbox/kafka/`: `doc.go` + `publisher.go` (sem `*_test.go`).
+- `tests/integration/*.go`: 2 arquivos (`admin_crud_test.go`, `erasure_test.go`), ambos `//go:build integration`, batem na API HTTP (`/v1/admin/outbox-archive`) mas não constroem publisher franz-go nem publicam mensagens Kafka em runtime.
+
+**Não há, no head `fae6c56`, teste que exercite o publisher Kafka com franz-go em runtime.** Portanto não existe uma «bateria Kafka» a rodar pela fila para esta MS.
+
+Sanity estático adicional rodado em compensação:
+
+- `go vet -tags=integration ./...` → sem erros (confirma que o universo com tag integration compila com `klauspost/compress v1.20.2`).
+- `govulncheck -test -tags=integration ./...` → «No vulnerabilities found» (0 affected); as 3 IDs não-compress permanecem (idem demais rodadas); **GO-2026-6865 segue ausente** mesmo incluindo o universo de integração na análise.
+
+Nada do que cobre franz-go/compress em runtime existe para rodar. A observação é registrada no lugar da execução.
