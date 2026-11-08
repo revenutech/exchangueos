@@ -13,6 +13,16 @@
 @.claude/context/business-rules.md
 @.claude/PERFORMANCE.md
 
+> **Catalogos canonicos (nao sao auto-carregados pelo Claude Code).** Consulte-os quando a tarefa pedir:
+>
+> - [`.base/adrs/index.md`](.base/adrs/index.md) — decisoes arquiteturais (ADR-NNN · `RADR.024|221..229.FFF.VV`).
+> - [`.base/rules/index.md`](.base/rules/index.md) — regras de dominio (RN_FX_* / RN_<AREA>_NNN · `RRUL.024|221..229.FFF.VV`).
+> - [`.base/flows/index.md`](.base/flows/index.md) — fluxos operacionais (RFLW.024|221..229.FFF.VV).
+>
+> Padrao em `baremetal/.base/plans/CONVENTIONS.md` § 3.3.5. O `.claude/rules/`
+> continua sendo o lugar das regras da PLATAFORMA que todo repositorio copia
+> (ex.: identificadores de mensagem). O `.base/rules/` e o deste modulo.
+
 ## Visao do Projeto
 
 ExchangeOS implementa o **Foreign Exchange (FX) Trading & Settlement** completo da Revenu Platform:

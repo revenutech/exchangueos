@@ -25,16 +25,16 @@
 
 ## Decision Records (ADRs)
 
-| ADR | Title | Status |
-|-----|-------|--------|
-| ADR-001 | Microservice Architecture | ACCEPTED |
-| ADR-009 | AccountOS Architecture | ACCEPTED |
-| ADR-010 | OnboardOS Architecture | ACCEPTED |
-| ADR-011 | ExchangeOS Architecture (standalone vs embedded, multi-CCY dual-ledger, CLS strategy, SWIFT FIN vs MX) | DRAFT |
-| ADR-012 | PVP Strategy (CLS first vs gross with Herstatt threshold) | DRAFT |
-| ADR-013 | ISO 20022 FX Coverage (fxtr + CLS + CFETS + decomposicao trea → fxti/fxmt obsolete) | DRAFT |
-| ADR-014 | Dual-Ledger Strategy (internal LedgerOS / production Temenos / stub) | ACCEPTED |
-| ADR-015 | Shared CRDB Hub Adoption (NUNCA inline insecure) | DRAFT |
+**O catálogo canônico de ADRs do exchangeos vive em
+[`../../adrs/`](../../adrs/index.md)**, no padrão unificado da plataforma
+(`baremetal/.base/plans/CONVENTIONS.md` § 3.3.5, faixa `024` + `220`–`249`).
+Esta seção deixa de listar ADRs — doc explica, não decide (`RULE-008`).
+
+A tabela anterior listava 8 itens, dos quais 5 passam no critério de ADR
+(`alternativa real · porta cara de reabrir · atravessa contextos · porquê
+não dedutível do código`) e 3 não (`ADR-001`, `ADR-009` e `ADR-010` eram
+de outros módulos). A migração está em `../../adrs/index.md` § «Decisões
+em doc que não viraram ADR».
 
 ## Sources
 
