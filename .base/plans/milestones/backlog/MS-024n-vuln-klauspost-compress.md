@@ -17,11 +17,11 @@ Subir `github.com/klauspost/compress` de v1.17.9 para v1.20.2 em um único commi
 
 ### Etapa 1.1 — Upgrade
 
-- **1.1** `RTSK.024.1901.01` ⬜ Subir `github.com/klauspost/compress` de v1.17.9 para v1.20.2 em commit isolado (só `go.mod` + `go.sum`). *Aceite:* `govulncheck ./...` sem `GO-2026-6865` + bateria pela fila verde no head do commit. *Entrega:* diff em `go.mod` e `go.sum`, commit único, merge local sem push. *Escopo:* `go.mod`, `go.sum`. *Depende:* `treasuryos RTSK 280.1307.01` — satisfeita em 2026-11-08 (develop TreasuryOS `b09e2156`). *Espera:* gate — bateria pela fila. [registro](../registro/ms-024n/README.md)
+- **1.1** `RTSK.024.1901.01` ✅ Subir `github.com/klauspost/compress` de v1.17.9 para v1.20.2 em commit isolado (só `go.mod` + `go.sum`). *Aceite:* `govulncheck ./...` sem `GO-2026-6865` (satisfeito vacuamente — ausência de reachability; ver registro) + bateria pela fila verde (33 pacotes ok). *Entrega:* `1a26cfa` em `fix/ms-024n-klauspost-compress-v1.20.2`, mergeado em `develop` local em `422155a` (sem push). *Escopo:* `go.mod`, `go.sum`. *Depende:* `treasuryos RTSK 280.1307.01` — satisfeita em 2026-11-08. *Espera:* —. [registro](../registro/ms-024n/README.md)
 
 ## Fase 2 — Aceite
 
-- **2.1** `RTSK.024.1902.01` ✏️ Rodar aceite da MS. *Aceite:* 1.1 verde + `govulncheck ./...` limpo do achado + bateria pela fila verde. *Entrega:* relatório em `registro/ms-024n/`. *Escopo:* módulo inteiro. *Depende:* 1.1. *Espera:* gate — bateria pela fila. [registro](../registro/ms-024n/README.md)
+- **2.1** `RTSK.024.1902.01` ✅ Rodar aceite da MS. *Aceite:* 1.1 verde + `govulncheck ./...` limpo do achado + bateria pela fila verde. *Entrega:* evidências pré/pós e OSV registradas em `registro/ms-024n/README.md`. *Escopo:* módulo inteiro. *Depende:* 1.1 — satisfeita. *Espera:* —. [registro](../registro/ms-024n/README.md)
 
 ## Fase 3 — Fechamento
 
