@@ -1,7 +1,7 @@
 # MS-024n — Vuln-fix: `klauspost/compress` GO-2026-6865
 
 **Code:** `RMLS.024.019.01` M alocado pela Baremetal em 2026-11-08 (§ 3.3.5 da CONVENTIONS; a linha da 024n está no ramo de plano da Baremetal `e268a2f4`, sem push — a tabela 024b..m já está em `main` em CONVENTIONS 1.9.0).
-**Status:** BACKLOG
+**Status:** DELIVERED
 **Owner:** Platform
 **Origem:** criada em 2026-11-08 por decisão do Core (select do dono); espelha o upgrade modelo da TreasuryOS MS-033 1.5 (`RTSK.280.1307.01`, commit `833b684` em `fix/ms033-compress`). Sem shape 1.1.0 anterior.
 
@@ -25,7 +25,7 @@ Subir `github.com/klauspost/compress` de v1.17.9 para v1.20.2 em um único commi
 
 ## Fase 3 — Fechamento
 
-- **3.1** `RTSK.024.1903.01` ✏️ Mover MS para `delivered/` e atualizar `milestones/index.md`. *Aceite:* MS em `delivered/`, índice sem referência em backlog. *Entrega:* commit de fechamento. *Escopo:* `.base/plans/milestones/`. *Depende:* 2.1. *Espera:* dono — aprovação final. [registro](../registro/ms-024n/README.md)
+- **3.1** `RTSK.024.1903.01` ✅ Mover MS para `delivered/` e atualizar `milestones/index.md`. *Aceite:* MS em `delivered/`, índice sem referência em backlog. *Entrega:* `git mv` para `delivered/` + 2 seções no `index.md` atualizadas, num commit único de fechamento. *Escopo:* `.base/plans/milestones/`. *Depende:* 2.1 — satisfeita. *Espera:* —. [registro](../registro/ms-024n/README.md)
 
 ## Referências
 
