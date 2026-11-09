@@ -19,6 +19,6 @@ Tarefa `RTSK.024.1717.01` (MS-024k 1.15), 2026-11-08.
 ```prova
 n1: ad909032b1a91341361a51499cd0b56bc63b2f99 verde — grep do .base/patterns/index.md acha sintaxe, ADR-019 e RFIX; gitleaks protect no-leaks; conferir-linhas sem linha aberta nova
 integracao: develop ad909032b1a91341361a51499cd0b56bc63b2f99
-n2: pendente — aguarda a fila do gate pesado no head atual
+n2: 23fca3073c4355816676803f50f3ddba3fc525bb vermelho — 37/38 passos verdes; catraca reprova 11 módulos abaixo do piso (domain≥80/application≥70), débito pertence à MS-024i 1.1 (cobertura de integração) e não ao escopo de 1.15 (só `.base/patterns/index.md`). 1.15 permanece ☑️ aguardando N2 verde depois do avanço da MS-024i 2026-11-09T03:54:14Z
 revisor: n/a — não toca dinheiro, tenant, assinatura nem PII
 ```

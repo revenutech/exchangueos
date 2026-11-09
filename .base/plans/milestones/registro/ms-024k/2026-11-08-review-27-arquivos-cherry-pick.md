@@ -48,6 +48,6 @@ Tarefa `RTSK.024.1718.01` (MS-024k 1.16), 2026-11-08.
 ```prova
 n1: c78784f7dca6735a447cafccae9ee84205f126ea verde — grep de marcadores vazio nos 27 arquivos, gitleaks protect no-leaks no diff 2695b9e^..c78784f, conferir-linhas 151/0×6/2 longas, nenhum pacote Go lê `.base/` nem `CLAUDE.md` (`modules/trade/domain/doc.go:15` é comentário) 2026-11-08T21:53:54Z
 integracao: develop c78784f7dca6735a447cafccae9ee84205f126ea
-n2: pendente — aguarda a fila do gate pesado no head atual
+n2: 23fca3073c4355816676803f50f3ddba3fc525bb vermelho — 37/38 passos verdes; catraca reprova 11 módulos abaixo do piso (domain≥80/application≥70): admin 73.0, cfets_capture 71.2, cfets_confirmation 60.8, cls_settlement 75.3, compliance 67.3, netreport 72.0, payin 71.2, quote 70.2, refdata 68.3, trade/application 56.4, trade/domain 67.2. Débito pertence à MS-024i 1.1 (cobertura de integração), não ao escopo de 1.16 (só `.md`). 1.16 permanece ☑️ aguardando N2 verde depois do avanço da MS-024i 2026-11-09T03:54:14Z
 revisor: n/a — não toca dinheiro, tenant, assinatura nem PII
 ```
