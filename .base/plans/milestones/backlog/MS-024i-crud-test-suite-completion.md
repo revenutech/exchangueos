@@ -17,7 +17,8 @@ Escrever os testes CRUD de integração remanescentes por BC × postgres backend
 
 ### Etapa 1.1 — Matriz CRUD por BC
 
-- **1.1** `RTSK.024.1501.01` ✏️ Matriz 14 BCs × 8 ops (Create/Read/Update/Delete/List/Filter/Page/Tx-rollback) = **112 testes**. *Aceite:* 112 testes passam contra testcontainer CRDB; cada BC tem arquivo próprio. *Entrega:* `modules/*/infrastructure/postgres/*_test.go` (14 arquivos novos/estendidos). *Escopo:* `modules/*/infrastructure/postgres/`. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.1** `RTSK.024.1501.01` ✏️ Matriz 14 BCs × 8 ops (Create/Read/Update/Delete/List/Filter/Page/Tx-rollback) = **112 testes**. *Aceite:* 112 testes passam contra testcontainer CRDB; cada BC tem arquivo próprio; piso 80/70 atingido nos 11 módulos abaixo (dívida da catraca contra base, Core via dono 2026-11-09). *Entrega:* `modules/*/infrastructure/postgres/*_test.go` (14 arquivos novos/estendidos). *Escopo:* `modules/*/infrastructure/postgres/`. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+  - Piso em `23fca30` (11 módulos abaixo, piso domain ≥ 80, application ≥ 70): admin/domain 73.0, cfets_capture/domain 71.2, cfets_confirmation/domain 60.8, cls_settlement/domain 75.3, compliance/domain 67.3, netreport/domain 72.0, payin/domain 71.2, quote/domain 70.2, refdata/domain 68.3, trade/application 56.4, trade/domain 67.2.
 - **1.2** `RTSK.024.1502.01` ✏️ Isolamento por teste via `CREATE SCHEMA tenant_test_<id>`. *Aceite:* 10 testes paralelos não colidem em schema. *Entrega:* helper em `tests/testutil/`. *Escopo:* `tests/testutil/`, `modules/*/`. *Depende:* 1.1. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
 
 ### Etapa 1.2 — Concorrência + sagas

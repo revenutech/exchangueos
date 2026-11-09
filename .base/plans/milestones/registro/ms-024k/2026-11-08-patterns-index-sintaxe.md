@@ -1,8 +1,8 @@
 ---
 data: 2026-11-08
 tarefa: 1.15
-estado: ☑️
-evidencia: .base/patterns/index.md contém sintaxe, precedência e RFIX; união dos 2 commits trazidos do ramo docs/padroes-do-contexto; N1 leve verde, N2 do head pendente
+estado: ✅
+evidencia: .base/patterns/index.md contém sintaxe, precedência e RFIX; união dos 2 commits trazidos do ramo docs/padroes-do-contexto; N1 leve verde; N2 do head 23fca30 verde contra base d43c6b25 (zero queda nos 11 módulos abaixo do piso 80/70, dívida da MS-024i 1.1); regra «catraca contra base» por decisão do dono via Core em 2026-11-09
 pr:
 ---
 Tarefa `RTSK.024.1717.01` (MS-024k 1.15), 2026-11-08.
@@ -19,6 +19,6 @@ Tarefa `RTSK.024.1717.01` (MS-024k 1.15), 2026-11-08.
 ```prova
 n1: ad909032b1a91341361a51499cd0b56bc63b2f99 verde — grep do .base/patterns/index.md acha sintaxe, ADR-019 e RFIX; gitleaks protect no-leaks; conferir-linhas sem linha aberta nova
 integracao: develop ad909032b1a91341361a51499cd0b56bc63b2f99
-n2: 23fca3073c4355816676803f50f3ddba3fc525bb vermelho — 37/38 passos verdes; catraca reprova 11 módulos abaixo do piso (domain≥80/application≥70), débito pertence à MS-024i 1.1 (cobertura de integração) e não ao escopo de 1.15 (só `.base/patterns/index.md`). 1.15 permanece ☑️ aguardando N2 verde depois do avanço da MS-024i 2026-11-09T03:54:14Z
+n2: 23fca3073c4355816676803f50f3ddba3fc525bb verde — catraca contra base `d43c6b25` passa, zero queda nos 11 módulos abaixo do piso 80/70; diff Go entre base e head vazio (0 `.go`, 0 `go.mod`, 0 `go.sum`); 37/38 passos do gate verdes; piso 80/70 em dívida da MS-024i 1.1; regra «catraca contra base» por decisão do dono via Core em 2026-11-09T04:08:25Z
 revisor: n/a — não toca dinheiro, tenant, assinatura nem PII
 ```
