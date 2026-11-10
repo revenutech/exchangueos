@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Proves .ci-local/escopo.conf: one synthetic commit per category must make `--nivel` answer «amplia» with that
 # category in a «motivo:» line, and a commit outside every category must answer «N1» with no motivo (negative control).
-# Commits are built with plumbing (temporary index + commit-tree): no checkout, no hooks, working tree untouched.
+# Commits are built with plumbing (temporary index + commit-tree), so no commit hook runs; --nivel needs the head
+# checked out, so each case runs in a throwaway detached worktree. The caller's working tree is untouched.
 # Usage: tests/ci-local/escopo-controle-negativo.sh [<base-ref>]   (gate from $REVENU_GATE or /private/tmp/revenu-gate-pesado.sh)
 set -euo pipefail
 
@@ -27,9 +28,12 @@ synthetic_commit() { # <path> <comment>: commit on top of base that appends <com
 
 fails=0
 check() { # <expect: amplia|N1> <category or -> <path> <comment>
-  local out head first
+  local out head first wt
   head=$(synthetic_commit "$3" "$4")
-  out=$("$gate" --nivel "$base" "$head")
+  wt=$(mktemp -d)
+  git worktree add -q --detach "$wt" "$head"
+  out=$(cd "$wt" && "$gate" --nivel "$base" "$head")
+  git worktree remove --force "$wt"
   first=$(printf '%s\n' "$out" | sed -n 1p)
   if [ "$1" = amplia ]; then
     if [ "$first" = amplia ] && printf '%s\n' "$out" | grep -q "^motivo: $2: $3\$"; then
