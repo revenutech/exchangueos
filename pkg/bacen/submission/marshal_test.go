@@ -120,6 +120,16 @@ func TestMarshal_RejectsInvalidReport(t *testing.T) {
 			r.SubmittedAt, r.RespondedAt = at, at
 		},
 		"reason when not rejected": func(r *submission.Report) { r.RejectionReason = "x" },
+		"reason with control char": func(r *submission.Report) {
+			r.Status = submission.ReportRejected
+			r.SubmittedAt, r.RespondedAt = at, at
+			r.RejectionReason = "campo\x01"
+		},
+		"reason not utf-8": func(r *submission.Report) {
+			r.Status = submission.ReportRejected
+			r.SubmittedAt, r.RespondedAt = at, at
+			r.RejectionReason = "campo\xff"
+		},
 	}
 	for name, mutate := range cases {
 		t.Run(name, func(t *testing.T) {
