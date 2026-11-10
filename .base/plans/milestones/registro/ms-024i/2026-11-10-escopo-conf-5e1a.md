@@ -1,8 +1,8 @@
 ---
 data: 2026-11-10
 tarefa: 1.11
-estado: ☑️
-evidencia: `.ci-local/escopo.conf` (6 categorias + 4 le-disco) e controle negativo 8/8; revisado pela Baremetal; N1 verde, na develop em 0fea661; N2 do lote 9.1 pendente
+estado: ✅
+evidencia: `.ci-local/escopo.conf` (6 categorias + 4 le-disco) e controle negativo 8/8; revisado pela Baremetal; N1 verde, na develop em 0fea661; N2 do lote 9.1 verde em 88938b8
 pr:
 ---
 Tarefa `RTSK.024.1513.01` (MS-024i 1.11), 2026-11-10, lote 9.1 da etapa 9 (código liberado pelo dono por select na Core em 2026-11-10).
@@ -13,7 +13,7 @@ Tarefa `RTSK.024.1513.01` (MS-024i 1.11), 2026-11-10, lote 9.1 da etapa 9 (códi
 
 ```prova
 n1: ee14ebe2385096c25b68736c443d518396606a59 rodada exchangeos-escopo-conf@2026-11-10T15:40:20Z
-n2: pendente — N2 única do lote 9.1, depois do último merge
+n2: 88938b8ccca11c4f3200dc12c135a54a9c252167 rodada exchangeos-n2-lote91@2026-11-10T15:46:08Z — build, vet, test -race ./... (35 pacotes), govulncheck, gitleaks 663fdaf..head, escopo 8/8, lint-patterns e catraca head × base 663fdaf sem queda (33 → 35 pacotes)
 integracao: develop 0fea661a2b44a4f5782bcf5407d83d484cc2aa12
 revisor: sessão Baremetal — aprovado ee14ebe em 2026-11-10
 ```

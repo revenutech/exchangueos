@@ -17,7 +17,7 @@ Implementar 4 providers por trás de uma interface comum `SanctionsProvider` + c
 
 ### Etapa 1.1 — Interface + cache
 
-- **1.1** `RTSK.024.1201.01` ☑️ Interface `SanctionsProvider` com `Refresh(ctx)` + `Match(query MatchQuery)`. *Aceite:* interface compila, godoc completa. *Entrega:* `pkg/sanctions/provider.go`. *Escopo:* `pkg/sanctions/`. *Espera:* gate — N2 do lote 9.1. [registro](../registro/ms-024d/2026-11-10-sanctions-provider-61f0.md)
+- **1.1** `RTSK.024.1201.01` ✅ Interface `SanctionsProvider` com `Refresh(ctx)` + `Match(query MatchQuery)`. *Aceite:* interface compila, godoc completa. *Entrega:* `pkg/sanctions/provider.go`. *Escopo:* `pkg/sanctions/`. [registro](../registro/ms-024d/2026-11-10-sanctions-provider-61f0.md)
 - **1.2** `RTSK.024.1202.01` ✏️ Cache in-memory com inverted index + scorer Jaro-Winkler. *Aceite:* 100k entradas indexadas em < 2s, Match p99 < 10ms. *Entrega:* `pkg/sanctions/cache.go`, `pkg/sanctions/jarowinkler.go` (ou import `github.com/xrash/smetrics`). *Escopo:* `pkg/sanctions/`. *Depende:* `RTSK.024.1201.01`. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
 
 ### Etapa 1.2 — Providers (4 fontes)

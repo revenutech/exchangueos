@@ -18,7 +18,7 @@ Converter os 823 placeholders em entradas reais ao longo do ciclo MS-024, usando
 ### Etapa 1.1 — Template + lint
 
 - **1.1** `RTSK.024.1701.01` ✅ Formalizar template em `patterns/TEMPLATE.md` (6 seções, ≤ 400 palavras cada). *Aceite:* template usado como base para 1 pattern de referência. *Entrega:* `.base/plans/01-architecture/patterns/TEMPLATE.md`. *Escopo:* `.base/plans/01-architecture/patterns/`. [registro](../registro/ms-024k/README.md)
-- **1.2** `RTSK.024.1702.01` ☑️ Lint script `scripts/lint-patterns.sh` validando 6 seções + ≥ 1 exemplo de código + ≥ 1 anti-pattern + ≥ 1 cross-link por arquivo. *Aceite:* script falha em pattern incompleto, passa em pattern completo. *Entrega:* `scripts/lint-patterns.sh`. *Escopo:* `scripts/`. *Depende:* `RTSK.024.1701.01`. *Espera:* gate — N2 do lote 9.1. [registro](../registro/ms-024k/2026-11-10-lint-patterns-3b94.md)
+- **1.2** `RTSK.024.1702.01` ✅ Lint script `scripts/lint-patterns.sh` validando 6 seções + ≥ 1 exemplo de código + ≥ 1 anti-pattern + ≥ 1 cross-link por arquivo. *Aceite:* script falha em pattern incompleto, passa em pattern completo. *Entrega:* `scripts/lint-patterns.sh`. *Escopo:* `scripts/`. *Depende:* `RTSK.024.1701.01`. [registro](../registro/ms-024k/2026-11-10-lint-patterns-3b94.md)
 - **1.3** `RTSK.024.1703.01` ✏️ Lefthook pre-commit rodando pattern lint quando `patterns/` muda. *Aceite:* hook reprova commit com pattern sem 6 seções. *Entrega:* atualização em `lefthook.yml`. *Escopo:* `lefthook.yml`. *Depende:* `RTSK.024.1702.01`. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
 
 ### Etapa 1.2 — Preenchimento por família
