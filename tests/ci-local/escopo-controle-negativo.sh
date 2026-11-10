@@ -27,13 +27,22 @@ synthetic_commit() { # <path> <comment>: commit on top of base that appends <com
 }
 
 fails=0
+total=0
+wt=""
+cleanup() { if [ -n "$wt" ]; then git worktree remove --force "$wt" 2>/dev/null || rm -rf "$wt"; wt=""; fi; }
+trap cleanup EXIT
+
 check() { # <expect: amplia|N1> <category or -> <path> <comment>
-  local out head first wt
+  local out head first
+  total=$((total + 1))
+  if [ -z "$3" ]; then
+    echo "FAIL $2 → nenhum arquivo rastreado para o caso (first_file vazio)"; fails=$((fails + 1)); return 0
+  fi
   head=$(synthetic_commit "$3" "$4")
   wt=$(mktemp -d)
   git worktree add -q --detach "$wt" "$head"
-  out=$(cd "$wt" && "$gate" --nivel "$base" "$head")
-  git worktree remove --force "$wt"
+  out=$(cd "$wt" && "$gate" --nivel "$base" "$head") || out="--nivel falhou (rc $?)"$'\n'"$out"
+  cleanup
   first=$(printf '%s\n' "$out" | sed -n 1p)
   if [ "$1" = amplia ]; then
     if [ "$first" = amplia ] && printf '%s\n' "$out" | grep -q "^motivo: $2: $3\$"; then
@@ -51,6 +60,7 @@ check() { # <expect: amplia|N1> <category or -> <path> <comment>
 }
 
 check amplia dinheiro   "$(first_file modules/trade/domain go)"   "// escopo controle"
+check amplia dinheiro   "$(first_file migrations/000002_create_fx_trades sql)" "-- escopo controle"
 check amplia tenant     "$(first_file internal/adminapi go)"      "// escopo controle"
 check amplia assinatura "$(first_file cmd/cred-rotator go)"       "// escopo controle"
 check amplia pii        "$(first_file internal/erasure go)"       "// escopo controle"
@@ -59,4 +69,4 @@ check amplia catalogo   "$(first_file .base/aasc ttl)"            "# escopo cont
 check N1     -          "$(first_file cmd/healthcheck go)"       "// escopo controle"
 
 if [ "$fails" != 0 ]; then echo "escopo: $fails falha(s)"; exit 1; fi
-echo "escopo: 7/7"
+echo "escopo: $total/$total"
