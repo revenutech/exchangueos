@@ -10,3 +10,7 @@ SELECT count(*) = 1 FROM information_schema.columns WHERE table_name = 'cos_case
 SELECT count(*) = 1 FROM information_schema.columns WHERE table_name = 'cos_cases' AND column_name = 'version' AND is_nullable = 'NO'
 # tenant-scoped FK target for the children
 SELECT count(*) = 1 FROM information_schema.table_constraints WHERE table_name = 'cos_cases' AND constraint_name = 'uq_cos_cases_tenant_case'
+# tenant-scoped counterparty FK target
+SELECT count(*) = 1 FROM information_schema.table_constraints WHERE table_name = 'counterparties' AND constraint_name = 'uq_counterparties_tenant'
+# one link between a case and a screening result: screening_results.cos_case_id (000014); none on cos_cases
+SELECT count(*) = 0 FROM information_schema.columns WHERE table_name = 'cos_cases' AND column_name = 'screening_result_id'
