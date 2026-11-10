@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
+	_ "time/tzdata" // embedded zone database: the host may lack it or run in another zone
 	"unicode/utf8"
 
 	"github.com/google/uuid"
@@ -39,13 +40,54 @@ const (
 	ReportRejected  ReportStatus = "REJECTED"
 )
 
+// CivilDate is a calendar date with no time and no zone: the reference date of
+// a report to BCB, which is the civil date in Brasília (America/Sao_Paulo).
+// It is resolved at the point where the Report is built, because the domain
+// BACENReport carries it two ways:
+//   - a fresh report holds an instant from the proto Timestamp
+//     (modules/compliance/api/grpc_server.go): use SaoPauloDateOf;
+//   - a loaded report holds the DATE column read as midnight UTC
+//     (modules/compliance/infrastructure/postgres/repos.go): use DateOf.
+//
+// Using the wrong one moves the date by one day.
+type CivilDate struct {
+	Year  int
+	Month time.Month
+	Day   int
+}
+
+// saoPaulo is the zone of BCB's civil date. America/Sao_Paulo, not a fixed
+// -03:00, so that historical daylight-saving rules (until 2019) still hold.
+// time/tzdata is embedded, so the lookup cannot fail on any host; a nil
+// location would make SaoPauloDateOf panic instead of shifting a date.
+var saoPaulo, _ = time.LoadLocation("America/Sao_Paulo")
+
+// SaoPauloDateOf is the civil date in São Paulo at instant t, whatever t's zone.
+func SaoPauloDateOf(t time.Time) CivilDate { return DateOf(t.In(saoPaulo)) }
+
+// DateOf is the year, month and day of t in t's own zone, with no conversion:
+// the right reading of a DATE column, which pgx returns as midnight UTC.
+func DateOf(t time.Time) CivilDate {
+	y, m, d := t.Date()
+	return CivilDate{Year: y, Month: m, Day: d}
+}
+
+// String is the date as YYYY-MM-DD.
+func (d CivilDate) String() string {
+	return fmt.Sprintf("%04d-%02d-%02d", d.Year, int(d.Month), d.Day)
+}
+
+func (d CivilDate) valid() bool {
+	return d.Year >= 1 && DateOf(time.Date(d.Year, d.Month, d.Day, 0, 0, 0, 0, time.UTC)) == d
+}
+
 // Report is the input of MarshalReport: a copy of a domain BACENReport.
-// Times are kept in UTC; ReferenceDate is a calendar date.
+// Instants are written in UTC; ReferenceDate is a civil date (see CivilDate).
 type Report struct {
 	ID            uuid.UUID
 	TenantID      uuid.UUID
 	Type          ReportType
-	ReferenceDate time.Time
+	ReferenceDate CivilDate
 	// PayloadHash is the lower-case hex SHA-256 of the serialised payload.
 	PayloadHash string
 	Status      ReportStatus
@@ -109,7 +151,7 @@ func MarshalReport(r Report) ([]byte, error) {
 		ID:              r.ID.String(),
 		TenantID:        r.TenantID.String(),
 		ReportType:      string(r.Type),
-		ReferenceDate:   r.ReferenceDate.UTC().Format(dateLayout),
+		ReferenceDate:   r.ReferenceDate.String(),
 		PayloadHash:     r.PayloadHash,
 		Status:          string(r.Status),
 		SubmittedAt:     formatTime(r.SubmittedAt),
@@ -139,9 +181,11 @@ func UnmarshalReport(b []byte) (Report, error) {
 	if r.TenantID, err = uuid.Parse(doc.TenantID); err != nil {
 		return Report{}, fmt.Errorf("%w: tenant_id: %v", ErrInvalidReport, err)
 	}
-	if r.ReferenceDate, err = time.Parse(dateLayout, doc.ReferenceDate); err != nil {
+	day, err := time.Parse(dateLayout, doc.ReferenceDate)
+	if err != nil {
 		return Report{}, fmt.Errorf("%w: reference_date: %v", ErrInvalidReport, err)
 	}
+	r.ReferenceDate = DateOf(day)
 	if r.SubmittedAt, err = parseTime(doc.SubmittedAt); err != nil {
 		return Report{}, fmt.Errorf("%w: submitted_at: %v", ErrInvalidReport, err)
 	}
@@ -183,8 +227,8 @@ func (r Report) validate() error {
 		return bad("id required")
 	case r.TenantID == uuid.Nil:
 		return bad("tenant_id required")
-	case r.ReferenceDate.IsZero():
-		return bad("reference_date required")
+	case !r.ReferenceDate.valid():
+		return bad("reference_date must be a real calendar date")
 	case !isLowerHex64(r.PayloadHash):
 		return bad("payload_hash must be 64 lower-case hex characters")
 	case r.Version < 1:
