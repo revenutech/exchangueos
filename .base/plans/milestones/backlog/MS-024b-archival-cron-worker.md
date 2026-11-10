@@ -17,8 +17,8 @@ Implementar `cmd/archiver/main.go` como CronJob Kubernetes que envelhece linhas 
 
 ### Etapa 1.1 — Schema + política
 
-- **1.1** `RTSK.024.1001.01` ⬜ Criar tabelas `archive_policy` e `archive_manifest`. *Aceite:* migração 000010 up+down idempotente, seed com 25 linhas (uma por tabela de `data-lifecycle/README.md`). *Entrega:* `migrations/000010_create_archive_tables.up.sql` + `.down.sql`. *Escopo:* `migrations/`. *Espera:* dono — liberar código (plano da etapa 9); revisor: IdentityOS (PII: retenção LGPD). [registro](../registro/README.md)
-- **1.2** `RTSK.024.1002.01` ✏️ Loader + cache de `archive_policy`. *Aceite:* carrega 25 políticas, invalida cache em UPDATE. *Entrega:* `internal/archive/policy.go`. *Escopo:* `internal/archive/`. *Depende:* `RTSK.024.1001.01`. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.1** `RTSK.024.1001.01` ☑️ Criar tabelas `archive_policy` e `archive_manifest`. *Aceite:* migração 000010 up+down idempotente, seed com 24 linhas (tabelas arquiváveis do `data-lifecycle/README.md`). *Entrega:* `migrations/000010_create_archive_tables.{up,down}.sql`. *Escopo:* `migrations/`. *Espera:* gate — N2 do lote 9.2; revisor: IdentityOS (PII: retenção LGPD). [registro](../registro/ms-024b/2026-11-10-archive-tables-e09d.md)
+- **1.2** `RTSK.024.1002.01` ☑️ Loader + cache de `archive_policy`. *Aceite:* carrega 24 políticas, invalida cache em UPDATE. *Entrega:* `internal/archive/policy.go`. *Escopo:* `internal/archive/`. *Depende:* `RTSK.024.1001.01`. *Espera:* gate — N2 do lote 9.2. [registro](../registro/ms-024b/2026-11-10-policy-loader-c6b3.md)
 
 ### Etapa 1.2 — Escritor parquet + GCS
 
@@ -45,6 +45,7 @@ Implementar `cmd/archiver/main.go` como CronJob Kubernetes que envelhece linhas 
 - **1.11** `RTSK.024.1011.01` ✏️ Harness `scripts/archive-restore-test.sh` para ensaio trimestral. *Aceite:* script restaura 1 batch de fixture e valida contagem de linhas + SHA256. *Entrega:* `scripts/archive-restore-test.sh`. *Escopo:* `scripts/`. *Depende:* `RTSK.024.1004.01`. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
 - **1.12** `RTSK.024.1012.01` ✏️ Teste de integração archive → manifest → marcação → hard-delete. *Aceite:* teste passa contra CRDB testcontainer. *Entrega:* `tests/integration/archiver_test.go`. *Escopo:* `tests/integration/`. *Depende:* `RTSK.024.1006.01`, `RTSK.024.1011.01`. *Espera:* gate — testes com banco. [registro](../registro/README.md)
 - **1.13** `RTSK.024.1013.01` ✏️ Painel Grafana no dashboard de FinOps (crescimento de storage + projeção de custo). *Aceite:* painel renderiza com dados das métricas de 1.8. *Entrega:* JSON do painel em `deploy/grafana/`. *Escopo:* `deploy/grafana/`. *Depende:* `RTSK.024.1008.01`. *Espera:* dono — definição da fórmula de projeção. [registro](../registro/README.md)
+- **1.14** `RTSK.024.1016.01` ✏️ Lifecycle do bucket de arquivo igual à `archive_policy`. *Aceite:* regra por prefixo no bucket apaga os objetos das tabelas erasáveis no `retention_after`; tabela sob guarda não expira. *Entrega:* `deploy/terraform/`. *Escopo:* `deploy/terraform/`. *Depende:* `RTSK.024.1003.01`. *Espera:* dono — provisionamento do bucket GCS; revisor: IdentityOS (PII: retenção LGPD). [registro](../registro/README.md)
 
 ## Fase 2 — Aceite
 
