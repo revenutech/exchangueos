@@ -17,7 +17,7 @@ Construir 4 adaptadores outbound em `pkg/bacen/submission/` (um por tipo de fili
 
 ### Etapa 1.1 — Cliente comum + marshal
 
-- **1.1** `RTSK.024.1301.01` ☑️ Interface `Submitter.Submit(ctx, payload)` + `Query(ctx, protocolID)`. *Aceite:* interface compila, 2 métodos documentados. *Entrega:* `pkg/bacen/submission/submitter.go`. *Escopo:* `pkg/bacen/submission/`. *Espera:* gate — N2 do lote 9.1. [registro](../registro/ms-024f/2026-11-10-submitter-9c1d.md)
+- **1.1** `RTSK.024.1301.01` ✅ Interface `Submitter.Submit(ctx, payload)` + `Query(ctx, protocolID)`. *Aceite:* interface compila, 2 métodos documentados. *Entrega:* `pkg/bacen/submission/submitter.go`. *Escopo:* `pkg/bacen/submission/`. [registro](../registro/ms-024f/2026-11-10-submitter-9c1d.md)
 - **1.2** `RTSK.024.1302.01` ✏️ Cliente mTLS com cert via Vault. *Aceite:* conexão estabelecida contra mock, 4xx/5xx tratados sem crash. *Entrega:* `pkg/bacen/submission/client.go`. *Escopo:* `pkg/bacen/submission/`. *Depende:* `RTSK.024.1301.01`. *Espera:* dono — provisionamento da cert do BACEN; revisor: IdentityOS (assinatura). [registro](../registro/README.md)
 - **1.3** `RTSK.024.1303.01` ⬜ Marshal `BACENReport` aggregate → XML (sem XML hand-crafted). *Aceite:* round-trip parse-marshal valida 1 fixture de cada tipo. *Entrega:* `pkg/bacen/submission/marshal.go`. *Escopo:* `pkg/bacen/submission/`. *Espera:* dono — liberar código (plano da etapa 9); revisor: IdentityOS (PII). [registro](../registro/README.md)
 - **1.4** `RTSK.024.1304.01` ✏️ Assinatura XML XAdES-BES por spec técnica BACEN. *Aceite:* XML assinado validado por verificador externo (xmlsectool). *Entrega:* seção em `client.go`. *Escopo:* `pkg/bacen/submission/`. *Depende:* `RTSK.024.1303.01`. *Espera:* dono — definição do certificado de assinatura; revisor: IdentityOS (assinatura). [registro](../registro/README.md)
@@ -42,7 +42,7 @@ Construir 4 adaptadores outbound em `pkg/bacen/submission/` (um por tipo de fili
 
 ### Etapa 1.5 — Testes
 
-- **1.14** `RTSK.024.1314.01` ☑️ Mock BACEN gateway em `tests/integration/bacen_mock_server.go` para CI. *Aceite:* mock aceita DEC/SCE-* e devolve protocolID + status. *Entrega:* `tests/integration/bacen_mock_server.go`. *Escopo:* `tests/integration/`. *Espera:* gate — N2 do lote 9.1. [registro](../registro/ms-024f/2026-11-10-bacen-mock-d2e6.md)
+- **1.14** `RTSK.024.1314.01` ✅ Mock BACEN gateway em `tests/integration/bacen_mock_server.go` para CI. *Aceite:* mock aceita DEC/SCE-* e devolve protocolID + status. *Entrega:* `tests/integration/bacen_mock_server.go`. *Escopo:* `tests/integration/`. [registro](../registro/ms-024f/2026-11-10-bacen-mock-d2e6.md)
 - **1.15** `RTSK.024.1315.01` ✏️ Teste de integração: submeter 1 de cada tipo → poll → ACCEPTED. *Aceite:* 4 submissões bem-sucedidas em < 15s total. *Entrega:* `tests/integration/bacen_submission_test.go`. *Escopo:* `tests/integration/`. *Depende:* `RTSK.024.1310.01`, `RTSK.024.1314.01`. *Espera:* gate — testes com banco. [registro](../registro/README.md)
 
 ## Fase 2 — Aceite

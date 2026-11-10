@@ -1,8 +1,8 @@
 ---
 data: 2026-11-10
 tarefa: 1.1
-estado: ☑️
-evidencia: interface `Submitter` em `pkg/bacen/submission/`, com redação do Body; revisada pela IdentityOS; N1 verde, na develop em 208dda3; N2 do lote 9.1 pendente
+estado: ✅
+evidencia: interface `Submitter` em `pkg/bacen/submission/`, com redação do Body; revisada pela IdentityOS; N1 verde, na develop em 208dda3; N2 do lote 9.1 verde em 88938b8
 pr:
 ---
 Tarefa `RTSK.024.1301.01` (MS-024f 1.1), 2026-11-10, lote 9.1 da etapa 9 (código liberado pelo dono por select na Core em 2026-11-10).
@@ -15,7 +15,7 @@ Tarefa `RTSK.024.1301.01` (MS-024f 1.1), 2026-11-10, lote 9.1 da etapa 9 (códig
 
 ```prova
 n1: 831cfdb72c936da53e655cdc168c2e9c8041919c rodada exchangeos-submitter@2026-11-10T15:07:47Z
-n2: pendente — N2 única do lote 9.1, depois do último merge
+n2: 88938b8ccca11c4f3200dc12c135a54a9c252167 rodada exchangeos-n2-lote91@2026-11-10T15:46:08Z — build, vet, test -race ./... (35 pacotes), govulncheck, gitleaks 663fdaf..head, escopo 8/8, lint-patterns e catraca head × base 663fdaf sem queda (33 → 35 pacotes)
 integracao: develop 208dda36142ba8df17911c29a0435056f7f4de9d
 revisor: sessão IdentityOS — aprovado 831cfdb em 2026-11-10 (assinatura, PII)
 ```

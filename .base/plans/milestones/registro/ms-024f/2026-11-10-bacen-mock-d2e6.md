@@ -1,8 +1,8 @@
 ---
 data: 2026-11-10
 tarefa: 1.14
-estado: ☑️
-evidencia: mock do gateway BACEN em `tests/integration/` (DEC e SCE-*), com teste próprio; N1 verde, na develop em 48eded1; N2 do lote 9.1 pendente
+estado: ✅
+evidencia: mock do gateway BACEN em `tests/integration/` (DEC e SCE-*), com teste próprio; N1 verde, na develop em 48eded1; N2 do lote 9.1 verde em 88938b8
 pr:
 ---
 Tarefa `RTSK.024.1314.01` (MS-024f 1.14), 2026-11-10, lote 9.1 da etapa 9 (código liberado pelo dono por select na Core em 2026-11-10).
@@ -13,7 +13,7 @@ Tarefa `RTSK.024.1314.01` (MS-024f 1.14), 2026-11-10, lote 9.1 da etapa 9 (códi
 
 ```prova
 n1: 7b6587f7ce906941a466069563059571eb3d0aa7 rodada exchangeos-bacen-mock@2026-11-10T14:46:33Z
-n2: pendente — N2 única do lote 9.1, depois do último merge
+n2: 88938b8ccca11c4f3200dc12c135a54a9c252167 rodada exchangeos-n2-lote91@2026-11-10T15:46:08Z — build, vet, test -race ./... (35 pacotes), govulncheck, gitleaks 663fdaf..head, escopo 8/8, lint-patterns e catraca head × base 663fdaf sem queda (33 → 35 pacotes)
 integracao: develop 48eded1c9e9569e6853768d715c6dafb148e5c76
 revisor: n/a — mock de teste, sem dado real; não toca dinheiro, tenant, assinatura nem PII
 ```
