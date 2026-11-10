@@ -17,8 +17,8 @@ Implementar `cmd/archiver/main.go` como CronJob Kubernetes que envelhece linhas 
 
 ### Etapa 1.1 — Schema + política
 
-- **1.1** `RTSK.024.1001.01` ☑️ Criar tabelas `archive_policy` e `archive_manifest`. *Aceite:* migração 000010 up+down idempotente, seed com 24 linhas (tabelas arquiváveis do `data-lifecycle/README.md`). *Entrega:* `migrations/000010_create_archive_tables.{up,down}.sql`. *Escopo:* `migrations/`. *Espera:* gate — N2 do lote 9.2; revisor: IdentityOS (PII: retenção LGPD). [registro](../registro/ms-024b/2026-11-10-archive-tables-e09d.md)
-- **1.2** `RTSK.024.1002.01` ☑️ Loader + cache de `archive_policy`. *Aceite:* carrega 24 políticas, invalida cache em UPDATE. *Entrega:* `internal/archive/policy.go`. *Escopo:* `internal/archive/`. *Depende:* `RTSK.024.1001.01`. *Espera:* gate — N2 do lote 9.2. [registro](../registro/ms-024b/2026-11-10-policy-loader-c6b3.md)
+- **1.1** `RTSK.024.1001.01` ✅ Criar tabelas `archive_policy` e `archive_manifest`. *Aceite:* migração 000010 up+down idempotente, seed com 24 linhas (tabelas arquiváveis do `data-lifecycle/README.md`). *Entrega:* `migrations/000010_create_archive_tables.{up,down}.sql`. *Escopo:* `migrations/`. [registro](../registro/ms-024b/2026-11-10-archive-tables-e09d.md)
+- **1.2** `RTSK.024.1002.01` ✅ Loader + cache de `archive_policy`. *Aceite:* carrega 24 políticas, invalida cache em UPDATE. *Entrega:* `internal/archive/policy.go`. *Escopo:* `internal/archive/`. *Depende:* `RTSK.024.1001.01`. [registro](../registro/ms-024b/2026-11-10-policy-loader-c6b3.md)
 
 ### Etapa 1.2 — Escritor parquet + GCS
 
