@@ -8,6 +8,9 @@
 #   3. down (all) and then the checks must FAIL (negative control: a check that passes on an empty schema is vacuous);
 #   4. up (all) again and the checks pass again.
 # A check file holds one query per line (# comments) that must return exactly «t».
+# A tests/ci-local/migracoes/<NNNNNN>.recusa.sql holds «<constraint> | <sql>» per line: the sql must FAIL and the
+# error must name <constraint>; «ok | <sql>» must succeed (positive control: the fixture itself is valid, so a
+# refusal is the constraint's, not a broken fixture's). Each sql runs alone; end it with ROLLBACK to leave no row.
 # Runs in the queue's DB lane (no REVENU_GATE_SEM_BANCO): the container carries label revenu.gate.dono.
 # Env: CRDB_IMAGE (cockroachdb/cockroach:latest-v24.3), REVENU_GATE_DONO (ExchangueOS).
 set -euo pipefail
@@ -67,8 +70,30 @@ checks() { # <expect: pass|fail>: run every check file; count the files that do 
   return "$bad"
 }
 
+recusas() { # every line of every recusa file behaves as declared; prints a summary
+  local f ln want sql out rc bad=0 total=0
+  for f in tests/ci-local/migracoes/*.recusa.sql; do
+    [ -e "$f" ] || continue
+    while IFS= read -r ln || [ -n "$ln" ]; do
+      case "$ln" in ''|'#'*) continue ;; esac
+      want=${ln%% | *}; sql=${ln#* | }; total=$((total + 1))
+      rc=0; out=$(sqlc -d exchangeos -e "$sql" 2>&1 </dev/null) || rc=$?
+      if [ "$want" = ok ]; then
+        [ "$rc" = 0 ] || { echo "FAIL ${f##*/}: expected success, got: $(printf '%s' "$out" | grep -m1 -i error)"; bad=$((bad + 1)); }
+      elif [ "$rc" = 0 ]; then
+        echo "FAIL ${f##*/}: $want did not refuse: ${sql:0:120}"; bad=$((bad + 1))
+      elif ! printf '%s' "$out" | grep -q "$want"; then
+        echo "FAIL ${f##*/}: refused, but not by $want: $(printf '%s' "$out" | grep -m1 -i error)"; bad=$((bad + 1))
+      fi
+    done < "$f"
+  done
+  echo "ok   recusas: $((total - bad))/$total"
+  return "$bad"
+}
+
 migrator up
 checks pass || fails=$((fails + $?))
+recusas || fails=$((fails + $?))
 echo "ok   up: $n migrations"
 
 for f in "${idem[@]}"; do sqlc -d exchangeos < "$f" >/dev/null 2>"$tmp/err" || { echo "FAIL idempotence: $f applied twice"; cat "$tmp/err"; fails=$((fails + 1)); }; done
