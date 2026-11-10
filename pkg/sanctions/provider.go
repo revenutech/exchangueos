@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 )
 
@@ -31,6 +32,20 @@ type MatchQuery struct {
 	Country string
 	// MinScore is the similarity threshold in [0, 1]; zero returns every candidate.
 	MinScore float64
+}
+
+// String never includes Name: the party name is PII. fmt uses it for %v, %+v and %s.
+func (q MatchQuery) String() string {
+	return fmt.Sprintf("MatchQuery{Country:%s MinScore:%v name_len:%d}", q.Country, q.MinScore, len(q.Name))
+}
+
+// LogValue never includes Name: the party name is PII.
+func (q MatchQuery) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.String("country", q.Country),
+		slog.Float64("min_score", q.MinScore),
+		slog.Int("name_len", len(q.Name)),
+	)
 }
 
 // Validate reports whether the query can be evaluated.
