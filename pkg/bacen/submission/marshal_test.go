@@ -2,6 +2,7 @@ package submission_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -232,5 +233,70 @@ func TestReport_NeverLeaksRejectionReason(t *testing.T) {
 		if !strings.Contains(out, "SISBACEN") || !strings.Contains(out, r.ID.String()) || !strings.Contains(out, fmt.Sprint(len(secret))) {
 			t.Errorf("output %d lost type, id or reason length: %s", i, out)
 		}
+	}
+}
+
+// json.Marshal of a Report must not carry RejectionReason; the XML still does.
+func TestReport_JSONNeverLeaksRejectionReason(t *testing.T) {
+	t.Parallel()
+	const secret = "CPF 123.456.789-09 Joao da Silva"
+	at := time.Date(2026, 11, 10, 13, 0, 0, 0, time.UTC)
+	r := validReport()
+	r.Status = submission.ReportRejected
+	r.SubmittedAt, r.RespondedAt = at, at
+	r.RejectionReason = secret
+
+	for name, v := range map[string]any{"value": r, "pointer": &r, "nested": struct{ R submission.Report }{r}} {
+		js, err := json.Marshal(v)
+		require.NoError(t, err, name)
+		out := string(js)
+		assert.NotContains(t, out, "123.456.789-09", name)
+		assert.NotContains(t, out, "Joao", name)
+		assert.Contains(t, out, `"rejection_reason_len":`+fmt.Sprint(len(secret)), name)
+		assert.Contains(t, out, r.ID.String(), name)
+		assert.Contains(t, out, `"reference_date":"2026-11-09"`, name)
+	}
+
+	b, err := submission.MarshalReport(r)
+	require.NoError(t, err)
+	assert.Contains(t, string(b), "<RejectionReason>"+secret+"</RejectionReason>", "the XML keeps the reason")
+}
+
+// A malformed document can carry the reason; the error never quotes it.
+func TestUnmarshal_ErrorsNeverQuoteTheDocument(t *testing.T) {
+	t.Parallel()
+	const secret = "Joao da Silva CPF 123.456.789-09"
+	good, err := os.ReadFile(filepath.Join("testdata", "cambio.xml"))
+	require.NoError(t, err)
+	doc := strings.Replace(string(good), "codigo de natureza 99999 invalido &lt;campo 7&gt;", secret, 1)
+	require.Contains(t, doc, secret)
+
+	cases := map[string]struct {
+		in       string
+		wantLine bool
+	}{
+		"unclosed element":  {strings.Replace(doc, "</RejectionReason>", "</Rejection"+secret+">", 1), true},
+		"bad entity":        {strings.Replace(doc, secret, secret+" &"+strings.ReplaceAll(secret, " ", "")+";", 1), true},
+		"bad tag on line 3": {strings.Replace(doc, "<RejectionReason>", "\n<RejectionReason><"+secret+">", 1), true},
+		"wrong root":        {strings.ReplaceAll(doc, "BACENReport>", "DEC"+strings.ReplaceAll(secret, " ", "")+">"), false},
+		"bad responded at":  {strings.Replace(doc, "<RespondedAt>2026-11-10T14:00:00Z<", "<RespondedAt>"+secret+"<", 1), false},
+		"bad id":            {strings.Replace(doc, "8b3e4ca0-5d6f-4071-8c1d-2e3f4a5b6c7d", secret, 1), false},
+		"bad tenant":        {strings.Replace(doc, "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d", secret, 1), false},
+		"bad date":          {strings.Replace(doc, "<ReferenceDate>2026-11-09<", "<ReferenceDate>"+secret+"<", 1), false},
+		"bad submitted at":  {strings.Replace(doc, "<SubmittedAt>2026-11-10T13:00:00Z<", "<SubmittedAt>"+secret+"<", 1), false},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			_, err := submission.UnmarshalReport([]byte(tc.in))
+			require.ErrorIs(t, err, submission.ErrInvalidReport)
+			msg := err.Error()
+			for _, part := range []string{"Joao", "Silva", "123.456.789-09", "JoaodaSilva"} {
+				assert.NotContains(t, msg, part)
+			}
+			if tc.wantLine {
+				assert.Regexp(t, `line \d+`, msg)
+			}
+		})
 	}
 }
