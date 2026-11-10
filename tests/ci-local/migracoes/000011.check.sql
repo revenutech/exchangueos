@@ -8,3 +8,5 @@ SELECT count(*) = 7 FROM information_schema.check_constraints WHERE constraint_n
 SELECT count(*) = 1 FROM information_schema.columns WHERE table_name = 'cos_cases' AND column_name = 'payload_hash'
 # optimistic concurrency
 SELECT count(*) = 1 FROM information_schema.columns WHERE table_name = 'cos_cases' AND column_name = 'version' AND is_nullable = 'NO'
+# tenant-scoped FK target for the children
+SELECT count(*) = 1 FROM information_schema.table_constraints WHERE table_name = 'cos_cases' AND constraint_name = 'uq_cos_cases_tenant_case'
