@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 )
@@ -41,8 +42,24 @@ type Payload struct {
 	Kind Kind
 	// ReferenceID is our idempotency key for the report (e.g. the BACENReport ID).
 	ReferenceID string
-	// Body is the signed XML document sent as is.
+	// Body is the signed XML document, sent byte for byte: implementations must
+	// not reformat or re-encode it, or the XAdES signature breaks. It carries
+	// personal data and never goes to logs.
 	Body []byte
+}
+
+// String never includes Body. fmt uses it for %v, %+v and %s.
+func (p Payload) String() string {
+	return fmt.Sprintf("Payload{Kind:%s ReferenceID:%s body_len:%d}", p.Kind, p.ReferenceID, len(p.Body))
+}
+
+// LogValue never includes Body.
+func (p Payload) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.String("kind", string(p.Kind)),
+		slog.String("reference_id", p.ReferenceID),
+		slog.Int("body_len", len(p.Body)),
+	)
 }
 
 // Validate reports whether the payload can be submitted.
@@ -76,7 +93,9 @@ func (s Status) Terminal() bool { return s == StatusAccepted || s == StatusRejec
 type Receipt struct {
 	ProtocolID string
 	Status     Status
-	// RejectionReason is set only when Status is StatusRejected.
+	// RejectionReason is set only when Status is StatusRejected. It is BACEN's
+	// text and may quote personal data from the XML (CPF, declarant name):
+	// never log it raw, and persist it as PII.
 	RejectionReason string
 	ReceivedAt      time.Time
 }
@@ -84,7 +103,10 @@ type Receipt struct {
 // Submitter sends reports to BACEN and polls their status.
 type Submitter interface {
 	// Submit sends p and returns the protocol BACEN assigned to it. It returns
-	// ErrInvalidPayload when p.Validate fails, without calling BACEN.
+	// ErrInvalidPayload when p.Validate fails, without calling BACEN. Submit is
+	// idempotent on p.ReferenceID: a second call with a reference already
+	// submitted returns the existing receipt and does not send the report again,
+	// so a retry never files a duplicate declaration.
 	Submit(ctx context.Context, p Payload) (Receipt, error)
 	// Query returns the current status of protocolID, or ErrProtocolNotFound.
 	Query(ctx context.Context, protocolID string) (Receipt, error)
