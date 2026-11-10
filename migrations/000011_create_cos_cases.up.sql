@@ -15,8 +15,17 @@
 -- (not CASCADE): an audit row must not disappear with its case. Its FK is (tenant_id, cos_case_id), so a transition
 -- cannot point at another tenant's case.
 --
--- screening_result_id is optional and carries no FK here: the link screening_results → cos_cases is MS-024g 1.3
--- (migration 000014).
+-- The link to a screening result lives in ONE place: screening_results.cos_case_id (000014, MS-024g 1.3), with a
+-- tenant-scoped FK. cos_cases carries no screening_result_id, so the two sides cannot diverge.
+--
+-- Tenant: every FK out of these tables is (tenant_id, <id>), so a case or a transition can only name rows of its own
+-- tenant. counterparties gets UNIQUE (tenant_id, counterparty_id) as the target of the counterparty FK.
+
+BEGIN;
+
+ALTER TABLE counterparties ADD CONSTRAINT IF NOT EXISTS uq_counterparties_tenant UNIQUE (tenant_id, counterparty_id);
+
+COMMIT;
 
 BEGIN;
 
@@ -24,7 +33,6 @@ CREATE TABLE IF NOT EXISTS cos_cases (
     cos_case_id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id            UUID        NOT NULL,
     counterparty_id      UUID        NOT NULL,
-    screening_result_id  UUID,
     created_by           STRING(128) NOT NULL,              -- token sub, never a typed name
     narrative            STRING      NOT NULL,              -- PII
     status               STRING(16)  NOT NULL DEFAULT 'DRAFT',
@@ -40,7 +48,7 @@ CREATE TABLE IF NOT EXISTS cos_cases (
     updated_at           TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
 
     CONSTRAINT fk_cos_cases_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(tenant_id) ON DELETE RESTRICT,
-    CONSTRAINT fk_cos_cases_counterparty FOREIGN KEY (counterparty_id) REFERENCES counterparties(counterparty_id) ON DELETE RESTRICT,
+    CONSTRAINT fk_cos_cases_counterparty FOREIGN KEY (tenant_id, counterparty_id) REFERENCES counterparties(tenant_id, counterparty_id) ON DELETE RESTRICT,
 
     CONSTRAINT chk_cos_cases_status CHECK (status IN ('DRAFT','UNDER_REVIEW','APPROVED','SUBMITTED','ACCEPTED','REJECTED')),
     -- 4-eyes: at most two approvers, distinct, neither the creator
@@ -86,6 +94,7 @@ CREATE TABLE IF NOT EXISTS cos_case_transitions (
 
     CONSTRAINT fk_cos_case_transitions_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(tenant_id) ON DELETE RESTRICT,
     CONSTRAINT fk_cos_case_transitions_case FOREIGN KEY (tenant_id, cos_case_id) REFERENCES cos_cases(tenant_id, cos_case_id) ON DELETE RESTRICT,
+    CONSTRAINT chk_cos_case_transitions_from CHECK (from_status IS NULL OR from_status IN ('DRAFT','UNDER_REVIEW','APPROVED','SUBMITTED','ACCEPTED','REJECTED')),
     CONSTRAINT chk_cos_case_transitions_to CHECK (to_status IN ('DRAFT','UNDER_REVIEW','APPROVED','SUBMITTED','ACCEPTED','REJECTED')),
     CONSTRAINT uq_cos_case_transitions_version UNIQUE (cos_case_id, case_version),
 
