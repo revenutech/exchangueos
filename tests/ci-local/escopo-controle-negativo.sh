@@ -58,4 +58,5 @@ check amplia contrato   "$(first_file proto/exchangeos/v1 proto)" "// escopo con
 check amplia catalogo   "$(first_file .base/aasc ttl)"            "# escopo controle"
 check N1     -          "$(first_file cmd/healthcheck go)"       "// escopo controle"
 
-[ "$fails" = 0 ] && echo "escopo: 7/7" || { echo "escopo: $fails falha(s)"; exit 1; }
+if [ "$fails" != 0 ]; then echo "escopo: $fails falha(s)"; exit 1; fi
+echo "escopo: 7/7"
