@@ -40,8 +40,8 @@ Converter os 823 placeholders em entradas reais ao longo do ciclo MS-024, usando
 ### Etapa 1.4 — Governança
 
 - **1.14** `RTSK.024.1714.01` ✏️ Pattern-review trimestral (1h) para retirar deprecated + promover úteis. *Aceite:* 1 sessão realizada com notas em `patterns/reviews/`. *Entrega:* notas de review. *Escopo:* `patterns/reviews/`. *Espera:* dono — agenda da sessão. [registro](../registro/README.md)
-- **1.15** `RTSK.024.1717.01` ✅ Registrar sintaxe `cognee-revenu:PTN-NNN`, precedência (cognee-revenu:ADR-019) e catálogo `RFIX` fora da precedência (cognee-revenu:O162) em `.base/patterns/index.md`. *Aceite:* `grep` acha os 3 conceitos. *Entrega:* `.base/patterns/index.md`. *Escopo:* `.base/patterns/`. [registro](../registro/ms-024k/2026-11-08-patterns-index-sintaxe.md)
-- **1.16** `RTSK.024.1718.01` ✅ Revisar contra a `develop` os 27 arquivos do cherry-pick `fd18a75`. *Aceite:* prova leve verde em `c78784f`, sem leitor Go. *Entrega:* registro da revisão. *Escopo:* `.base/adrs/`, `.base/flows/`, `.base/rules/`, `.base/plans/00-governance/`, `CLAUDE.md`. [registro](../registro/ms-024k/2026-11-08-review-27-arquivos-cherry-pick.md)
+- **1.15** `RTSK.024.1717.01` ✅ Registrar sintaxe `cognee-revenu:PTN-NNN`, precedência (fundação→ontologia→ADR→padrão→regra→fluxo, cognee-revenu:ADR-019) e catálogo `RFIX` fora da precedência (ledgeros dom. 053, cognee-revenu:O162) em `.base/patterns/index.md`. *Aceite:* `grep` acha os 3 conceitos no `.base/patterns/index.md`. *Entrega:* `.base/patterns/index.md` (pela união dos 2 commits de `docs/padroes-do-contexto`). *Escopo:* `.base/patterns/`. [registro](../registro/ms-024k/2026-11-08-patterns-index-sintaxe.md)
+- **1.16** `RTSK.024.1718.01` ✅ Revisar os 27 arquivos trazidos pelo cherry-pick `fd18a75` (commit local `2695b9e`) contra a `develop`. *Aceite:* prova leve verde no sha `c78784f` e sem leitor Go. *Entrega:* `registro/ms-024k/2026-11-08-review-27-arquivos-cherry-pick.md`. *Escopo:* `.base/adrs/`, `.base/flows/`, `.base/rules/`, `.base/plans/00-governance/`, `CLAUDE.md`. [registro](../registro/ms-024k/2026-11-08-review-27-arquivos-cherry-pick.md)
 
 ## Fase 2 — Aceite
 
