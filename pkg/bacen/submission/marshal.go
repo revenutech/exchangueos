@@ -1,6 +1,7 @@
 package submission
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -120,6 +121,45 @@ func (r Report) LogValue() slog.Value {
 	)
 }
 
+// reportJSON is the JSON shape of a Report: RejectionReason only by length.
+type reportJSON struct {
+	ID                 uuid.UUID    `json:"id"`
+	TenantID           uuid.UUID    `json:"tenant_id"`
+	Type               ReportType   `json:"type"`
+	ReferenceDate      string       `json:"reference_date"`
+	PayloadHash        string       `json:"payload_hash"`
+	Status             ReportStatus `json:"status"`
+	SubmittedAt        *time.Time   `json:"submitted_at,omitempty"`
+	RespondedAt        *time.Time   `json:"responded_at,omitempty"`
+	RejectionReasonLen int          `json:"rejection_reason_len"`
+	Version            int          `json:"version"`
+}
+
+// MarshalJSON never includes RejectionReason, only its length. It does not
+// affect MarshalReport, which writes the reason into the XML.
+func (r Report) MarshalJSON() ([]byte, error) {
+	return json.Marshal(reportJSON{
+		ID:                 r.ID,
+		TenantID:           r.TenantID,
+		Type:               r.Type,
+		ReferenceDate:      r.ReferenceDate.String(),
+		PayloadHash:        r.PayloadHash,
+		Status:             r.Status,
+		SubmittedAt:        optionalTime(r.SubmittedAt),
+		RespondedAt:        optionalTime(r.RespondedAt),
+		RejectionReasonLen: len(r.RejectionReason),
+		Version:            r.Version,
+	})
+}
+
+func optionalTime(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
+	}
+	u := t.UTC()
+	return &u
+}
+
 const (
 	dateLayout = "2006-01-02"
 	timeLayout = time.RFC3339Nano
@@ -169,28 +209,28 @@ func MarshalReport(r Report) ([]byte, error) {
 func UnmarshalReport(b []byte) (Report, error) {
 	var doc reportDoc
 	if err := xml.Unmarshal(b, &doc); err != nil {
-		return Report{}, fmt.Errorf("%w: decode: %v", ErrInvalidReport, err)
+		return Report{}, decodeError(err)
 	}
 	var (
 		r   Report
 		err error
 	)
 	if r.ID, err = uuid.Parse(doc.ID); err != nil {
-		return Report{}, fmt.Errorf("%w: id: %v", ErrInvalidReport, err)
+		return Report{}, fmt.Errorf("%w: id is not a UUID", ErrInvalidReport)
 	}
 	if r.TenantID, err = uuid.Parse(doc.TenantID); err != nil {
-		return Report{}, fmt.Errorf("%w: tenant_id: %v", ErrInvalidReport, err)
+		return Report{}, fmt.Errorf("%w: tenant_id is not a UUID", ErrInvalidReport)
 	}
 	day, err := time.Parse(dateLayout, doc.ReferenceDate)
 	if err != nil {
-		return Report{}, fmt.Errorf("%w: reference_date: %v", ErrInvalidReport, err)
+		return Report{}, fmt.Errorf("%w: reference_date is not YYYY-MM-DD", ErrInvalidReport)
 	}
 	r.ReferenceDate = DateOf(day)
 	if r.SubmittedAt, err = parseTime(doc.SubmittedAt); err != nil {
-		return Report{}, fmt.Errorf("%w: submitted_at: %v", ErrInvalidReport, err)
+		return Report{}, fmt.Errorf("%w: submitted_at is not RFC 3339", ErrInvalidReport)
 	}
 	if r.RespondedAt, err = parseTime(doc.RespondedAt); err != nil {
-		return Report{}, fmt.Errorf("%w: responded_at: %v", ErrInvalidReport, err)
+		return Report{}, fmt.Errorf("%w: responded_at is not RFC 3339", ErrInvalidReport)
 	}
 	r.Type = ReportType(doc.ReportType)
 	r.PayloadHash = doc.PayloadHash
@@ -201,6 +241,17 @@ func UnmarshalReport(b []byte) (Report, error) {
 		return Report{}, err
 	}
 	return r, nil
+}
+
+// decodeError keeps the category and, for a syntax error, the line, and drops
+// the rest: encoding/xml quotes parts of the document, which may carry the
+// rejection reason or other personal data.
+func decodeError(err error) error {
+	var syn *xml.SyntaxError
+	if errors.As(err, &syn) {
+		return fmt.Errorf("%w: XML syntax error on line %d", ErrInvalidReport, syn.Line)
+	}
+	return fmt.Errorf("%w: document is not a BACENReport", ErrInvalidReport)
 }
 
 func formatTime(t time.Time) string {

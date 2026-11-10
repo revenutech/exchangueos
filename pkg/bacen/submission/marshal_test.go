@@ -300,3 +300,12 @@ func TestUnmarshal_ErrorsNeverQuoteTheDocument(t *testing.T) {
 		})
 	}
 }
+
+func TestReport_JSONOmitsUnsetTimes(t *testing.T) {
+	t.Parallel()
+	js, err := json.Marshal(validReport())
+	require.NoError(t, err)
+	assert.NotContains(t, string(js), "submitted_at")
+	assert.NotContains(t, string(js), "responded_at")
+	assert.Contains(t, string(js), `"rejection_reason_len":0`)
+}
