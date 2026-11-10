@@ -58,13 +58,15 @@ check() {
 
 all=$(git show "$base:.ci-local/passos.conf" | grep -c ' -- ' || true)
 # negative control: plan text only → gitleaks, nothing else
-check "negativo .base/plans" "$(first_file .base/plans/milestones/backlog md)" "<!-- passos controle -->" '^gitleaks$' '^(teste-|build|govulncheck|bacen-mock|helm|escopo|passos|lint-patterns|shellcheck)' 1
+check "negativo .base/plans" "$(first_file .base/plans/milestones/backlog md)" "<!-- passos controle -->" '^gitleaks$' '^(teste-|build|govulncheck|bacen-mock|helm|escopo|passos|lint-patterns|shellcheck|migracoes)' 1
 # a leaf package (nobody imports pkg/sanctions): its own test step and the tree-wide Go steps; no disk gates
 check "pkg/sanctions" "$(first_file pkg/sanctions/ go)" "// passos controle" '^teste-pkg_sanctions$' '^(helm|escopo|passos|lint-patterns|bacen-mock|teste-cmd_healthcheck)$' 4
 # disk read declared in escopo.conf (le-disco pkg/bacen → data/bacen/): every Go test step enters
 check "data/bacen" "$(first_file data/bacen/ '[a-z]+')" "# passos controle" '^teste-pkg_bacen$' '^(build|govulncheck|helm|escopo)$' 10
+# a migration: the round trip (DB lane) and gitleaks, no Go test step
+check "migrations" "$(first_file migrations/000002_create_fx_trades sql)" "-- passos controle" '^migracoes$' '^(teste-|build|helm|escopo)' 2
 # chart only
-check "helm" "$(first_file deploy/helm/exchangeos/ yaml)" "# passos controle" '^helm$' '^(teste-|build|govulncheck|escopo)' 2
+check "helm" "$(first_file deploy/helm/exchangeos/ yaml)" "# passos controle" '^helm$' '^(teste-|build|govulncheck|escopo|migracoes)' 2
 # .ci-local/ widens: every line of passos.conf has at least one step entering
 check ".ci-local amplia" ".ci-local/escopo.conf" "# passos controle" '^(escopo|passos|teste-pkg_sanctions|helm|gitleaks)$' '' "$all"
 
