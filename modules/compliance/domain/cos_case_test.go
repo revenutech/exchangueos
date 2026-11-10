@@ -124,6 +124,7 @@ func TestRN_FX_039_COSCase_Lifecycle_Accepted(t *testing.T) {
 	var names []string
 	for _, e := range c.PendingEvents() {
 		names = append(names, e.EventName())
+		assert.Equal(t, c.TenantID(), e.TenantID(), "tenant on %s", e.EventName())
 	}
 	assert.Equal(t, []string{
 		"compliance.cos_case.drafted.v1",
@@ -145,6 +146,9 @@ func TestCOSCase_Lifecycle_Rejected(t *testing.T) {
 	assert.Equal(t, domain.COSRejected, c.Status())
 	assert.Equal(t, "layout invalido", c.RejectionReason())
 	assert.Equal(t, cosT0.Add(2*time.Hour), c.RespondedAt())
+	for _, e := range c.PendingEvents() {
+		assert.Equal(t, c.TenantID(), e.TenantID(), "tenant on %s", e.EventName())
+	}
 }
 
 func TestCOSCase_InvalidTransitions(t *testing.T) {
@@ -305,6 +309,7 @@ func TestCOSCase_Redaction(t *testing.T) {
 	assert.Contains(t, outputs["ptr %v"], "REJECTED")
 	assert.Contains(t, outputs["slog json"], fmt.Sprintf(`"narrative_len":%d`, len(plantedNarrative)))
 	assert.Contains(t, outputs["json ptr"], `"status":"REJECTED"`)
+	assert.Contains(t, outputs["json ptr"], fmt.Sprintf(`"rejection_len":%d`, len(plantedNarrative)))
 }
 
 func TestCOSCase_ErrorsAreDistinct(t *testing.T) {
@@ -312,4 +317,45 @@ func TestCOSCase_ErrorsAreDistinct(t *testing.T) {
 	assert.False(t, errors.Is(domain.ErrSelfApproval, domain.ErrDuplicateApprover))
 	assert.ErrorIs(t, domain.ErrSelfApproval, domain.ErrInvalidInput)
 	assert.ErrorIs(t, domain.ErrDuplicateApprover, domain.ErrInvalidInput)
+}
+
+// RN_FX_039 counts from DecidedAt: a zero instant would break the deadline, so every transition refuses it.
+func TestCOSCase_ZeroTimeRefused(t *testing.T) {
+	t.Parallel()
+	var zero time.Time
+	at := cosT0.Add(time.Hour)
+	cases := []struct {
+		name string
+		mk   func(*testing.T) *domain.COSCase
+		do   func(*domain.COSCase) error
+	}{
+		{"review", newCOS, func(c *domain.COSCase) error { return c.SubmitForReview(zero) }},
+		{"approve", func(t *testing.T) *domain.COSCase {
+			c := newCOS(t)
+			require.NoError(t, c.SubmitForReview(at))
+			return c
+		}, func(c *domain.COSCase) error { return c.Approve("officer-a", zero) }},
+		{"submit", approved, func(c *domain.COSCase) error { return c.MarkSubmitted(zero, "P") }},
+		{"accept", func(t *testing.T) *domain.COSCase {
+			c := approved(t)
+			require.NoError(t, c.MarkSubmitted(at, "P"))
+			return c
+		}, func(c *domain.COSCase) error { return c.MarkAccepted(zero) }},
+		{"reject", func(t *testing.T) *domain.COSCase {
+			c := approved(t)
+			require.NoError(t, c.MarkSubmitted(at, "P"))
+			return c
+		}, func(c *domain.COSCase) error { return c.MarkRejected(zero, "r") }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			c := tc.mk(t)
+			st, v, n := c.Status(), c.Version(), len(c.Approvers())
+			require.ErrorIs(t, tc.do(c), domain.ErrInvalidInput)
+			assert.Equal(t, st, c.Status())
+			assert.Equal(t, v, c.Version())
+			assert.Equal(t, n, len(c.Approvers()))
+		})
+	}
 }
