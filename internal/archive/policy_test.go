@@ -15,13 +15,13 @@ import (
 
 // fakeStore counts calls and serves whatever the test puts in it.
 type fakeStore struct {
-	mu        sync.Mutex
-	policies  []archive.Policy
-	fp        archive.Fingerprint
-	loadErr   error
-	fpErr     error
-	loads     int
-	fpCalls   int
+	mu       sync.Mutex
+	policies []archive.Policy
+	fp       archive.Fingerprint
+	loadErr  error
+	fpErr    error
+	loads    int
+	fpCalls  int
 }
 
 func (f *fakeStore) LoadAll(context.Context) ([]archive.Policy, error) {
@@ -70,8 +70,8 @@ func (c *clock) advance(d time.Duration) {
 
 var t0 = time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC)
 
-func years(n int32) archive.Interval { return archive.Interval{Months: 12 * n} }
-func days(n int32) archive.Interval  { return archive.Interval{Days: n} }
+func years(n int32) archive.Interval           { return archive.Interval{Months: 12 * n} }
+func days(n int32) archive.Interval            { return archive.Interval{Days: n} }
 func ptr(i archive.Interval) *archive.Interval { return &i }
 
 func seed() []archive.Policy {
