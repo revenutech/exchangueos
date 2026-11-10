@@ -13,7 +13,7 @@ import (
 
 type fakeProvider struct{ entries []sanctions.Match }
 
-func (f *fakeProvider) Source() sanctions.Source       { return sanctions.SourceOFAC }
+func (f *fakeProvider) Source() sanctions.Source      { return sanctions.SourceOFAC }
 func (f *fakeProvider) Refresh(context.Context) error { return nil }
 func (f *fakeProvider) Match(_ context.Context, q sanctions.MatchQuery) ([]sanctions.Match, error) {
 	if err := q.Validate(); err != nil {
