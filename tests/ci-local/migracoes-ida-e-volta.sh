@@ -4,7 +4,7 @@
 #   1. up (all) and the checks of every tests/ci-local/migracoes/<NNNNNN>.check.sql must pass;
 #   2. idempotence, for each migration that has a check file (new migrations bring one; the older ones predate the
 #      rule and some use ADD CONSTRAINT without IF NOT EXISTS): its up.sql applied a second time, and its down.sql
-#      twice in a row, succeed;
+#      applied again right after its own rollback (one step down at a time), succeed;
 #   3. down (all) and then the checks must FAIL (negative control: a check that passes on an empty schema is vacuous);
 #   4. up (all) again and the checks pass again.
 # A check file holds one query per line (# comments) that must return exactly «t».
@@ -100,11 +100,21 @@ for f in "${idem[@]}"; do sqlc -d exchangeos < "$f" >/dev/null 2>"$tmp/err" || {
 checks pass || fails=$((fails + $?))
 echo "ok   idempotence: up.sql applied twice: ${idem[*]}"
 
-migrator down "$n"
+# down one step at a time; right after a migration with a check file is rolled back, its down.sql runs once more on
+# the very schema it belongs to (a down of an ALTER cannot run once the table under it is gone)
+all=()
+while IFS= read -r u; do all+=("$u"); done <<< "$ups"
+for ((i = ${#all[@]} - 1; i >= 0; i--)); do
+  migrator down 1
+  for u in "${idem[@]}"; do
+    [ "$u" = "${all[$i]}" ] || continue
+    d=${u%.up.sql}.down.sql
+    sqlc -d exchangeos < "$d" >/dev/null 2>"$tmp/err" || { echo "FAIL idempotence: $d applied twice"; cat "$tmp/err"; fails=$((fails + 1)); }
+  done
+done
+echo "ok   idempotence: down.sql applied twice, each right after its own rollback"
 checks fail || fails=$((fails + $?))
 echo "ok   down $n: checks fail on the empty schema (negative control)"
-for ((i = ${#idem[@]} - 1; i >= 0; i--)); do f=${idem[$i]}; d=${f%.up.sql}.down.sql; sqlc -d exchangeos < "$d" >/dev/null 2>"$tmp/err" || { echo "FAIL idempotence: $d on an already rolled back schema"; cat "$tmp/err"; fails=$((fails + 1)); }; done
-echo "ok   idempotence: down.sql applied on an already rolled back schema"
 
 migrator up
 checks pass || fails=$((fails + $?))
