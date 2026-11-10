@@ -1,8 +1,8 @@
 ---
 data: 2026-11-10
 tarefa: 1.3
-estado: ☑️
-evidencia: migração 000014 (`screening_results.cos_case_id`, FK opcional por tenant); revisada pela IdentityOS; N1 verde, na develop em 9734733; N2 do lote 9.2 pendente
+estado: ✅
+evidencia: migração 000014 (`screening_results.cos_case_id`, FK opcional por tenant); revisada pela IdentityOS; N1 verde, na develop em 9734733; N2 do lote 9.2 verde em cd359a1
 pr:
 ---
 Tarefa `RTSK.024.1403.01` (MS-024g 1.3), 2026-11-10, lote 9.2 da etapa 9 (código liberado pelo dono por select na Core em 2026-11-10).
@@ -15,7 +15,7 @@ Tarefa `RTSK.024.1403.01` (MS-024g 1.3), 2026-11-10, lote 9.2 da etapa 9 (códig
 
 ```prova
 n1: 2e42c6873db5cf6f4efd46f70ad00d78245e5359 rodada exchangeos-migracoes@2026-11-10T22:22:36Z
-n2: pendente — N2 única do lote 9.2, depois do último merge
+n2: cd359a19cba589a9996bc36afda70992309793cd rodada exchangeos-n2-lote92@2026-11-10T23:13:05Z — rodada-escopo n2 com 95 passos verdes (go test -race por pacote, build, vet, govulncheck, migracoes 14/17 checks com recusas e teste Go com banco, helm, escopo, passos, lint-patterns, shellcheck, gitleaks), gitleaks 78fa578..head e catraca head × base 78fa578 sem queda (35 → 36 pacotes)
 integracao: develop 9734733c2a24b7b2e28276d88f8028a6024a585d
 revisor: sessão IdentityOS — aprovado em a562af9, reconfirmado em 2e42c68 em 2026-11-10 (PII, tenant)
 ```

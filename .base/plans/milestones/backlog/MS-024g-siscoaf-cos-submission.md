@@ -17,9 +17,9 @@ Implementar geração + submissão de XML COS para SISCOAF. Inclui workflow de g
 
 ### Etapa 1.1 — Aggregate + migração
 
-- **1.1** `RTSK.024.1401.01` ☑️ Aggregate `COSCase` (DRAFT → UNDER_REVIEW → APPROVED → SUBMITTED → ACCEPTED/REJECTED) + 4-eyes. *Aceite:* transições válidas aceitas, inválidas recusadas, 1 aprovador não submete. *Entrega:* `modules/compliance/domain/cos_case.go` + testes. *Escopo:* `modules/compliance/domain/`. *Espera:* gate — N2 do lote 9.2; revisor: IdentityOS (PII). [registro](../registro/ms-024g/2026-11-10-cos-case-4c1e.md)
-- **1.2** `RTSK.024.1402.01` ☑️ Migração criando `cos_cases` com lifecycle completo + audit + `payload_hash`. *Aceite:* migração up+down idempotente, FK para tenant. *Entrega:* `migrations/000011_create_cos_cases.up.sql` + `.down.sql`. *Escopo:* `migrations/`. *Espera:* gate — N2 do lote 9.2; revisor: IdentityOS (tenant, PII). [registro](../registro/ms-024g/2026-11-10-cos-cases-a35f.md)
-- **1.3** `RTSK.024.1403.01` ☑️ Migração estendendo `screening_results` com FK opcional para `cos_cases.id`. *Aceite:* FK não obrigatória, migração up+down. *Entrega:* migração em `migrations/`. *Escopo:* `migrations/`. *Depende:* `RTSK.024.1402.01`. *Espera:* gate — N2 do lote 9.2; revisor: IdentityOS (PII). [registro](../registro/ms-024g/2026-11-10-screening-fk-5d80.md)
+- **1.1** `RTSK.024.1401.01` ✅ Aggregate `COSCase` (DRAFT → UNDER_REVIEW → APPROVED → SUBMITTED → ACCEPTED/REJECTED) + 4-eyes. *Aceite:* transições válidas aceitas, inválidas recusadas, 1 aprovador não submete. *Entrega:* `modules/compliance/domain/cos_case.go` + testes. *Escopo:* `modules/compliance/domain/`. [registro](../registro/ms-024g/2026-11-10-cos-case-4c1e.md)
+- **1.2** `RTSK.024.1402.01` ✅ Migração criando `cos_cases` com lifecycle completo + audit + `payload_hash`. *Aceite:* migração up+down idempotente, FK para tenant. *Entrega:* `migrations/000011_create_cos_cases.up.sql` + `.down.sql`. *Escopo:* `migrations/`. [registro](../registro/ms-024g/2026-11-10-cos-cases-a35f.md)
+- **1.3** `RTSK.024.1403.01` ✅ Migração estendendo `screening_results` com FK opcional para `cos_cases.id`. *Aceite:* FK não obrigatória, migração up+down. *Entrega:* migração em `migrations/`. *Escopo:* `migrations/`. *Depende:* `RTSK.024.1402.01`. [registro](../registro/ms-024g/2026-11-10-screening-fk-5d80.md)
 
 ### Etapa 1.2 — Workflow + wiring
 

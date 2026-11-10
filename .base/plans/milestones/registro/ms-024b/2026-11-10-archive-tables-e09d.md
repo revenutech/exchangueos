@@ -1,8 +1,8 @@
 ---
 data: 2026-11-10
 tarefa: 1.1
-estado: ☑️
-evidencia: migração 000010 (`archive_policy` com 24 políticas e `archive_manifest`) e o teste de ida e volta das migrações; revisada pela IdentityOS; N1 verde, na develop em 64e1d03; N2 do lote 9.2 pendente
+estado: ✅
+evidencia: migração 000010 (`archive_policy` com 24 políticas e `archive_manifest`) e o teste de ida e volta das migrações; revisada pela IdentityOS; N1 verde, na develop em 64e1d03; N2 do lote 9.2 verde em cd359a1
 pr:
 ---
 Tarefa `RTSK.024.1001.01` (MS-024b 1.1), 2026-11-10, lote 9.2 da etapa 9 (código liberado pelo dono por select na Core em 2026-11-10).
@@ -16,7 +16,7 @@ Tarefa `RTSK.024.1001.01` (MS-024b 1.1), 2026-11-10, lote 9.2 da etapa 9 (códig
 
 ```prova
 n1: 2d1a946197927ef43fe84446d9bf41507e7a8957 rodada exchangeos-migracoes@2026-11-10T18:49:08Z
-n2: pendente — N2 única do lote 9.2, depois do último merge
+n2: cd359a19cba589a9996bc36afda70992309793cd rodada exchangeos-n2-lote92@2026-11-10T23:13:05Z — rodada-escopo n2 com 95 passos verdes (go test -race por pacote, build, vet, govulncheck, migracoes 14/17 checks com recusas e teste Go com banco, helm, escopo, passos, lint-patterns, shellcheck, gitleaks), gitleaks 78fa578..head e catraca head × base 78fa578 sem queda (35 → 36 pacotes)
 integracao: develop 64e1d031305678d6a0885c39b09925ffe20f0480
 revisor: sessão IdentityOS — aprovado em 2d1a946 em 2026-11-10 (PII: retenção LGPD)
 ```
