@@ -11,6 +11,9 @@
 # A tests/ci-local/migracoes/<NNNNNN>.recusa.sql holds «<constraint> | <sql>» per line: the sql must FAIL and the
 # error must name <constraint>; «ok | <sql>» must succeed (positive control: the fixture itself is valid, so a
 # refusal is the constraint's, not a broken fixture's). Each sql runs alone; end it with ROLLBACK to leave no row.
+# After the final up, every package listed in tests/ci-local/migracoes/go-integracao.txt runs its integration tests
+# (go test -tags integration) against this database; it must PASS at least one test and SKIP none (a skip there means
+# the DSN did not reach the test, which would pass vacuously).
 # Runs in the queue's DB lane (no REVENU_GATE_SEM_BANCO): the container carries label revenu.gate.dono.
 # Env: CRDB_IMAGE (cockroachdb/cockroach:latest-v24.3), REVENU_GATE_DONO (ExchangueOS).
 set -euo pipefail
@@ -119,6 +122,19 @@ echo "ok   down $n: checks fail on the empty schema (negative control)"
 migrator up
 checks pass || fails=$((fails + $?))
 echo "ok   up again: $n migrations"
+
+if [ -f tests/ci-local/migracoes/go-integracao.txt ]; then
+  while IFS= read -r pkg || [ -n "$pkg" ]; do
+    case "$pkg" in ''|'#'*) continue ;; esac
+    if EXCHANGEOS_TEST_DSN="$EXCHANGEOS_DB_DSN" go test -tags integration -count=1 -v "$pkg" > "$tmp/go.log" 2>&1 </dev/null \
+      && grep -q -- '--- PASS' "$tmp/go.log" && ! grep -q -- '--- SKIP' "$tmp/go.log"; then
+      echo "ok   go integration: $pkg ($(grep -c -- '--- PASS' "$tmp/go.log") passed)"
+    else
+      echo "FAIL go integration: $pkg"; grep -E -- '--- (FAIL|SKIP)|Error|error' "$tmp/go.log" | head -30; tail -5 "$tmp/go.log"
+      fails=$((fails + 1))
+    fi
+  done < tests/ci-local/migracoes/go-integracao.txt
+fi
 
 if [ "$fails" != 0 ]; then echo "migracoes: $fails falha(s)"; exit 1; fi
 echo "migracoes: ida e volta verde ($n migrações, $(cat tests/ci-local/migracoes/*.check.sql 2>/dev/null | grep -vc -E '^(#|$)') checks)"
