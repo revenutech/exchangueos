@@ -24,7 +24,7 @@ func validReport() submission.Report {
 		ID:            uuid.MustParse("6f1c2a8e-3b4d-4e5f-8a9b-0c1d2e3f4a5b"),
 		TenantID:      uuid.MustParse("0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"),
 		Type:          submission.ReportSISBACEN,
-		ReferenceDate: time.Date(2026, 11, 9, 0, 0, 0, 0, time.UTC),
+		ReferenceDate: submission.CivilDate{Year: 2026, Month: time.November, Day: 9},
 		PayloadHash:   hashHex,
 		Status:        submission.ReportPending,
 		Version:       1,
@@ -85,23 +85,65 @@ func TestMarshal_NormalisesTimesToUTC(t *testing.T) {
 	t.Parallel()
 	sp := time.FixedZone("BRT", -3*3600)
 	r := validReport()
-	r.ReferenceDate = time.Date(2026, 11, 9, 22, 0, 0, 0, sp) // 2026-11-10 01:00 UTC
 	r.Status = submission.ReportSubmitted
 	r.SubmittedAt = time.Date(2026, 11, 10, 10, 0, 0, 0, sp)
 	b, err := submission.MarshalReport(r)
 	require.NoError(t, err)
-	assert.Contains(t, string(b), "<ReferenceDate>2026-11-10</ReferenceDate>")
 	assert.Contains(t, string(b), "<SubmittedAt>2026-11-10T13:00:00Z</SubmittedAt>")
+}
+
+// The reference date of a report to BCB is the civil date in Brasília. The
+// domain carries it two ways (see CivilDate): an instant on a fresh report and
+// a DATE column read as midnight UTC on a loaded one. Each needs its own
+// conversion; using the wrong one moves the date by one day.
+func TestCivilDate_FromEachSource(t *testing.T) {
+	t.Parallel()
+	brt := time.FixedZone("BRT", -3*3600)
+	cases := map[string]struct {
+		got  submission.CivilDate
+		want string
+	}{
+		"instant 22:30 BRT is still the 10th":      {submission.SaoPauloDateOf(time.Date(2026, 11, 10, 22, 30, 0, 0, brt)), "2026-11-10"},
+		"same instant written as 01:30Z":           {submission.SaoPauloDateOf(time.Date(2026, 11, 11, 1, 30, 0, 0, time.UTC)), "2026-11-10"},
+		"same instant on a Luanda host (WAT)":      {submission.SaoPauloDateOf(time.Date(2026, 11, 11, 2, 30, 0, 0, time.FixedZone("WAT", 3600))), "2026-11-10"},
+		"instant 02:59:59Z is the 9th in SP":       {submission.SaoPauloDateOf(time.Date(2026, 11, 10, 2, 59, 59, 0, time.UTC)), "2026-11-09"},
+		"DATE column read as midnight UTC":         {submission.DateOf(time.Date(2026, 11, 10, 0, 0, 0, 0, time.UTC)), "2026-11-10"},
+		"trap: midnight UTC read as an SP instant": {submission.SaoPauloDateOf(time.Date(2026, 11, 10, 0, 0, 0, 0, time.UTC)), "2026-11-09"},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.want, tc.got.String())
+			r := validReport()
+			r.ReferenceDate = tc.got
+			b, err := submission.MarshalReport(r)
+			require.NoError(t, err)
+			assert.Contains(t, string(b), "<ReferenceDate>"+tc.want+"</ReferenceDate>")
+		})
+	}
+}
+
+// The marshal only formats: it never shifts the date, whatever the host zone.
+func TestUnmarshal_ReferenceDateIsTheCivilDate(t *testing.T) {
+	t.Parallel()
+	b, err := os.ReadFile(filepath.Join("testdata", "sisbacen.xml"))
+	require.NoError(t, err)
+	r, err := submission.UnmarshalReport(b)
+	require.NoError(t, err)
+	assert.Equal(t, submission.CivilDate{Year: 2026, Month: time.November, Day: 9}, r.ReferenceDate)
 }
 
 func TestMarshal_RejectsInvalidReport(t *testing.T) {
 	t.Parallel()
 	at := time.Date(2026, 11, 10, 13, 0, 0, 0, time.UTC)
 	cases := map[string]func(*submission.Report){
-		"nil id":               func(r *submission.Report) { r.ID = uuid.Nil },
-		"nil tenant":           func(r *submission.Report) { r.TenantID = uuid.Nil },
-		"unknown type":         func(r *submission.Report) { r.Type = "DEC" },
-		"zero reference date":  func(r *submission.Report) { r.ReferenceDate = time.Time{} },
+		"nil id":              func(r *submission.Report) { r.ID = uuid.Nil },
+		"nil tenant":          func(r *submission.Report) { r.TenantID = uuid.Nil },
+		"unknown type":        func(r *submission.Report) { r.Type = "DEC" },
+		"zero reference date": func(r *submission.Report) { r.ReferenceDate = submission.CivilDate{} },
+		"impossible date": func(r *submission.Report) {
+			r.ReferenceDate = submission.CivilDate{Year: 2026, Month: time.February, Day: 30}
+		},
 		"short hash":           func(r *submission.Report) { r.PayloadHash = "abc" },
 		"non-hex hash":         func(r *submission.Report) { r.PayloadHash = strings.Repeat("z", 64) },
 		"upper-case hash":      func(r *submission.Report) { r.PayloadHash = strings.ToUpper(hashHex) },
