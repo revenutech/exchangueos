@@ -1,0 +1,2 @@
+# Go packages whose integration tests (build tag integration) run against the round-trip database, one per line.
+./internal/archive/
