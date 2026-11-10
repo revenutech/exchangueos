@@ -11,8 +11,8 @@ cd "$(git rev-parse --show-toplevel)"
 base=$(git rev-parse "${1:-HEAD}")
 git cat-file -e "$base:.ci-local/escopo.conf" || { echo "FAIL: .ci-local/escopo.conf missing in $base"; exit 1; }
 
-first_file() { # <dir> <ext>: first tracked file under <dir> with extension <ext>
-  git ls-tree -r --name-only "$base" -- "$1" | grep -m1 -E "\.$2\$"
+first_file() { # <prefix> <ext>: first tracked file whose path starts with <prefix> and ends in .<ext>
+  git ls-tree -r --name-only "$base" | grep -m1 -E "^$1.*\.$2\$"
 }
 
 synthetic_commit() { # <path> <comment>: commit on top of base that appends <comment> to <path>
