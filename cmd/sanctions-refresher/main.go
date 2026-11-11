@@ -187,11 +187,35 @@ func buildJobs(ts []target, getenv func(string) string, client *http.Client, max
 	return jobs, nil
 }
 
-// newHTTPClient is the client of the list downloads: TLS 1.3 minimum (platform rule), one deadline per request.
+// maxRedirects bounds the redirects one download may follow.
+const maxRedirects = 5
+
+var (
+	// errInsecureRedirect refuses a redirect off https: the list would come in clear, outside TLS 1.3, and could be
+	// poisoned on the way.
+	errInsecureRedirect = errors.New("sanctions-refresher: redirect to a non-https URL refused")
+	// errTooManyRedirects stops a redirect chain longer than maxRedirects.
+	errTooManyRedirects = errors.New("sanctions-refresher: too many redirects")
+)
+
+// newHTTPClient is the client of the list downloads: TLS 1.3 minimum (platform rule), redirects only to https and
+// at most maxRedirects of them, one deadline per request.
 func newHTTPClient(timeout time.Duration) *http.Client {
 	tr := http.DefaultTransport.(*http.Transport).Clone()
 	tr.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS13}
-	return &http.Client{Timeout: timeout, Transport: tr}
+	return &http.Client{Timeout: timeout, Transport: tr, CheckRedirect: checkRedirect}
+}
+
+// checkRedirect is the redirect policy of newHTTPClient. Its errors never quote a URL: the target (Location) may carry
+// the same token as the original. The client wraps them in a *url.Error, which httpFetch strips.
+func checkRedirect(req *http.Request, via []*http.Request) error {
+	if req.URL.Scheme != "https" {
+		return errInsecureRedirect
+	}
+	if len(via) >= maxRedirects {
+		return errTooManyRedirects
+	}
+	return nil
 }
 
 // stripURL drops the URL from a *url.Error (which quotes it, query string included) and keeps the cause.
