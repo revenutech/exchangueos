@@ -1,0 +1,29 @@
+[
+  {
+    "Source": "EU",
+    "ID": "900001",
+    "Name": "Ana Ficticia Exemplo",
+    "Aliases": ["Anna Fiktiva"],
+    "Kind": "INDIVIDUAL",
+    "Countries": ["XA", "XB"],
+    "Programs": ["SYN-A"]
+  },
+  {
+    "Source": "EU",
+    "ID": "900002",
+    "Name": "Synthetic Trading; Holdings Ltd",
+    "Aliases": ["STH Ltd", "Exemplo \"Quoted\" Group"],
+    "Kind": "ENTITY",
+    "Countries": ["XB"],
+    "Programs": ["SYN-B", "SYN-A"]
+  },
+  {
+    "Source": "EU",
+    "ID": "900003",
+    "Name": "Fictional Shipping Co",
+    "Aliases": null,
+    "Kind": "ENTITY",
+    "Countries": null,
+    "Programs": ["SYN-C"]
+  }
+]
