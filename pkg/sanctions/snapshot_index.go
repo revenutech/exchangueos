@@ -1,6 +1,7 @@
 package sanctions
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -37,16 +38,19 @@ type SnapshotIndex struct {
 	fetchedAt time.Time    // zero until the first Load
 }
 
+var _ contextMatcher = (*SnapshotIndex)(nil)
+
 // NewSnapshotIndex returns an empty index for source; Match is blocked until the first Load. A non-positive maxAge
-// means MaxSnapshotAge, a nil now means time.Now.
-func NewSnapshotIndex(source Source, maxAge time.Duration, now func() time.Time) *SnapshotIndex {
+// means MaxSnapshotAge, a nil now means time.Now. opts configure the underlying Cache: in production,
+// WithHitAuditor, so every screening's hits are audited (MS-024d 1.11) under the request's HitScope.
+func NewSnapshotIndex(source Source, maxAge time.Duration, now func() time.Time, opts ...CacheOption) *SnapshotIndex {
 	if maxAge <= 0 {
 		maxAge = MaxSnapshotAge
 	}
 	if now == nil {
 		now = time.Now
 	}
-	return &SnapshotIndex{source: source, maxAge: maxAge, now: now, cache: NewCache()}
+	return &SnapshotIndex{source: source, maxAge: maxAge, now: now, cache: NewCache(opts...)}
 }
 
 // FetchedAt reports the fetched_at of the loaded snapshot (zero before the first Load).
@@ -87,9 +91,17 @@ func (x *SnapshotIndex) Reload(dir string) error {
 	return x.Load(snap)
 }
 
-// Match screens q against the loaded snapshot, or fails with ErrStaleSnapshot when there is none or it is older than
-// maxAge. Errors name the list and the age, never the query.
+// Match is MatchContext without a context. With an auditor wired it fails with ErrHitAudit (no tenant), so it only
+// serves the no-op default.
 func (x *SnapshotIndex) Match(q MatchQuery) ([]Match, error) {
+	return x.MatchContext(context.Background(), q)
+}
+
+// MatchContext screens q against the loaded snapshot. It fails with ErrStaleSnapshot when there is no snapshot or it
+// is older than maxAge; that check comes first, so a stale list blocks before any audit. Otherwise it is
+// Cache.MatchContext: with an auditor, ctx must carry a HitScope with a tenant (ErrHitAudit otherwise), and the hits
+// are audited under it. Errors name the list and the age, never the query.
+func (x *SnapshotIndex) MatchContext(ctx context.Context, q MatchQuery) ([]Match, error) {
 	if err := q.Validate(); err != nil {
 		return nil, err
 	}
@@ -102,5 +114,5 @@ func (x *SnapshotIndex) Match(q MatchQuery) ([]Match, error) {
 	if age := x.now().Sub(fetchedAt); age > x.maxAge {
 		return nil, fmt.Errorf("%w: %s snapshot is %s old (limit %s)", ErrStaleSnapshot, x.source, age.Round(time.Second), x.maxAge)
 	}
-	return x.cache.Match(q)
+	return x.cache.MatchContext(ctx, q)
 }
