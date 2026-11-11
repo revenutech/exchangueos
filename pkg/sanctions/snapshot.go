@@ -54,7 +54,7 @@ func (s Snapshot) validate() error {
 }
 
 // WriteSnapshot validates snap and replaces its file in dir atomically: the content goes to a temporary file in the
-// same directory, is synced, and is renamed over SnapshotPath. A reader sees the previous snapshot or the new one,
+// same directory, is synced, is renamed over SnapshotPath, and the directory is synced. A reader sees the previous snapshot or the new one,
 // never half of either. An invalid snapshot is refused with ErrInvalidSnapshot and leaves the directory as it was.
 //
 // The file is created 0600: every exchangeos pod runs as the same non-root user (65532), so the screening pods can
@@ -89,7 +89,24 @@ func WriteSnapshot(dir string, snap Snapshot) (err error) {
 	if err := os.Rename(tmp.Name(), SnapshotPath(dir, snap.Source)); err != nil {
 		return fmt.Errorf("sanctions: publish %s snapshot: %w", snap.Source, err)
 	}
+	// The rename is durable only once the directory entry is: sync the directory too. An error here means the new
+	// snapshot is visible but may not survive a crash, and is reported as a failed write.
+	if err := syncDir(dir); err != nil {
+		return fmt.Errorf("sanctions: sync %s snapshot dir: %w", snap.Source, err)
+	}
 	return nil
+}
+
+func syncDir(dir string) error {
+	d, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+	if err := d.Sync(); err != nil {
+		_ = d.Close()
+		return err
+	}
+	return d.Close()
 }
 
 // ReadSnapshot reads the snapshot of source from dir and checks it as WriteSnapshot does. A missing file is reported
