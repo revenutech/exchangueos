@@ -17,7 +17,9 @@ import (
 //	upstream unreachable (errUpstream), snapshot ≤ 24h   fallback: Warn, the run does not fail
 //	anything else, snapshot ≤ 24h                         failure: Error, the run exits non-zero (a list that
 //	                                                      answers but does not parse is a format change or a
-//	                                                      poisoning attempt, and needs a person)
+//	                                                      poisoning attempt, and needs a person; so is a redirect
+//	                                                      off https, errInsecureRedirect, though the client wraps
+//	                                                      it in errUpstream)
 //	no snapshot, or snapshot > 24h                        blocked: Error, the run exits non-zero; the screening
 //	                                                      pods refuse Match for the list (sanctions.SnapshotIndex)
 //
@@ -25,6 +27,13 @@ import (
 
 // errUpstream marks a download that did not get the list: a network error or a non-200 answer.
 var errUpstream = errors.New("upstream unreachable")
+
+// isOutage reports whether err is an upstream outage, the only failure that may fall back. A redirect off https is
+// refused by the client and so carries errUpstream too, but it is an integrity signal (someone may be steering the
+// download into clear text), handled like a parse failure.
+func isOutage(err error) bool {
+	return errors.Is(err, errUpstream) && !errors.Is(err, errInsecureRedirect)
+}
 
 // reportFailure classifies a failed refresh by the rule above, sets out.fallback or out.blocked, and logs it.
 // When the list is blocked, out.err becomes a sanctions.ErrStaleSnapshot that still wraps the cause.
@@ -41,7 +50,7 @@ func (r *refresher) reportFailure(j job, out *outcome) {
 			sanctions.ErrStaleSnapshot, j.name, out.age.Round(time.Second), freshnessSLO, out.err)
 		r.log.Error("screening blocked: sanctions snapshot stale",
 			append(base, zap.Duration("snapshot_age", out.age), zap.Error(out.err))...)
-	case errors.Is(out.err, errUpstream):
+	case isOutage(out.err):
 		out.fallback = true
 		r.log.Warn("upstream unreachable, serving cached snapshot",
 			append(base, zap.Duration("snapshot_age", out.age), zap.Error(out.err))...)
