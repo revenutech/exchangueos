@@ -18,6 +18,9 @@ import (
 // screenedName is synthetic; the tests also use it to check that no error carries it.
 const screenedName = "Synthetic Counterparty Bank"
 
+// sentinelName is a synthetic name planted in dependency errors: Screen must not pass it on.
+const sentinelName = "Sentinel Fulano da Silva"
+
 // fakeListProvider stands in for one live sanctions list.
 type fakeListProvider struct {
 	src     sanctions.Source
@@ -180,10 +183,11 @@ func TestRN_FX_039_ScreenCounterparty_HitOrdering(t *testing.T) {
 }
 
 // A list that cannot answer makes the whole screening fail: a counterparty is never cleared on three lists out of
-// four. Nothing is persisted, and the error names the list, never the counterparty.
+// four. Nothing is persisted, and the error names the list, never the counterparty: the provider's own error, which
+// here quotes a name, is not passed on.
 func TestRN_FX_039_ScreenCounterparty_ProviderErrorFailsClosed(t *testing.T) {
 	t.Parallel()
-	boom := errors.New("synthetic list outage")
+	boom := errors.New("synthetic list outage while matching " + sentinelName)
 	for _, failing := range []sanctions.Source{sanctions.SourceOFAC, sanctions.SourceUN, sanctions.SourceEU, sanctions.SourceCOAF} {
 		t.Run(string(failing), func(t *testing.T) {
 			t.Parallel()
@@ -200,9 +204,11 @@ func TestRN_FX_039_ScreenCounterparty_ProviderErrorFailsClosed(t *testing.T) {
 			require.Error(t, err)
 			assert.Nil(t, res)
 			assert.ErrorIs(t, err, application.ErrScreeningFailed)
-			assert.ErrorIs(t, err, boom)
+			assert.NotErrorIs(t, err, boom, "the provider error is not wrapped: it may quote the name")
 			assert.Contains(t, err.Error(), string(failing))
 			assert.NotContains(t, err.Error(), screenedName)
+			assert.NotContains(t, err.Error(), sentinelName)
+			assert.NotContains(t, err.Error(), "Fulano")
 			assert.Empty(t, repo.Saved, "a failed screening must not be recorded")
 		})
 	}
@@ -210,15 +216,15 @@ func TestRN_FX_039_ScreenCounterparty_ProviderErrorFailsClosed(t *testing.T) {
 
 func TestRN_FX_039_ScreenCounterparty_UnresolvedNameFailsClosed(t *testing.T) {
 	t.Parallel()
-	notFound := errors.New("synthetic directory miss")
 	cases := []struct {
 		name  string
 		names *fakeNames
-		want  error
 	}{
-		{"resolver error", &fakeNames{err: notFound}, notFound},
-		{"empty name", &fakeNames{name: ""}, application.ErrScreeningFailed},
-		{"blank name", &fakeNames{name: "   "}, application.ErrScreeningFailed},
+		{"resolver error", &fakeNames{err: errors.New("synthetic directory miss")}},
+		{"resolver error quoting a name", &fakeNames{err: errors.New("no BIC record for " + sentinelName)}},
+		{"resolver error with a name and an error", &fakeNames{name: sentinelName, err: errors.New("stale " + sentinelName)}},
+		{"empty name", &fakeNames{name: ""}},
+		{"blank name", &fakeNames{name: "   "}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -227,8 +233,14 @@ func TestRN_FX_039_ScreenCounterparty_UnresolvedNameFailsClosed(t *testing.T) {
 			svc, repo, _ := newSvcWith(t, newProviderScreener(t, tc.names, fs))
 
 			_, err := svc.ScreenCounterparty(context.Background(), screenInput())
+			require.Error(t, err)
 			assert.ErrorIs(t, err, application.ErrScreeningFailed)
-			assert.ErrorIs(t, err, tc.want)
+			assert.Contains(t, err.Error(), "counterparty name unavailable")
+			assert.NotContains(t, err.Error(), sentinelName, "the resolver error must not reach the returned error")
+			assert.NotContains(t, err.Error(), "Fulano")
+			if tc.names.err != nil {
+				assert.NotErrorIs(t, err, tc.names.err)
+			}
 			assert.Empty(t, repo.Saved)
 			for _, f := range fs {
 				assert.Empty(t, f.calls(), "no list is queried without a name")
