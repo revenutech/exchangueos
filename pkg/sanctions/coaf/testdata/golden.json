@@ -1,0 +1,7 @@
+[
+  {"Source": "COAF", "ID": "COAF-0001", "Name": "João Fictício da Silva", "Aliases": ["João F. Silva", "Joao Ficticio"], "Kind": "INDIVIDUAL", "Countries": ["XA"], "Programs": ["CSNU 1267"]},
+  {"Source": "COAF", "ID": "COAF-0002", "Name": "Empresa Sintética Ltda", "Aliases": ["ESL", "Sintética & Filhos"], "Kind": "ENTITY", "Countries": ["XA", "XB"], "Programs": ["CSNU 1988"]},
+  {"Source": "COAF", "ID": "COAF-0003", "Name": "Navio Inventado", "Aliases": null, "Kind": "VESSEL", "Countries": null, "Programs": ["CSNU 2231"]},
+  {"Source": "COAF", "ID": "1004", "Name": "Aeronave Exemplo", "Aliases": null, "Kind": "AIRCRAFT", "Countries": null, "Programs": ["CSNU 2231", "CSNU 1267"]},
+  {"Source": "COAF", "ID": "COAF-0005", "Name": "Organização Imaginária", "Aliases": null, "Kind": "ENTITY", "Countries": ["XB"], "Programs": ["CSNU 1988"]}
+]
