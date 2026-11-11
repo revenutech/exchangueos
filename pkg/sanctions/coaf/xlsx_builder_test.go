@@ -65,7 +65,7 @@ func esc(s string) string {
 	return b.String()
 }
 
-func colName(i int) string {
+func colLetters(i int) string {
 	s := ""
 	for i++; i > 0; i = (i - 1) / 26 {
 		s = string(rune('A'+(i-1)%26)) + s
@@ -83,7 +83,7 @@ func sheetParts(rows [][]string) (sheet, sst string) {
 	for r, row := range rows {
 		fmt.Fprintf(&sb, `<row r="%d">`, r+1)
 		for c, v := range row {
-			ref := fmt.Sprintf("%s%d", colName(c), r+1)
+			ref := fmt.Sprintf("%s%d", colLetters(c), r+1)
 			switch {
 			case v == "":
 				continue
