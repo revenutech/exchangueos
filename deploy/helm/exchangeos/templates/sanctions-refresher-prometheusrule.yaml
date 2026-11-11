@@ -1,0 +1,46 @@
+{{- if .Values.sanctionsFreshness.enabled }}
+# Freshness SLO of the sanctions lists (MS-024d 1.8, RTSK.024.1208.01): every list refreshed within 24 hours.
+#
+# cmd/sanctions-refresher records sanctions_list_age_seconds{list} after each list — the age of the snapshot the
+# screening pods load — and pushes it over OTLP when the Job ends. The series therefore has one sample per run
+# (hourly), not a continuous scrape: the rules read the last sample of a window wider than the schedule.
+#
+#   SanctionsListStale    the last reported age is above maxAgeSeconds (86400): the list has not been refreshed
+#                         for a day and screening against it is blocked (MS-024d 1.9).
+#   SanctionsListSilent   a list reported no age during absentFor: the refresher is not running, or the list has
+#                         never had a snapshot.
+{{- $binaryName := "sanctions-refresher" -}}
+{{- $cfg := .Values.sanctionsFreshness }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "exchangeos.fullname" (dict "Release" .Release "binaryName" $binaryName) }}
+  labels:
+    {{- include "exchangeos.labels" (dict "Release" .Release "binaryName" $binaryName) | nindent 4 }}
+    {{- with $cfg.ruleLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    - name: exchangeos-sanctions-freshness
+      rules:
+        - alert: SanctionsListStale
+          expr: last_over_time({{ $cfg.metric }}[{{ $cfg.lookback }}]) > {{ $cfg.maxAgeSeconds }}
+          labels:
+            severity: {{ $cfg.severity }}
+            module: exchangeos
+          annotations:
+            summary: {{ `"Sanctions list {{ $labels.list }} is older than 24h"` }}
+            description: {{ `"The {{ $labels.list }} snapshot is {{ $value | humanizeDuration }} old. Screening against it is blocked until a refresh succeeds; check the sanctions-refresher Job logs for the upstream error."` }}
+{{- range $list := $cfg.lists }}
+        - alert: SanctionsListSilent
+          expr: absent_over_time({{ $cfg.metric }}{list="{{ $list }}"}[{{ $cfg.absentFor }}])
+          labels:
+            severity: {{ $cfg.severity }}
+            module: exchangeos
+            list: {{ $list | quote }}
+          annotations:
+            summary: {{ printf "%q" (printf "Sanctions list %s reported no age for %s" $list $cfg.absentFor) }}
+            description: {{ printf "%q" (printf "No sanctions_list_age_seconds sample for %s: the sanctions-refresher CronJob is not running, or %s has never produced a snapshot." $list $list) }}
+{{- end }}
+{{- end }}
