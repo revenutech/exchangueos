@@ -85,6 +85,7 @@ var requiredSanctionsSources = []sanctions.Source{
 
 // CounterpartyNameResolver returns the name a counterparty is screened under (the institution name of its BIC,
 // in production from refdata). The name is PII: implementations must not log it nor put it in their errors.
+// ProviderScreener does not pass the resolver's error on, in case one does.
 type CounterpartyNameResolver interface {
 	CounterpartyName(ctx context.Context, bic, lei string) (string, error)
 }
@@ -103,6 +104,12 @@ type CounterpartyNameResolver interface {
 // fails, Screen returns an error wrapping ErrScreeningFailed and no hits, so ScreenCounterparty persists nothing.
 // Partial results are never returned: a counterparty is not cleared on three lists out of four. Errors name the
 // failing list and never the counterparty.
+//
+// The resolver's and the providers' own errors are not wrapped into the returned error: either may quote the name
+// (a vendor API echoing the query, a directory miss naming the record), and nothing here can check that they do
+// not. Screen returns ErrScreeningFailed with a fixed reason instead; only the context's own error, which carries no
+// name, is wrapped. The dependency error is dropped, so diagnosing it is the dependency's job, under its own
+// redaction.
 type ProviderScreener struct {
 	names     CounterpartyNameResolver
 	providers []sanctions.SanctionsProvider
@@ -144,11 +151,8 @@ func (s *ProviderScreener) Screen(ctx context.Context, bic, lei string) ([]strin
 		return nil, fmt.Errorf("%w: %w", ErrScreeningFailed, err)
 	}
 	name, err := s.names.CounterpartyName(ctx, bic, lei)
-	if err != nil {
-		return nil, fmt.Errorf("%w: resolve counterparty name: %w", ErrScreeningFailed, err)
-	}
-	if strings.TrimSpace(name) == "" {
-		return nil, fmt.Errorf("%w: counterparty has no name to screen", ErrScreeningFailed)
+	if err != nil || strings.TrimSpace(name) == "" {
+		return nil, fmt.Errorf("%w: counterparty name unavailable", ErrScreeningFailed)
 	}
 	q := sanctions.MatchQuery{Name: name, MinScore: s.minScore}
 
@@ -163,7 +167,10 @@ func (s *ProviderScreener) Screen(ctx context.Context, bic, lei string) ([]strin
 		}
 		matches, err := p.Match(ctx, q)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %s: %w", ErrScreeningFailed, p.Source(), err)
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				return nil, fmt.Errorf("%w: %s: %w", ErrScreeningFailed, p.Source(), ctxErr)
+			}
+			return nil, fmt.Errorf("%w: %s: list match failed", ErrScreeningFailed, p.Source())
 		}
 		for _, m := range matches {
 			k := key{m.Source, m.EntryID}
