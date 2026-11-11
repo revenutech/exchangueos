@@ -15,7 +15,7 @@ permissions:
   attestations: write
 
 env:
-  GO_VERSION: '1.26.10'
+  GO_VERSION: '1.26.11'
   IMAGE_REGISTRY: gcr.io/revenu-platform
 
 jobs:
