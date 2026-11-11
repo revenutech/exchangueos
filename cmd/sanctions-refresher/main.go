@@ -11,7 +11,8 @@
 // an index that only records the entries; the snapshot is then written with sanctions.WriteSnapshot (temp file in
 // the same directory, fsync, rename), so a reader sees the previous snapshot or the new one, never a partial file.
 // A list that fails (download, parse, an invalid or foreign entry, an empty list) leaves its previous snapshot
-// untouched, the other lists are still refreshed, and the run exits non-zero.
+// untouched and the other lists are still refreshed. Whether the run then exits non-zero is the fallback rule of
+// fallback.go (MS-024d 1.9): an unreachable upstream with a snapshot of at most 24h is a fallback, not a failure.
 //
 // Who consumes it. The processes that call Match (the API, through compliance screening) mount the same volume
 // read-only, sanctions.ReadSnapshot each list and Load it into their own sanctions.Cache. The hand-off is a file
@@ -239,11 +240,11 @@ func httpFetch(client *http.Client, name, rawURL string, maxBytes int64) sanctio
 		req.Header.Set("User-Agent", serviceName+"/"+serviceVersion)
 		resp, err := client.Do(req)
 		if err != nil {
-			return nil, fmt.Errorf("%s: download: %w", name, stripURL(err))
+			return nil, fmt.Errorf("%w: %s: download: %w", errUpstream, name, stripURL(err))
 		}
 		if resp.StatusCode != http.StatusOK {
 			_ = resp.Body.Close()
-			return nil, fmt.Errorf("%s: download: HTTP %d", name, resp.StatusCode)
+			return nil, fmt.Errorf("%w: %s: download: HTTP %d", errUpstream, name, resp.StatusCode)
 		}
 		return &cappedBody{r: io.LimitReader(resp.Body, maxBytes+1), c: resp.Body, max: maxBytes}, nil
 	}
@@ -299,6 +300,9 @@ type outcome struct {
 	// one when the refresh failed. ageKnown is false when the list has no readable snapshot at all.
 	age      time.Duration
 	ageKnown bool
+	// fallback: the upstream was unreachable and the cached snapshot, at most freshnessSLO old, keeps serving.
+	// blocked: the list has no snapshot within freshnessSLO; screening against it fails until a refresh succeeds.
+	fallback, blocked bool
 }
 
 // run refreshes the jobs in order, waiting stagger between two of them. A failed list does not stop the others; the
@@ -314,7 +318,8 @@ func (r *refresher) run(ctx context.Context, jobs []job) error {
 		if err := ctx.Err(); err != nil {
 			return errors.Join(append(errs, err)...)
 		}
-		if out := r.refresh(ctx, j); out.err != nil {
+		// A list serving its cached snapshot within the 24h limit is not a failure of the run (fallback.go).
+		if out := r.refresh(ctx, j); out.err != nil && !out.fallback {
 			errs = append(errs, fmt.Errorf("%s: %w", j.name, out.err))
 		}
 	}
@@ -335,11 +340,7 @@ func (r *refresher) refresh(ctx context.Context, j job) outcome {
 	out.duration = end.Sub(start)
 	r.measureAge(ctx, j, end, &out)
 	if out.err != nil {
-		fields := []zap.Field{zap.String("list", j.name), zap.Duration("duration", out.duration), zap.Error(out.err)}
-		if out.ageKnown {
-			fields = append(fields, zap.Duration("snapshot_age", out.age))
-		}
-		r.log.Error("list refresh failed", fields...)
+		r.reportFailure(j, &out) // fallback to the cached snapshot, or block (fallback.go)
 		return out
 	}
 	r.log.Info("list refreshed",
