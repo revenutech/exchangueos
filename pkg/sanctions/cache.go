@@ -2,6 +2,7 @@ package sanctions
 
 import (
 	"cmp"
+	"context"
 	"fmt"
 	"math/bits"
 	"slices"
@@ -39,16 +40,29 @@ const blockLen = 3
 // «FAKERTON, Zebulon» meets «Zebulon Fakerton»); an entry scores its best name.
 //
 // Load builds the next snapshot aside and swaps it in one atomic store; Match reads whichever snapshot is current,
-// without locks. The zero value is an empty cache ready for use.
+// without locks. The zero value is an empty cache ready for use, with no hit audit.
+//
+// Every entry Match scores, including those below MinScore, is handed to the cache's HitAuditor (see audit.go);
+// the default discards them.
 type Cache struct {
-	mu   sync.Mutex // serialises Load
-	snap atomic.Pointer[snapshot]
+	mu      sync.Mutex // serialises Load
+	snap    atomic.Pointer[snapshot]
+	auditor HitAuditor // set at construction only; nil means NopHitAuditor
 }
 
-var _ Index = (*Cache)(nil)
+var (
+	_ Index          = (*Cache)(nil)
+	_ contextMatcher = (*Cache)(nil)
+)
 
 // NewCache returns an empty cache.
-func NewCache() *Cache { return &Cache{} }
+func NewCache(opts ...CacheOption) *Cache {
+	c := &Cache{}
+	for _, o := range opts {
+		o(c)
+	}
+	return c
+}
 
 type variant struct {
 	norm, sorted []rune
@@ -191,9 +205,17 @@ func blockKeys(t []rune) []string {
 	return []string{"<" + string(t[:blockLen]), ">" + string(t[len(t)-blockLen:])}
 }
 
-// Match returns the entries whose similarity to q reaches q.MinScore, best first, ties by source then entry id.
-// When q.Country is set, entries listing countries must list it; entries without countries always pass.
+// Match is MatchContext without a context: the hits are audited with an empty HitScope.
 func (c *Cache) Match(q MatchQuery) ([]Match, error) {
+	return c.MatchContext(context.Background(), q)
+}
+
+// MatchContext returns the entries whose similarity to q reaches q.MinScore, best first, ties by source then entry
+// id. When q.Country is set, entries listing countries must list it; entries without countries always pass.
+//
+// Every scored entry, above or below q.MinScore, is audited as one Hit under HitScopeFrom(ctx). If the auditor
+// fails, MatchContext returns no matches and an error wrapping ErrHitAudit.
+func (c *Cache) MatchContext(ctx context.Context, q MatchQuery) ([]Match, error) {
 	if err := q.Validate(); err != nil {
 		return nil, err
 	}
@@ -250,14 +272,16 @@ func (c *Cache) Match(q MatchQuery) ([]Match, error) {
 			best[p.entry] = score
 		}
 	}
-	var out []Match
-	for e, score := range best {
-		if score >= q.MinScore {
-			ce := &s.entries[e]
-			out = append(out, Match{Source: ce.source, EntryID: ce.id, Name: ce.name, Score: score})
-		}
+	if len(best) == 0 {
+		return nil, nil
 	}
-	slices.SortFunc(out, func(a, b Match) int {
+	// scored holds every scored entry, sub-threshold included; sorted best first, the matches are its prefix.
+	scored := make([]Match, 0, len(best))
+	for e, score := range best {
+		ce := &s.entries[e]
+		scored = append(scored, Match{Source: ce.source, EntryID: ce.id, Name: ce.name, Score: score})
+	}
+	slices.SortFunc(scored, func(a, b Match) int {
 		if c := cmp.Compare(b.Score, a.Score); c != 0 {
 			return c
 		}
@@ -266,5 +290,33 @@ func (c *Cache) Match(q MatchQuery) ([]Match, error) {
 		}
 		return cmp.Compare(a.EntryID, b.EntryID)
 	})
-	return out, nil
+	if err := c.audit(ctx, q.MinScore, scored); err != nil {
+		return nil, err
+	}
+	n := 0
+	for n < len(scored) && scored[n].Score >= q.MinScore {
+		n++
+	}
+	if n == 0 {
+		return nil, nil
+	}
+	return slices.Clip(scored[:n]), nil
+}
+
+// audit hands every scored entry to the auditor as one Hit. The query name is never passed on.
+func (c *Cache) audit(ctx context.Context, minScore float64, scored []Match) error {
+	if c.auditor == nil {
+		return nil
+	}
+	hits := make([]Hit, len(scored))
+	for i, m := range scored {
+		hits[i] = Hit{
+			Source: m.Source, EntryID: m.EntryID, Score: m.Score, MinScore: minScore,
+			AboveThreshold: m.Score >= minScore,
+		}
+	}
+	if err := c.auditor.RecordHits(ctx, HitScopeFrom(ctx), hits); err != nil {
+		return fmt.Errorf("%w: %w", ErrHitAudit, err)
+	}
+	return nil
 }

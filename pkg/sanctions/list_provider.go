@@ -72,6 +72,12 @@ type Index interface {
 	Match(q MatchQuery) ([]Match, error)
 }
 
+// contextMatcher is implemented by an Index whose Match uses the request context (the Cache audits its hits under
+// the context's HitScope). ListProvider.Match prefers it, so the scope reaches the audit.
+type contextMatcher interface {
+	MatchContext(ctx context.Context, q MatchQuery) ([]Match, error)
+}
+
 // Fetch opens the list as published (HTTP download in production, a fixture in tests).
 type Fetch func(ctx context.Context) (io.ReadCloser, error)
 
@@ -133,10 +139,13 @@ func (p *ListProvider) Refresh(ctx context.Context) error {
 	return nil
 }
 
-// Match validates the query and asks the index.
-func (p *ListProvider) Match(_ context.Context, q MatchQuery) ([]Match, error) {
+// Match validates the query and asks the index, passing ctx on when the index takes one.
+func (p *ListProvider) Match(ctx context.Context, q MatchQuery) ([]Match, error) {
 	if err := q.Validate(); err != nil {
 		return nil, err
+	}
+	if cm, ok := p.index.(contextMatcher); ok {
+		return cm.MatchContext(ctx, q)
 	}
 	return p.index.Match(q)
 }
