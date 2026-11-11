@@ -59,3 +59,10 @@ func BenchmarkJaroWinkler(b *testing.B) {
 		_ = jaroWinkler("synthetic trading company", "synthetik tradng company")
 	}
 }
+
+func TestJaro_WithoutPrefixBoost(t *testing.T) {
+	t.Parallel()
+	assert.InDelta(t, 0.944, jaroRunes([]rune("MARTHA"), []rune("MARHTA")), 0.001)
+	assert.InDelta(t, 0.822, jaroRunes([]rune("DWAYNE"), []rune("DUANE")), 0.001)
+	assert.Less(t, jaroRunes([]rune("bakori"), []rune("bakozen")), tokenFloor, "same-prefix tokens are not candidates by prefix alone")
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand/v2"
+	"runtime"
 	"slices"
 	"sort"
 	"sync"
@@ -267,6 +268,7 @@ func TestCache_Acceptance100k(t *testing.T) {
 	load := time.Since(start)
 	t.Logf("load 100k: %v", load)
 	assert.Less(t, load, 2*time.Second)
+	runtime.GC() // the garbage of building 100k entries is not the latency of Match
 
 	r := rand.New(rand.NewPCG(11, 13))
 	lat := make([]time.Duration, 1000)
@@ -314,4 +316,15 @@ func BenchmarkCacheMatch(b *testing.B) {
 		}
 		i++
 	}
+}
+
+func TestCache_ShortTokenDoesNotHitItsExtensions(t *testing.T) {
+	t.Parallel()
+	c := loaded(t, ent("long", "Barimal"), ent("typo", "Bary"))
+	got, err := c.Match(MatchQuery{Name: "Bari", MinScore: 0.8})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"typo"}, ids(got), "«barimal» extends «bari»; it is not a spelling of it")
+	permissive, err := c.Match(MatchQuery{Name: "Bari", MinScore: 0.5})
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"long", "typo"}, ids(permissive), "a permissive query is not pruned harder than it asked")
 }
