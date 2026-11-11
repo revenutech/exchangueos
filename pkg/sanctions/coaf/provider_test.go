@@ -244,18 +244,25 @@ func TestParse_ZipBombDeclaredSize(t *testing.T) {
 	assert.ErrorIs(t, err, ErrTooLarge)
 }
 
-// A part whose declared size understates what it inflates to is cut at the budget while reading.
-func TestParse_UncompressedBudgetWhileReading(t *testing.T) {
+// The budget is shared: every part fits on its own, but together they exceed it by one byte. (A part that inflates
+// past its own declared size is already refused by archive/zip with zip.ErrFormat.)
+func TestParse_UncompressedBudgetIsShared(t *testing.T) {
 	t.Parallel()
-	pad := strings.Repeat("<!-- synthetic padding -->", 200) // ~5 KiB
-	parts := replacePart(xlsxParts(fixtureRows), "xl/sharedStrings.xml", "")
-	_, sst := sheetParts(fixtureRows)
-	parts = append(parts, part{"xl/sharedStrings.xml", strings.Replace(sst, "<sst ", pad+"<sst ", 1)})
+	parts := xlsxParts(fixtureRows)
+	var total, largest int64
+	for _, p := range parts {
+		switch p.name {
+		case "xl/workbook.xml", "xl/_rels/workbook.xml.rels", "xl/worksheets/sheet1.xml", "xl/sharedStrings.xml":
+			total += int64(len(p.body))
+			largest = max(largest, int64(len(p.body)))
+		}
+	}
+	require.Less(t, largest, total-1)
 	b := zipParts(t, parts)
-	_, err := parse(bytes.NewReader(b), limits{input: MaxInput, uncompressed: 4 << 10, entries: MaxEntries})
+	_, err := parse(bytes.NewReader(b), limits{input: MaxInput, uncompressed: total - 1, entries: MaxEntries})
 	assert.ErrorIs(t, err, ErrTooLarge)
-	_, err = parse(bytes.NewReader(b), limits{input: MaxInput, uncompressed: 64 << 10, entries: MaxEntries})
-	assert.NoError(t, err, "the same archive passes with room in the budget")
+	_, err = parse(bytes.NewReader(b), limits{input: MaxInput, uncompressed: total, entries: MaxEntries})
+	assert.NoError(t, err, "exactly the bytes read fit")
 }
 
 func TestParse_InputCap(t *testing.T) {
