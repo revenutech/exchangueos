@@ -32,8 +32,17 @@ import (
 	"github.com/revenutech/exchangeos/pkg/sanctions"
 )
 
-// ErrMissingColumn is returned when the header lacks a required column (or there is no header).
-var ErrMissingColumn = errors.New("eu: required column missing")
+// MaxListBytes caps how much of a download Parse reads. The real FSF CSV is in the tens of MiB; 256 MiB leaves
+// room to grow while refusing a runaway or hostile response before it exhausts memory. With LazyQuotes an
+// unclosed quote turns the rest of the input into one field, so the cap is what bounds a damaged download.
+const MaxListBytes int64 = 256 << 20
+
+var (
+	// ErrMissingColumn is returned when the header lacks a required column (or there is no header).
+	ErrMissingColumn = errors.New("eu: required column missing")
+	// ErrListTooLarge is returned when the input exceeds MaxListBytes.
+	ErrListTooLarge = errors.New("eu: list exceeds the size cap")
+)
 
 const (
 	colID       = "Entity_LogicalId"
@@ -52,9 +61,17 @@ func New(fetch sanctions.Fetch, idx sanctions.Index) (*sanctions.ListProvider, e
 	return sanctions.NewListProvider(sanctions.SourceEU, fetch, Parse, idx)
 }
 
-// Parse reads the FSF consolidated CSV into one Entry per Entity_LogicalId.
-func Parse(r io.Reader) ([]sanctions.Entry, error) {
-	br := bufio.NewReader(r)
+// Parse reads the FSF consolidated CSV into one Entry per Entity_LogicalId, reading at most MaxListBytes.
+func Parse(r io.Reader) ([]sanctions.Entry, error) { return parse(r, MaxListBytes) }
+
+func parse(r io.Reader, limit int64) (entries []sanctions.Entry, err error) {
+	lim := &capReader{r: r, left: limit}
+	defer func() {
+		if lim.over {
+			entries, err = nil, ErrListTooLarge
+		}
+	}()
+	br := bufio.NewReader(lim)
 	if b, err := br.Peek(len(bom)); err == nil && bytes.Equal(b, bom) {
 		_, _ = br.Discard(len(bom))
 	}
@@ -156,4 +173,29 @@ func appendUnique(s []string, v string) []string {
 		}
 	}
 	return append(s, v)
+}
+
+// capReader reads at most left bytes and fails, remembering why, if the input has more.
+type capReader struct {
+	r    io.Reader
+	left int64
+	over bool
+}
+
+func (c *capReader) Read(p []byte) (int, error) {
+	if c.left <= 0 {
+		var one [1]byte
+		n, err := c.r.Read(one[:])
+		if n > 0 {
+			c.over = true
+			return 0, ErrListTooLarge
+		}
+		return 0, err
+	}
+	if int64(len(p)) > c.left {
+		p = p[:c.left]
+	}
+	n, err := c.r.Read(p)
+	c.left -= int64(n)
+	return n, err
 }
