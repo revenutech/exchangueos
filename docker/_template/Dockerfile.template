@@ -3,7 +3,7 @@
 #
 # Used by: exchangeos-worker, -migrator, -cls-cycle, -eod, -mq-bridge, -cred-rotator.
 
-ARG GO_VERSION=1.25.1
+ARG GO_VERSION=1.26.11
 ARG DISTROLESS_TAG=nonroot
 
 FROM golang:${GO_VERSION}-bookworm AS builder
