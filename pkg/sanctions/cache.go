@@ -42,8 +42,8 @@ const blockLen = 3
 // Load builds the next snapshot aside and swaps it in one atomic store; Match reads whichever snapshot is current,
 // without locks. The zero value is an empty cache ready for use, with no hit audit.
 //
-// Every entry Match scores, including those below MinScore, is handed to the cache's HitAuditor (see audit.go);
-// the default discards them.
+// Every entry Match scores is audited through the cache's HitAuditor (see audit.go): in detail at or above MinScore,
+// as an aggregate below it. Without an auditor nothing is audited.
 type Cache struct {
 	mu      sync.Mutex // serialises Load
 	snap    atomic.Pointer[snapshot]
@@ -205,7 +205,8 @@ func blockKeys(t []rune) []string {
 	return []string{"<" + string(t[:blockLen]), ">" + string(t[len(t)-blockLen:])}
 }
 
-// Match is MatchContext without a context: the hits are audited with an empty HitScope.
+// Match is MatchContext without a context. With an auditor wired it always fails with ErrHitAudit (no tenant to
+// audit under), so it is not a production path then; it serves the no-op default.
 func (c *Cache) Match(q MatchQuery) ([]Match, error) {
 	return c.MatchContext(context.Background(), q)
 }
@@ -213,11 +214,19 @@ func (c *Cache) Match(q MatchQuery) ([]Match, error) {
 // MatchContext returns the entries whose similarity to q reaches q.MinScore, best first, ties by source then entry
 // id. When q.Country is set, entries listing countries must list it; entries without countries always pass.
 //
-// Every scored entry, above or below q.MinScore, is audited as one Hit under HitScopeFrom(ctx). If the auditor
-// fails, MatchContext returns no matches and an error wrapping ErrHitAudit.
+// With an auditor, ctx must carry a HitScope with a tenant (WithHitScope), or MatchContext fails with ErrHitAudit
+// before scoring. The scored entries are then audited as one HitBatch: detail for those at or above q.MinScore, an
+// aggregate for those below. If the auditor fails, MatchContext returns no matches and an error wrapping ErrHitAudit.
 func (c *Cache) MatchContext(ctx context.Context, q MatchQuery) ([]Match, error) {
 	if err := q.Validate(); err != nil {
 		return nil, err
+	}
+	var scope HitScope
+	if c.auditor != nil {
+		var err error
+		if scope, err = auditScope(ctx); err != nil {
+			return nil, err
+		}
 	}
 	toks := strings.Fields(normalize(q.Name))
 	if len(toks) == 0 {
@@ -290,12 +299,12 @@ func (c *Cache) MatchContext(ctx context.Context, q MatchQuery) ([]Match, error)
 		}
 		return cmp.Compare(a.EntryID, b.EntryID)
 	})
-	if err := c.audit(ctx, q.MinScore, scored); err != nil {
-		return nil, err
-	}
 	n := 0
 	for n < len(scored) && scored[n].Score >= q.MinScore {
 		n++
+	}
+	if err := c.audit(ctx, scope, q.MinScore, scored[:n], scored[n:]); err != nil {
+		return nil, err
 	}
 	if n == 0 {
 		return nil, nil
@@ -303,19 +312,20 @@ func (c *Cache) MatchContext(ctx context.Context, q MatchQuery) ([]Match, error)
 	return slices.Clip(scored[:n]), nil
 }
 
-// audit hands every scored entry to the auditor as one Hit. The query name is never passed on.
-func (c *Cache) audit(ctx context.Context, minScore float64, scored []Match) error {
+// audit hands one HitBatch to the auditor: detail for the matches, only the count and best score for the entries
+// below the threshold (below is sorted best first). The query name is never passed on.
+func (c *Cache) audit(ctx context.Context, scope HitScope, minScore float64, matches, below []Match) error {
 	if c.auditor == nil {
 		return nil
 	}
-	hits := make([]Hit, len(scored))
-	for i, m := range scored {
-		hits[i] = Hit{
-			Source: m.Source, EntryID: m.EntryID, Score: m.Score, MinScore: minScore,
-			AboveThreshold: m.Score >= minScore,
-		}
+	b := HitBatch{Scope: scope, MinScore: minScore, Hits: make([]Hit, len(matches))}
+	for i, m := range matches {
+		b.Hits[i] = Hit{Source: m.Source, EntryID: m.EntryID, Score: m.Score}
 	}
-	if err := c.auditor.RecordHits(ctx, HitScopeFrom(ctx), hits); err != nil {
+	if len(below) > 0 {
+		b.BelowThreshold = SubThreshold{Count: len(below), BestScore: below[0].Score}
+	}
+	if err := c.auditor.RecordHits(ctx, b); err != nil {
 		return fmt.Errorf("%w: %w", ErrHitAudit, err)
 	}
 	return nil
