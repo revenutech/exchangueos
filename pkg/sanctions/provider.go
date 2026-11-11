@@ -30,6 +30,10 @@ const (
 // PII: Name is the counterparty's name. String, GoString, LogValue and MarshalJSON never print it, only the country,
 // the threshold and the name length. They use value receivers on purpose, so a pointer or a dereferenced copy is
 // redacted as well. MarshalJSON is a redacted view, not a wire format: a MatchQuery does not round-trip through JSON.
+//
+// fmt calls these methods only on exported fields. A MatchQuery kept in an unexported field of another struct is
+// printed raw, Name included, by %v, %+v or %#v of the outer struct (and encoding/json skips unexported fields). Never
+// keep a MatchQuery in an unexported field of a struct that gets formatted.
 type MatchQuery struct {
 	// Name is the party name as captured, before normalisation. Required.
 	Name string
