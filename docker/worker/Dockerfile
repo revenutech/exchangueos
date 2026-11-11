@@ -4,7 +4,7 @@
 # Distroless multi-stage, multi-arch — same shape as the api image.
 # ─────────────────────────────────────────────────────────────────────────────
 
-ARG GO_VERSION=1.25.1
+ARG GO_VERSION=1.26.11
 ARG DISTROLESS_TAG=nonroot
 
 # ─── Stage 1: builder ────────────────────────────────────────────────────────
