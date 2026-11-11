@@ -3,7 +3,7 @@
 # Bundles SQL files into the image so it's self-contained at runtime.
 # ─────────────────────────────────────────────────────────────────────────────
 
-ARG GO_VERSION=1.25.1
+ARG GO_VERSION=1.26.11
 ARG DISTROLESS_TAG=nonroot
 
 # ─── Stage 1: builder ────────────────────────────────────────────────────────
