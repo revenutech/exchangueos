@@ -154,3 +154,26 @@ func TestNew_RequiresFetchAndIndex(t *testing.T) {
 	_, err = New(fetchBytes(nil), nil)
 	assert.Error(t, err)
 }
+
+func TestParse_SizeCap(t *testing.T) {
+	t.Parallel()
+	body := header + "1;person;P;SYN;Synthetic Person;XA;\n2;enterprise;E;SYN;Synthetic Org;;XB\n"
+	_, err := parse(strings.NewReader(body), 64)
+	require.ErrorIs(t, err, ErrListTooLarge, "a download larger than the cap is refused")
+	got, err := parse(strings.NewReader(body), int64(len(body)))
+	require.NoError(t, err, "exactly the cap is accepted (negative control)")
+	assert.Len(t, got, 2)
+}
+
+func TestParse_UnclosedQuoteHitsTheCap(t *testing.T) {
+	t.Parallel()
+	// With LazyQuotes an unclosed quote swallows the rest of the input into one field: the cap still bounds it.
+	body := header + "1;person;P;SYN;\"Synthetic Person;XA;\n" + strings.Repeat("filler;row;\n", 64)
+	_, err := parse(strings.NewReader(body), int64(len(header)+128))
+	require.ErrorIs(t, err, ErrListTooLarge)
+}
+
+func TestMaxListBytes(t *testing.T) {
+	t.Parallel()
+	assert.Equal(t, int64(256<<20), MaxListBytes)
+}
