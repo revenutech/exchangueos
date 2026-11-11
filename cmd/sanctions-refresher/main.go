@@ -38,6 +38,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -248,7 +249,21 @@ func checkRedirect(req *http.Request, via []*http.Request) error {
 func stripURL(err error) error {
 	var ue *url.Error
 	if errors.As(err, &ue) {
-		return fmt.Errorf("%s: %w", ue.Op, ue.Err)
+		return fmt.Errorf("%s: %w", ue.Op, stripAddr(ue.Err))
+	}
+	return stripAddr(err)
+}
+
+// stripAddr drops the host and port a DNS or dial error names. The cause stays: the syscall error of a dial
+// is kept with %w (errors.Is(err, syscall.ECONNREFUSED) still holds), and a DNS failure keeps its reason.
+func stripAddr(err error) error {
+	var de *net.DNSError
+	if errors.As(err, &de) {
+		return fmt.Errorf("lookup: %s", de.Err)
+	}
+	var oe *net.OpError
+	if errors.As(err, &oe) {
+		return fmt.Errorf("%s: %w", oe.Op, oe.Err)
 	}
 	return err
 }
