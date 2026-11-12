@@ -11,13 +11,13 @@ A tesouraria (treasuryos, exposure) recalcula posição quando a taxa muda, e a 
 
 ## Descrição
 
-Emitir `cambio.taxa_publicada` pelo outbox do exchangeos, com o identificador registrado no catálogo `ledgeros/.base/aasc/iso20022` e o envelope que o catálogo manda carimbar (`msg_def_idr`). O registro no catálogo é feito pela sessão LedgerOS (decisão do dono, 2026-11-12), com emissor `exchangeos` e consumidor `treasuryos`; esta MS não escolhe nem aloca o identificador. Frescor por `tipo_taxa`, RPC por `rate_id` e contingência manual seguem pendentes com o dono (ADR-006 da tesouraria) e ficam fora desta MS até decididos.
+Emitir `cambio.taxa_publicada` pelo outbox do exchangeos, com o identificador registrado no catálogo `ledgeros/.base/aasc/iso20022` e o envelope que o catálogo manda carimbar (`msg_def_idr`). O registro no catálogo foi feito pela sessão LedgerOS (decisão do dono, 2026-11-12): `xfxt.001.001.01`, classe C, tópico `revenu.xfxt.001`, emissor `exchangeos`, consumidor `treasuryos` (ledgeros 978c74db1, MS-079 1.9). Enums sem default: valor novo em tipo ou fonte vira `.002`. Frescor por `tipo_taxa`, RPC por `rate_id` e contingência manual seguem pendentes com o dono (ADR-006 da tesouraria) e ficam fora desta MS até decididos.
 
 ## Fase 1 — Implementação
 
 ### Etapa 1.1 — Emissão do evento
 
-- **1.1** `RTSK.024.2001.01` ✏️ Emitir `cambio.taxa_publicada` pelo outbox nos quatro `tipo_taxa`, PTAX na mesma mensagem, com `rate_id`. *Aceite:* `msgrepo drift` limpo; consumidor de teste lê o evento pelo tópico do catálogo, com o `msg_def_idr` no header (ADR-061). *Entrega:* emissor + teste. *Escopo:* `modules/refdata/`, `pkg/outbox/`. *Espera:* sessão LedgerOS — registro no catálogo. [registro](../registro/README.md)
+- **1.1** `RTSK.024.2001.01` ✏️ Emitir `cambio.taxa_publicada` (`xfxt.001.001.01`, `MustID`) pelo outbox, uma cotação por mensagem; `MANUAL` só em contingência, com quem e motivo no audit. *Aceite:* `msgrepo events` sem E3; consumidor de teste lê `revenu.xfxt.001` com `msg_def_idr` no header. *Entrega:* emissor + teste. *Escopo:* `modules/refdata/`, `pkg/outbox/`. *Espera:* sessão LedgerOS — revenu-common com o ID. [registro](../registro/README.md)
 
 ## Fase 2 — Aceite
 
