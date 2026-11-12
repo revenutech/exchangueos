@@ -21,5 +21,5 @@ Tarefa `RTSK.024.1207.01` (MS-024d 1.7), 2026-11-12, lote 9.3 da etapa 9 (códig
 n1: PENDENTE
 n2: PENDENTE
 integracao: PENDENTE
-revisor: IndentityOS — aprovado com 79cf1b5 e 7b2e9d7
+revisor: sessão IdentityOS — ajustar em cb13f20 (redirect), aprovado em 79cf1b5, reconfirmado em 7b2e9d7 (endereço do dial) em 2026-11-11 (PII)
 ```
