@@ -1,0 +1,62 @@
+[
+  {
+    "Source": "UN",
+    "ID": "QDi.990",
+    "Name": "TAVEK ORMANDI SYNTHETOV",
+    "Aliases": [
+      "Tavek the Synthetic",
+      "Abu Ormandi"
+    ],
+    "Kind": "INDIVIDUAL",
+    "Countries": [
+      "AF",
+      "PK"
+    ],
+    "Programs": [
+      "Al-Qaida"
+    ]
+  },
+  {
+    "Source": "UN",
+    "ID": "KPi.990",
+    "Name": "MIRELA KOSTADIN",
+    "Aliases": [
+      "Mira Kost"
+    ],
+    "Kind": "INDIVIDUAL",
+    "Countries": [
+      "KP"
+    ],
+    "Programs": [
+      "DPRK"
+    ]
+  },
+  {
+    "Source": "UN",
+    "ID": "QDe.990",
+    "Name": "CRESCENT DUNE RELIEF FOUNDATION",
+    "Aliases": [
+      "Crescent Dune Foundation",
+      "Dune Relief Society"
+    ],
+    "Kind": "ENTITY",
+    "Countries": [
+      "SO",
+      "YE"
+    ],
+    "Programs": [
+      "Al-Qaida"
+    ]
+  },
+  {
+    "Source": "UN",
+    "ID": "9900102",
+    "Name": "NORTHGATE MARITIME SHIPPING CO.",
+    "Aliases": null,
+    "Kind": "ENTITY",
+    "Countries": null,
+    "Programs": [
+      "DPRK"
+    ]
+  }
+]
