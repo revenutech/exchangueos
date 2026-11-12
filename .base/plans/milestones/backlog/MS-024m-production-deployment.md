@@ -48,7 +48,7 @@ Provisionar projeto GCP de produção + cluster GKE Autopilot + infra de apoio v
 - **1.20** `RTSK.024.1820.01` ✏️ `k6 run tests/load/k6-trade-book.js` contra staging atende SLO. *Aceite:* p95 trade-book < limite SLO. *Entrega:* relatório k6. *Escopo:* staging. *Espera:* gate — load. [registro](../registro/README.md)
 - **1.21** `RTSK.024.1821.01` ✏️ 1 canary rollout 10→30→60→100 com AnalysisTemplate Prometheus verde. *Aceite:* rollout completa sem rollback automático. *Entrega:* evento ArgoRollouts. *Escopo:* cluster de produção. *Depende:* `RTSK.024.1815.01`. *Espera:* gate — canary. [registro](../registro/README.md)
 - **1.22** `RTSK.024.1822.01` ✏️ CHAOS-01 + CHAOS-02 em staging via Litmus. *Aceite:* 2 experimentos completam sem derrubar SLO. *Entrega:* relatórios Litmus. *Escopo:* staging. *Depende:* `RTSK.024.1811.01`. *Espera:* gate — chaos. [registro](../registro/README.md)
-- **1.23** `RTSK.024.1823.01` ✏️ Drill de restore-from-backup + RTO/RPO medidos. *Aceite:* restore ≤ 30 min (RTO) e perda ≤ 1 min (RPO), 0 para liquidação aceita (ADR-038 classe 2). *Entrega:* relatório em `.audit-bundles/`. *Escopo:* DR. *Depende:* `RTSK.086.752.01`. *Espera:* Baremetal — ADR-038 (`RADR.076.002.01`) Aceito; depois gate — DR drill. [registro](../registro/README.md)
+- **1.23** `RTSK.024.1823.01` ✏️ Drill de restore-from-backup + RTO/RPO medidos. *Aceite:* restore ≤ 30 min (RTO) e perda ≤ 1 min (RPO), 0 para liquidação aceita (ADR-038 classe 2). *Entrega:* relatório em `.audit-bundles/`. *Escopo:* DR. *Depende:* `RTSK.086.752.01`. *Espera:* gate — DR drill (alvo do ADR-038 `RADR.076.002.01`, Aceito em 2026-11-12). [registro](../registro/README.md)
 
 ### Etapa 1.5 — Handover operacional
 
