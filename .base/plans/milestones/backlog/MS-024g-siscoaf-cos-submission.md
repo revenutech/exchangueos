@@ -23,7 +23,7 @@ Implementar geração + submissão de XML COS para SISCOAF. Inclui workflow de g
 
 ### Etapa 1.2 — Workflow + wiring
 
-- **1.4** `RTSK.024.1404.01` ✏️ Application service `OpenCOSCase` acionado automático em hit HIGH. *Aceite:* `ScreenCounterparty` HIGH cria `COSCase` em DRAFT com payload_hash. *Entrega:* `modules/compliance/application/cos_workflow.go`. *Escopo:* `modules/compliance/application/`. *Depende:* `RTSK.024.1401.01`. *Espera:* sessão dona — implementação; revisor: IdentityOS (PII). [registro](../registro/README.md)
+- **1.4** `RTSK.024.1404.01` ✏️ Serviço `OpenCOSCase` acionado em hit HIGH. *Aceite:* `ScreenCounterparty` HIGH cria `COSCase` em DRAFT com payload_hash. *Entrega:* `modules/compliance/application/cos_workflow.go`. *Escopo:* `modules/compliance/application/`. *Depende:* `RTSK.024.1401.01`, `RTSK.024.1212.01`. *Espera:* sessão dona — fundida na 024d 1.12 (dono, 2026-11-12); revisor: IdentityOS (PII). [registro](../registro/README.md)
 - **1.5** `RTSK.024.1405.01` ✏️ Auto-submit após sign-off do segundo aprovador. *Aceite:* 2ª aprovação transiciona para APPROVED e dispara submissão. *Entrega:* lógica em `cos_workflow.go`. *Escopo:* `modules/compliance/application/`. *Depende:* `RTSK.024.1404.01`. *Espera:* sessão dona — implementação; revisor: IdentityOS (PII). [registro](../registro/README.md)
 
 ### Etapa 1.3 — Fila de revisão + API
