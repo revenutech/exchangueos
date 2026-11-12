@@ -53,7 +53,7 @@ Provisionar projeto GCP de produção + cluster GKE Autopilot + infra de apoio v
 ### Etapa 1.5 — Handover operacional
 
 - **1.24** `RTSK.024.1824.01` ✏️ On-call enrolled em PagerDuty `exchangeos-api-prod`. *Aceite:* rotation configurada, 1 teste de alerta recebido. *Entrega:* configuração PagerDuty. *Escopo:* PagerDuty. *Espera:* dono — definição da rotation. [registro](../registro/README.md)
-- **1.25** `RTSK.024.1825.01` ✏️ Runbook index validado (todos os links resolvem). *Aceite:* verificador link-checker 0 falhas em `docs/operations/`. *Entrega:* evidência. *Escopo:* `docs/operations/`. *Espera:* sessão dona — validação. [registro](../registro/README.md)
+- **1.25** `RTSK.024.1825.01` ⬜ Runbook index validado (todos os links resolvem). *Aceite:* verificador link-checker 0 falhas em `docs/operations/`. *Entrega:* evidência. *Escopo:* `docs/operations/`. *Espera:* sessão dona — validação. [registro](../registro/README.md)
 - **1.26** `RTSK.024.1826.01` ✏️ Primeiro chaos day agendado + primeira revisão trimestral de custo + primeira revisão LGPD + primeiro DR drill. *Aceite:* 4 eventos no calendário com responsável. *Entrega:* convites de calendário. *Escopo:* calendário. *Espera:* dono — agenda. [registro](../registro/README.md)
 
 ## Fase 2 — Aceite
