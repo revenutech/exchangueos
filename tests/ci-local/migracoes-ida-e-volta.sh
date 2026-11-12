@@ -134,6 +134,8 @@ if [ -f tests/ci-local/migracoes/go-integracao.txt ]; then
     fi
     if EXCHANGEOS_TEST_DSN="$EXCHANGEOS_DB_DSN" go test -tags integration -count=1 -v ${run_args[@]+"${run_args[@]}"} "$pkg" > "$tmp/go.log" 2>&1 </dev/null \
       && grep -q -- '--- PASS' "$tmp/go.log" && ! grep -q -- '--- SKIP' "$tmp/go.log"; then
+      # The go test -v result lines go to stdout: the driver counts them on a banco step (MS-023 1.39, item 13).
+      grep -E -- '^(=== RUN|--- (PASS|FAIL|SKIP)|ok |FAIL|PASS$)' "$tmp/go.log"
       echo "ok   go integration: $pkg ($(grep -c -- '--- PASS' "$tmp/go.log") passed)"
     else
       echo "FAIL go integration: $pkg"; grep -E -- '--- (FAIL|SKIP)|Error|error' "$tmp/go.log" | head -30; tail -5 "$tmp/go.log"
