@@ -8,7 +8,6 @@ vars:
   GO_VERSION: 1.25.1
   HTTP_PORT: 8084
   GRPC_PORT: 9084
-  CRDB_HUB: cockroachdb/modules/exchangeos
   IMAGE_REGISTRY: gcr.io/revenu-platform
   IMAGE_TAG:
     sh: git rev-parse --short HEAD 2>/dev/null || echo "dev"
@@ -188,9 +187,9 @@ tasks:
   # Database (CockroachDB shared hub TLS — NEVER inline --insecure)
   # ─────────────────────────────────────────────────────────────
   db:up:
-    desc: Start CRDB via shared hub
+    desc: The shared cockroachdb hub was removed on 2026-11-10 (MS-024i 1.13)
     cmds:
-      - cd {{.CRDB_HUB}} && task up
+      - echo "db:up: the cockroachdb hub was removed on 2026-11-10; use the local mesh (malha-local) or tests/ci-local/migracoes-ida-e-volta.sh" >&2; exit 1
 
   db:migrate:
     desc: Run migrations 000001-000020
@@ -207,7 +206,7 @@ tasks:
     desc: Reset CRDB (destructive — requires CONFIRM=yes)
     cmds:
       - test "$CONFIRM" = "yes" || (echo "Aborted: set CONFIRM=yes"; exit 1)
-      - cd {{.CRDB_HUB}} && task reset
+      - echo "db:reset: the cockroachdb hub was removed on 2026-11-10; reset the local mesh database instead" >&2; exit 1
 
   # ─────────────────────────────────────────────────────────────
   # Docker / Compose
