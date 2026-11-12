@@ -17,7 +17,7 @@ Emitir `cambio.taxa_publicada` pelo outbox do exchangeos, com o identificador re
 
 ### Etapa 1.1 — Emissão do evento
 
-- **1.1** `RTSK.024.2001.01` ✏️ Emitir `cambio.taxa_publicada` (`xfxt.001.001.01`, `MustID`) pelo outbox, uma cotação por mensagem; `MANUAL` só em contingência, com quem e motivo no audit. *Aceite:* `msgrepo events` sem E3; consumidor de teste lê `revenu.xfxt.001` com `msg_def_idr` no header. *Entrega:* emissor + teste. *Escopo:* `modules/refdata/`, `pkg/outbox/`. *Espera:* sessão LedgerOS — revenu-common com o ID (lançamento pede o dono). [registro](../registro/README.md)
+- **1.1** `RTSK.024.2001.01` ✏️ Emitir `cambio.taxa_publicada` (`xfxt.001.001.01`, `MustID`) pelo outbox, uma cotação por mensagem; `MANUAL` só em contingência, com quem e motivo no audit. *Aceite:* `msgrepo events` sem E3; teste lê `revenu.xfxt.001` com `msg_def_idr` no header. *Entrega:* emissor + teste. *Escopo:* `modules/refdata/`, `pkg/outbox/`. *Espera:* sessão LedgerOS — revenu-common com o ID (lançamento pede o dono). [registro](../registro/README.md)
 
 ## Fase 2 — Aceite
 
