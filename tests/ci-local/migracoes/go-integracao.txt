@@ -1,7 +1,7 @@
 # Go packages whose integration tests (build tag integration) run against the round-trip database, one per line.
 # Every package with a _test.go that calls dbtest.PoolOrSkip (EXCHANGEOS_TEST_DSN) belongs here: outside this list
-# the test skips and the package passes vacuously (finding of 2026-11-12, MS-023 1.39). tests/integration/ is not
-# listed: its other tests call the live server on :8084 and would skip; erasure_test.go waits for a -run filter.
+# the test skips and the package passes vacuously (finding of 2026-11-12, MS-023 1.39). A line may end in
+# «-run <regex>» for a package that mixes DB tests with tests of the live server on :8084 (tests/integration/).
 ./internal/archive/
 ./modules/admin/infrastructure/postgres/
 ./modules/cfets_capture/infrastructure/postgres/
@@ -9,3 +9,4 @@
 ./modules/compliance/infrastructure/postgres/
 ./modules/netreport/infrastructure/postgres/
 ./modules/payin/infrastructure/postgres/
+./tests/integration/ -run ^TestErasureExecutor_
