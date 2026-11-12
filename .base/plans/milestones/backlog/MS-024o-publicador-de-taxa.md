@@ -11,7 +11,7 @@ A tesouraria (treasuryos, exposure) recalcula posição quando a taxa muda, e a 
 
 ## Descrição
 
-Emitir `cambio.taxa_publicada` pelo outbox do exchangeos, com o identificador registrado no catálogo `ledgeros/.base/aasc/iso20022` e o envelope que o catálogo manda carimbar (`msg_def_idr`). O registro no catálogo foi feito pela sessão LedgerOS (decisão do dono, 2026-11-12): `xfxt.001.001.01`, classe C, tópico `revenu.xfxt.001`, emissor `exchangeos`, consumidor `treasuryos` (ledgeros 978c74db1, MS-079 1.9). Enums sem default: valor novo em tipo ou fonte vira `.002`. Frescor por `tipo_taxa`, RPC por `rate_id` e contingência manual seguem pendentes com o dono (ADR-006 da tesouraria) e ficam fora desta MS até decididos.
+Emitir `cambio.taxa_publicada` pelo outbox do exchangeos, com o identificador registrado no catálogo `ledgeros/.base/aasc/iso20022` e o envelope que o catálogo manda carimbar (`msg_def_idr`). O registro no catálogo foi feito pela sessão LedgerOS (decisão do dono, 2026-11-12): `xfxt.001.001.01`, classe C, tópico `revenu.xfxt.001`, emissor `exchangeos`, consumidor `treasuryos` (ledgeros 978c74db1, MS-079 1.9). Enums sem default: valor novo em tipo ou fonte vira `.002`. Frescor por `tipo_taxa` e RPC por `rate_id` seguem pendentes com o dono (ADR-006 da tesouraria) e ficam fora desta MS até decididos; a contingência `MANUAL` o dono decidiu em 2026-11-12 (linha 1.1).
 
 ## Fase 1 — Implementação
 
