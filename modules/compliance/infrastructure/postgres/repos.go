@@ -255,7 +255,7 @@ func (r *ScreeningRepo) Save(ctx context.Context, s *domain.ScreeningResult) err
 			risk_level, hits, screened_at
 		) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 		s.ID(), s.TenantID(), s.CounterpartyBIC(), nullableString(s.LEI()),
-		string(s.RiskLevel()), s.Hits(), s.ScreenedAt(),
+		string(s.RiskLevel()), textArray(s.Hits()), s.ScreenedAt(),
 	)
 	if err != nil {
 		return fmt.Errorf("screening.save: %w", err)
@@ -264,6 +264,15 @@ func (r *ScreeningRepo) Save(ctx context.Context, s *domain.ScreeningResult) err
 }
 
 // ─── helpers ───────────────────────────────────────────────────────────────
+
+// textArray returns an empty slice for nil: pgx encodes a nil slice as SQL NULL, and an explicit NULL does not fall
+// back to the column's DEFAULT '{}', so a NOT NULL STRING[] column would refuse it.
+func textArray(s []string) []string {
+	if s == nil {
+		return []string{}
+	}
+	return s
+}
 
 func nullableTime(t time.Time) any {
 	if t.IsZero() {
