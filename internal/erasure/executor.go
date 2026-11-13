@@ -165,12 +165,15 @@ func BuildSQL(plan *Plan, op Operation) string {
 
 func buildRedactSQL(plan *Plan, op Operation) string {
 	marker := plan.RedactionMarker()
+	// Each value is the marker plus a per-row random token: a redacted field may sit under a UNIQUE constraint
+	// (actors has UNIQUE (tenant_id, external_sub)), and one shared marker would refuse the second row of a ticket.
+	// The token is random, not derived from the old value: a hash of the PII would still link the row to the subject.
 	// Deterministic field order for reproducible SQL across runs.
 	fields := append([]string(nil), op.Fields...)
 	sort.Strings(fields)
 	parts := make([]string, len(fields))
 	for i, f := range fields {
-		parts[i] = fmt.Sprintf("%s = '%s'", f, escapeSingleQuote(marker))
+		parts[i] = fmt.Sprintf("%s = '%s ' || gen_random_uuid()::STRING", f, escapeSingleQuote(marker))
 	}
 	return fmt.Sprintf("UPDATE %s SET %s WHERE %s", op.Table, strings.Join(parts, ", "), op.Where)
 }
