@@ -136,7 +136,8 @@ if [ -f tests/ci-local/migracoes/go-integracao.txt ]; then
       && grep -q -- '--- PASS' "$tmp/go.log" && ! grep -q -- '--- SKIP' "$tmp/go.log"; then
       echo "ok   go integration: $pkg ($(grep -c -- '--- PASS' "$tmp/go.log") passed)"
     else
-      echo "FAIL go integration: $pkg"; grep -E -- '--- (FAIL|SKIP)|Error|error' "$tmp/go.log" | head -30; tail -5 "$tmp/go.log"
+      # The whole go.log (bounded): testify puts the database message on the line after «Error:», which a filter loses.
+      echo "FAIL go integration: $pkg"; head -400 "$tmp/go.log"
       fails=$((fails + 1))
     fi
   done < tests/ci-local/migracoes/go-integracao.txt
