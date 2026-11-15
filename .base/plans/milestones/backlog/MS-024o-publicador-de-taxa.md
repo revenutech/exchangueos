@@ -21,7 +21,7 @@ Emitir `cambio.taxa_publicada` pelo outbox do exchangeos, com o identificador re
 
 ## Fase 2 — Aceite
 
-- **2.1** `RTSK.024.2002.01` ✏️ Rodar aceite da MS. *Aceite:* tarefas da Fase 1 cumpridas + `lote` verde + a TreasuryOS confirma o recebimento do evento no consumidor de exposure. *Entrega:* relatório em `registro/ms-024o/`. *Escopo:* módulo inteiro. *Espera:* gate — rodada `lote` do head de integração. [registro](../registro/README.md)
+- **2.1** `RTSK.024.2002.01` ✏️ Rodar aceite da MS. *Aceite:* tarefas da Fase 1 cumpridas + `lote` (N2) verde + a TreasuryOS confirma o recebimento do evento no consumidor de exposure. *Entrega:* relatório em `registro/ms-024o/`. *Escopo:* módulo inteiro. *Espera:* gate — rodada `lote` do head de integração. [registro](../registro/README.md)
 
 ## Fase 3 — Fechamento
 
