@@ -39,7 +39,7 @@ Implementar os 7 cenários E2E remanescentes contra o stack `make local-up` comp
 
 ## Fase 2 — Aceite
 
-- **2.1** `RTSK.024.1611.01` ✏️ Rodar aceite da MS. *Aceite:* todas as tarefas da Fase 1 cumpridas + 3 execuções consecutivas do workflow verdes sem flake. *Entrega:* relatório em `registro/ms-024j/`. *Escopo:* módulo inteiro. *Espera:* gate — rodada N2 + e2e. [registro](../registro/README.md)
+- **2.1** `RTSK.024.1611.01` ✏️ Rodar aceite da MS. *Aceite:* todas as tarefas da Fase 1 cumpridas + 3 execuções consecutivas do workflow verdes sem flake. *Entrega:* relatório em `registro/ms-024j/`. *Escopo:* módulo inteiro. *Espera:* gate — rodada `lote` + e2e. [registro](../registro/README.md)
 
 ## Fase 3 — Fechamento
 

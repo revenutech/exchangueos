@@ -49,7 +49,7 @@ Implementar `cmd/archiver/main.go` como CronJob Kubernetes que envelhece linhas 
 
 ## Fase 2 — Aceite
 
-- **2.1** `RTSK.024.1014.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 ciclo noturno completo em staging com batch > 0 + restauração de 1 batch bem sucedida. *Entrega:* relatório em `registro/ms-024b/`. *Escopo:* módulo inteiro + staging. *Espera:* gate — rodada N2. [registro](../registro/README.md)
+- **2.1** `RTSK.024.1014.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 ciclo noturno completo em staging com batch > 0 + restauração de 1 batch bem sucedida. *Entrega:* relatório em `registro/ms-024b/`. *Escopo:* módulo inteiro + staging. *Espera:* gate — rodada `lote` do head de integração. [registro](../registro/README.md)
 
 ## Fase 3 — Fechamento
 

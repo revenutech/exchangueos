@@ -59,7 +59,7 @@ Provisionar projeto GCP de produção + cluster GKE Autopilot + infra de apoio v
 
 ## Fase 2 — Aceite
 
-- **2.1** `RTSK.024.1827.01` ✏️ Rodar aceite da MS. *Aceite:* todas as tarefas da Fase 1 cumpridas + `docs/operations/go-live-checklist.md` com todas as linhas ✅ assinadas + sistema serve 1 trade real. *Entrega:* `.audit-bundles/prod-bringup-YYYYMMDD/` completo + checklist. *Escopo:* módulo inteiro + produção. *Espera:* gate — rodada N2 + canary. [registro](../registro/README.md)
+- **2.1** `RTSK.024.1827.01` ✏️ Rodar aceite da MS. *Aceite:* todas as tarefas da Fase 1 cumpridas + `docs/operations/go-live-checklist.md` com todas as linhas ✅ assinadas + sistema serve 1 trade real. *Entrega:* `.audit-bundles/prod-bringup-YYYYMMDD/` completo + checklist. *Escopo:* módulo inteiro + produção. *Espera:* gate — rodada `lote` + canary. [registro](../registro/README.md)
 
 ## Fase 3 — Fechamento
 

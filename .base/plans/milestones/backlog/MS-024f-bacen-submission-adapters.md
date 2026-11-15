@@ -49,7 +49,7 @@ Construir 4 adaptadores outbound em `pkg/bacen/submission/` (um por tipo de fili
 
 ## Fase 2 — Aceite
 
-- **2.1** `RTSK.024.1316.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 submissão real a sandbox BACEN de cada tipo com resposta ACCEPTED em < 60s. *Entrega:* relatório em `registro/ms-024f/`. *Escopo:* módulo inteiro + staging + sandbox BACEN. *Espera:* gate — rodada N2. [registro](../registro/README.md)
+- **2.1** `RTSK.024.1316.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 submissão real a sandbox BACEN de cada tipo com resposta ACCEPTED em < 60s. *Entrega:* relatório em `registro/ms-024f/`. *Escopo:* módulo inteiro + staging + sandbox BACEN. *Espera:* gate — rodada `lote` do head de integração. [registro](../registro/README.md)
 
 ## Fase 3 — Fechamento
 

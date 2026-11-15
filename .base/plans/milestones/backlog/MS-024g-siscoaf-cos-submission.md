@@ -49,7 +49,7 @@ Implementar geração + submissão de XML COS para SISCOAF. Inclui workflow de g
 
 ## Fase 2 — Aceite
 
-- **2.1** `RTSK.024.1414.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 fluxo end-to-end em sandbox SISCOAF com resposta ACCEPTED em < 1 dia útil. *Entrega:* relatório em `registro/ms-024g/`. *Escopo:* módulo inteiro + sandbox SISCOAF. *Espera:* gate — rodada N2. [registro](../registro/README.md)
+- **2.1** `RTSK.024.1414.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 fluxo end-to-end em sandbox SISCOAF com resposta ACCEPTED em < 1 dia útil. *Entrega:* relatório em `registro/ms-024g/`. *Escopo:* módulo inteiro + sandbox SISCOAF. *Espera:* gate — rodada `lote` do head de integração. [registro](../registro/README.md)
 
 ## Fase 3 — Fechamento
 

@@ -48,7 +48,7 @@ Implementar 4 providers por trás de uma interface comum `SanctionsProvider` + c
 
 ## Fase 2 — Aceite
 
-- **2.1** `RTSK.024.1216.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 ciclo horário de refresh em staging sem falha + 1 hit conhecido reproduzido por fixture. *Entrega:* relatório em `registro/ms-024d/`. *Escopo:* módulo inteiro + staging. *Espera:* gate — rodada N2. [registro](../registro/README.md)
+- **2.1** `RTSK.024.1216.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 ciclo horário de refresh em staging sem falha + 1 hit conhecido reproduzido por fixture. *Entrega:* relatório em `registro/ms-024d/`. *Escopo:* módulo inteiro + staging. *Espera:* gate — rodada `lote` do head de integração. [registro](../registro/README.md)
 
 ## Fase 3 — Fechamento
 

@@ -50,7 +50,7 @@ Construir o rotator real dirigido por cron que orquestra rotação mensal de `cl
 
 ## Fase 2 — Aceite
 
-- **2.1** `RTSK.024.1116.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 rotação mensal real em staging sem incidente + rollback testado uma vez. *Entrega:* relatório em `registro/ms-024c/`. *Escopo:* módulo inteiro + staging. *Espera:* gate — rodada N2. [registro](../registro/README.md)
+- **2.1** `RTSK.024.1116.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 rotação mensal real em staging sem incidente + rollback testado uma vez. *Entrega:* relatório em `registro/ms-024c/`. *Escopo:* módulo inteiro + staging. *Espera:* gate — rodada `lote` do head de integração. [registro](../registro/README.md)
 
 ## Fase 3 — Fechamento
 
