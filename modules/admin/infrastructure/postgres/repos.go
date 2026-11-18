@@ -114,7 +114,7 @@ func (r *EODJobRepo) Save(ctx context.Context, j *domain.EODJob) error {
 		WHERE eod_jobs.version = EXCLUDED.version - 1`,
 		j.ID(), j.TenantID(), j.BusinessDate(), string(j.Status()),
 		nullableTime(j.StartedAt()), nullableTime(j.CompletedAt()),
-		nullableString(j.FailureReason()), j.StepsDone(), j.Version(),
+		nullableString(j.FailureReason()), textArray(j.StepsDone()), j.Version(),
 	)
 	if err != nil {
 		return fmt.Errorf("eod_job.save: %w", err)
@@ -169,6 +169,15 @@ func (r *EODJobRepo) scanOne(ctx context.Context, where string, args ...any) (*d
 }
 
 // ─── helpers ───────────────────────────────────────────────────────────────
+
+// textArray returns an empty slice for nil: pgx encodes a nil slice as SQL NULL, and an explicit NULL does not fall
+// back to the column's DEFAULT '{}', so a NOT NULL STRING[] column would refuse it.
+func textArray(s []string) []string {
+	if s == nil {
+		return []string{}
+	}
+	return s
+}
 
 func nullableTime(t time.Time) any {
 	if t.IsZero() {
