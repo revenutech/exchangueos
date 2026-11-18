@@ -47,6 +47,12 @@ pre-commit:
 pre-push:
   parallel: false
   commands:
+    # CI local (RN_GIT_006/008, dono 2026-11-18, MS-024i 1.29): os workflows de pull_request pelo act, na fila do
+    # gate pesado; o resultado fica em cache por sha (.cache/ci-local/ok/). Ignorados: .ci-local-ignorar.
+    ci-local:
+      run: scripts/ci-local/run.sh
+      fail_text: "CI local (act) reprovou — veja a saída acima; nada de --no-verify"
+
     unit-tests:
       run: go test -race -count=1 -short ./...
       fail_text: "Unit tests failed — fix before pushing"

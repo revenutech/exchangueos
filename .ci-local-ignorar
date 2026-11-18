@@ -1,0 +1,4 @@
+# Workflows que a CI local (scripts/ci-local/run.sh) não roda pelo act. Um nome por linha.
+# message-repository-gate.yml usa secrets.PLATFORM_REPO_TOKEN; sob o act falha até a baremetal MS-024 1.24
+# (RTSK.086.803.01, token restrito do Keychain). Decisão do dono, 2026-11-18. Sai daqui quando a 1.24 entrar.
+message-repository-gate.yml
