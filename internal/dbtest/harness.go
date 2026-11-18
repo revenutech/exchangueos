@@ -87,12 +87,12 @@ func SeedTrade(t *testing.T, pool *pgxpool.Pool, tenantID uuid.UUID) uuid.UUID {
 			trade_id, tenant_id, trade_type, settlement_venue,
 			buyer_counterparty_id, seller_counterparty_id,
 			bought_currency, bought_amount, sold_currency, sold_amount,
-			deal_rate, trade_date
+			deal_rate, trade_date, value_date
 		) VALUES (
 			$1, $2, 'SPOT', 'BILATERAL',
 			$3, $4,
 			'USD', 1000, 'BRL', 5000,
-			5.0, current_timestamp()
+			5.0, current_timestamp(), current_date() + 2
 		)`,
 		id, tenantID, buyer, seller)
 	require.NoError(t, err, "seed fx_trade")

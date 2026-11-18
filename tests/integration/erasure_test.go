@@ -13,6 +13,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -73,15 +74,22 @@ func TestErasureExecutor_Apply_RedactAndDelete(t *testing.T) {
 	assert.Len(t, res.Ops, 4)
 	assert.Equal(t, int64(4), res.RowsTotal, "3 redacts + 1 delete = 4 rows touched")
 
-	// Assert redacted display_names match the marker.
-	want := plan.RedactionMarker()
+	// Assert redacted fields carry the marker and the original PII is gone. external_sub is under
+	// UNIQUE (tenant_id, external_sub), so each row gets the marker plus its own token.
+	want := plan.RedactionMarker() + " "
+	subs := map[string]bool{}
 	for _, a := range actors {
-		var got string
+		var name, sub string
 		require.NoError(t, pool.QueryRow(ctx,
-			`SELECT display_name FROM actors WHERE actor_id = $1`, a.id,
-		).Scan(&got))
-		assert.Equal(t, want, got, "actor %s display_name must be redacted", a.id)
+			`SELECT display_name, external_sub FROM actors WHERE actor_id = $1`, a.id,
+		).Scan(&name, &sub))
+		assert.True(t, strings.HasPrefix(name, want), "actor %s display_name must be redacted, got %q", a.id, name)
+		assert.True(t, strings.HasPrefix(sub, want), "actor %s external_sub must be redacted, got %q", a.id, sub)
+		assert.NotContains(t, name, a.name)
+		assert.NotContains(t, sub, a.sub)
+		subs[sub] = true
 	}
+	assert.Len(t, subs, len(actors), "redacted external_sub values must stay unique per tenant")
 
 	// Assert counterparty gone.
 	var exists bool
