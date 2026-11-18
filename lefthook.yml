@@ -1,7 +1,7 @@
 # ExchangeOS — Lefthook HARD-enforcement (FX-COMMIT-001..025)
 # 3 tiers:
 #   pre-commit  < 30s  (Tier 1 — fast feedback)
-#   pre-push    < 3min (Tier 2 — confidence)
+#   pre-push    CI local via act (Tier 2; first run per sha is long, then cached)
 #   pre-merge   <15min (Tier 3 — full coverage; runs via CI only)
 #
 # Bypass: scripts/git-hooks-wrapper.sh blocks --no-verify; EMERGENCY_BYPASS=true
@@ -22,10 +22,6 @@ pre-commit:
       run: gofmt -l -s {staged_files} | tee /tmp/_exos_fmt && test ! -s /tmp/_exos_fmt
       fail_text: "gofmt found unformatted files (run: task fmt)"
 
-    vet:
-      glob: "*.go"
-      run: go vet ./...
-
     secrets:
       run: gitleaks protect --staged --redact --no-banner
       fail_text: "gitleaks detected potential secrets — see output above"
@@ -43,28 +39,17 @@ pre-commit:
           echo "(yamllint not installed — skipping)"
         fi
 
-# ─── Tier 2: pre-push (< 3min) ───────────────────────────────────────────────
+# ─── Tier 2: pre-push ───────────────────────────────────────────────────────────
+# Only the CI local (dono, 2026-11-18, MS-024i 1.29): scripts/ci-local/run.sh runs the pull_request workflows
+# (ci.yml, go-floor.yml, security.yml) through act, in the heavy-gate queue, and caches the result per sha.
+# Those workflows cover what this tier ran before: go test -race, golangci-lint, govulncheck, the BACEN codegen
+# drift and go vet. Running them here as well would compile and test twice, outside the queue.
 pre-push:
   parallel: false
   commands:
-    unit-tests:
-      run: go test -race -count=1 -short ./...
-      fail_text: "Unit tests failed — fix before pushing"
-
-    lint:
-      run: golangci-lint run ./...
-
-    govulncheck:
-      run: |
-        if command -v govulncheck >/dev/null 2>&1; then
-          govulncheck ./...
-        else
-          echo "(govulncheck not installed — install: go install golang.org/x/vuln/cmd/govulncheck@latest)"
-        fi
-
-    bacen-codegen-drift:
-      run: bash scripts/check-bacen-codegen.sh
-      fail_text: "pkg/bacen/codes_full.go is stale vs the CSV — run 'go generate ./pkg/bacen/...' and re-commit"
+    ci-local:
+      run: scripts/ci-local/run.sh
+      fail_text: "CI local (act) failed — see the output above; never --no-verify"
 
 # ─── commit-msg: Conventional Commits enforcement ───────────────────────────
 commit-msg:
