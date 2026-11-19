@@ -23,7 +23,7 @@ Implementar geração + submissão de XML COS para SISCOAF. Inclui workflow de g
 
 ### Etapa 1.2 — Workflow + wiring
 
-- **1.14** `RTSK.024.1416.01` ✏️ Repositório de `cos_cases` com transições, versão otimista e tenant. *Aceite:* ida e volta com banco; versão velha recusada; outro tenant não lê. *Entrega:* `modules/compliance/infrastructure/` + teste com banco. *Escopo:* `modules/compliance/infrastructure/`. *Depende:* `RTSK.024.1402.01`. *Espera:* sessão dona — implementação; revisor: IdentityOS (tenant, PII). [registro](../registro/README.md)
+- **1.14** `RTSK.024.1416.01` ✏️ Repositório de `cos_cases` com transições, versão otimista e tenant. *Aceite:* ida e volta, versão e tenant; `mudanca` (N1) unitária verde (ADR-039); banco no fechamento do plano. *Entrega:* `modules/compliance/infrastructure/` + teste com banco. *Escopo:* `modules/compliance/infrastructure/`. *Depende:* `RTSK.024.1402.01`. *Espera:* sessão dona — implementação; revisor: IdentityOS (tenant, PII). [registro](../registro/README.md)
 - **1.4** `RTSK.024.1404.01` ✏️ Serviço `OpenCOSCase` acionado em hit HIGH. *Aceite:* `ScreenCounterparty` HIGH cria `COSCase` em DRAFT com payload_hash. *Entrega:* `modules/compliance/application/cos_workflow.go`. *Escopo:* `modules/compliance/application/`. *Depende:* `RTSK.024.1401.01`, `RTSK.024.1212.01`, `RTSK.024.1416.01`. *Espera:* sessão dona — implementação; revisor: IdentityOS (PII). [registro](../registro/README.md)
 - **1.5** `RTSK.024.1405.01` ✏️ Auto-submit após sign-off do segundo aprovador. *Aceite:* 2ª aprovação transiciona para APPROVED e dispara submissão. *Entrega:* lógica em `cos_workflow.go`. *Escopo:* `modules/compliance/application/`. *Depende:* `RTSK.024.1404.01`. *Espera:* sessão dona — implementação; revisor: IdentityOS (PII). [registro](../registro/README.md)
 
@@ -45,7 +45,7 @@ Implementar geração + submissão de XML COS para SISCOAF. Inclui workflow de g
 ### Etapa 1.6 — Runbook + teste
 
 - **1.12** `RTSK.024.1412.01` ✏️ Runbook: rejeição, resubmit, resposta a query regulatória. *Aceite:* 3 fluxos documentados com comandos. *Entrega:* `docs/compliance/cos-workflow.md`. *Escopo:* `docs/compliance/`. *Depende:* `RTSK.024.1409.01`. *Espera:* jurídico — validação do procedimento. [registro](../registro/README.md)
-- **1.13** `RTSK.024.1413.01` ✏️ Teste de integração: abrir → 4-eyes approve → submeter → ACCEPTED. *Aceite:* teste completo em < 30s contra mock. *Entrega:* `tests/integration/cos_workflow_test.go`. *Escopo:* `tests/integration/`. *Depende:* `RTSK.024.1405.01`, `RTSK.024.1409.01`. *Espera:* gate — testes com banco. [registro](../registro/README.md)
+- **1.13** `RTSK.024.1413.01` ✏️ Teste de integração: abrir → 4-eyes approve → submeter → ACCEPTED. *Aceite:* teste completo em < 30s contra mock escrito; `mudanca` (N1) unitária verde (ADR-039); a rodada com banco fica no fechamento do plano. *Entrega:* `tests/integration/cos_workflow_test.go`. *Escopo:* `tests/integration/`. *Depende:* `RTSK.024.1405.01`, `RTSK.024.1409.01`. *Espera:* gate — testes com banco. [registro](../registro/README.md)
 
 ## Fase 2 — Aceite
 
