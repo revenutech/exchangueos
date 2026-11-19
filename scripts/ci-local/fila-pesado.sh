@@ -40,6 +40,9 @@
 # REVENU_GATE_SWAP_MAX (85, em %), REVENU_GATE_VAGAS_WARN (3), REVENU_GATE_CRDB_MAX (3), REVENU_GATE_LEVE_MAX (2), REVENU_GATE_LEVE_WARN (2).
 # Rodada paralela: quem exporta REVENU_GATE_RODADA=1 não perde vaga por carga; memória e teto de CRDB seguem (dono, select no Core em 2026-11-07).
 # Pista sem banco: quem exporta REVENU_GATE_SEM_BANCO=1 (lint, vet, unitário) tem senhas e vagas próprias e não espera CockroachDB.
+# Nível unitário (dono, 2026-11-18; rodada-escopo.sh): RODADA_NIVEL=unitaria ou REVENU_GATE_NIVEL_TESTE=unitaria também
+# entra na pista sem banco; a senha guarda o nível em `nivel_teste` (o `nivel` N1/N2 segue igual), o --status acrescenta
+# «nível=unitária» ao estado e a prova gravada leva «nivel=unitaria».
 # Dono, select no DV em 2026-11-06: até 3 gates com banco juntos, também em warn (revoga «um por vez» de 05/11); critical segue 1.
 FILA_LOCK=${REVENU_GATE_PESADO_LOCK:-/private/tmp/revenu-gate-pesado.lock}
 FILA_SENHAS=${REVENU_GATE_PESADO_SENHAS:-${FILA_LOCK%.lock}.senhas}
@@ -275,6 +278,7 @@ fila_status() { # uma linha por senha viva das duas pistas: pista, senha, dono, 
         [ $(( agora - desde )) -gt "$FILA_ESPERA_ALERTA_S" ] && estado="$estado ESPERA>30min"
         fila_barrada "$dir/$s" && estado="$estado RESERVA"
       fi
+      [ "$(cat "$dir/$s/nivel_teste" 2>/dev/null)" != unitaria ] || estado="$estado nível=unitária"
       prog=-; [ -f "$dir/$s/progresso" ] && prog=$(fila_progresso_resumo "$(cat "$dir/$s/progresso")")
       printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$pista" "$s" "$(cat "$dir/$s/dono" 2>/dev/null)" "$pid" "$estado" "$prog"
     done
@@ -282,7 +286,8 @@ fila_status() { # uma linha por senha viva das duas pistas: pista, senha, dono, 
 }
 
 fila_entrar() { # <dono>
-  if [ "${REVENU_GATE_SEM_BANCO:-0}" = 1 ]; then # pista própria: outra pasta de senhas e de vagas, sem esperar a cabeça com banco
+  local nt=${REVENU_GATE_NIVEL_TESTE:-${RODADA_NIVEL:-}}   # nível unitário: pista sem banco (dono, 2026-11-18)
+  if [ "${REVENU_GATE_SEM_BANCO:-0}" = 1 ] || [ "$nt" = unitaria ]; then # pista própria: outra pasta de senhas e de vagas, sem esperar a cabeça com banco
     fila_leve=1; FILA_LOCK=$FILA_LOCK_LEVE; FILA_SENHAS=${FILA_LOCK%.lock}.senhas; FILA_VAGAS_MAX=$FILA_LEVE_MAX
   fi
   local dono=$1 n s pos cabeca vagas v d antigos avisado=false leitura="" linha lv lc lsw lp lr lk vi
@@ -294,6 +299,7 @@ fila_entrar() { # <dono>
   fila_senha=$n; echo "$$" > "$FILA_SENHAS/$n/pid"; echo "$dono" > "$FILA_SENHAS/$n/dono"; : > "$FILA_SENHAS/$n/cabeca"
   # progresso.tsv da prova (CONVENTIONS § 6.6): o caminho fica na senha, e o --status lê dali o passo e o pacote em curso
   case ${REVENU_GATE_NIVEL_PROVA:-} in N1|N2) echo "$REVENU_GATE_NIVEL_PROVA" > "$FILA_SENHAS/$n/nivel" ;; esac
+  [ "$nt" != unitaria ] || echo "$nt" > "$FILA_SENHAS/$n/nivel_teste"   # campo à parte: quem lê o `nivel` não muda
   if [ -n "${REVENU_GATE_PROGRESSO:-}" ]; then
     case $REVENU_GATE_PROGRESSO in /*) echo "$REVENU_GATE_PROGRESSO" ;; *) echo "$PWD/$REVENU_GATE_PROGRESSO" ;; esac > "$FILA_SENHAS/$n/progresso"
   fi
@@ -655,7 +661,7 @@ fila_prova() { # <passo> <hash> [<caminho…>]: grava o passo verde com o head d
   if [ $# -gt 0 ]; then sujo=$(git status --porcelain -- "$@" 2>/dev/null); else sujo=$(git status --porcelain --untracked-files=no 2>/dev/null); fi
   [ -z "$sujo" ] || { echo "fila: árvore suja; prova de $passo não gravada" >&2; return 1; }
   local d; d=$FILA_ESTADO/provas/$(fila_repo)/$passo; mkdir -p "$d"
-  echo "head $(git rev-parse --short HEAD 2>/dev/null) em $(date -u +%FT%TZ)" > "$d/$hash"
+  echo "head $(git rev-parse --short HEAD 2>/dev/null) em $(date -u +%FT%TZ)${REVENU_GATE_NIVEL_TESTE:+ nivel=$REVENU_GATE_NIVEL_TESTE}" > "$d/$hash"
 }
 
 fila_reaproveita() { # <passo> <hash>: 0 e a origem, se a prova desse hash existe e o passo pode reaproveitar

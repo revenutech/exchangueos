@@ -152,7 +152,8 @@ jobs:
   # ─── Docker build (only api for PR; multi-bin on main) ───────────────────
   docker-build:
     name: docker (${{ matrix.bin }})
-    needs: [build, test, test-os]
+    # Sem test-os: o act pula macOS e Windows, e a imagem deixaria de ser construída no hook (MS-024i 1.34).
+    needs: [build, test]
     runs-on: ubuntu-latest
     strategy:
       matrix:
