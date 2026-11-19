@@ -86,3 +86,9 @@ linters:
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
+  # Ratchet da dívida antiga (RPTN.091.026.01; decisão do dono, 2026-11-19, MS-024i 1.32): só reprova achado
+  # em linha mudada depois deste commit. A dívida de antes (2567 linhas, revive 670) é a linha 1.33 do MS-024i;
+  # o rev só anda para frente quando ela baixar.
+  # ratchet: teto
+  # controle-negativo: tests/ci-local/golangci-novo-reprova.sh
+  new-from-rev: 0ddc368193b17ba1764afd4cf247020582cc2c3c

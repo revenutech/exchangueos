@@ -23,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # o golangci-lint compara com issues.new-from-rev (.golangci.yml)
 
       - uses: actions/setup-go@v5
         with:
@@ -44,9 +46,9 @@ jobs:
       - uses: bufbuild/buf-setup-action@v1
       - run: buf lint
 
-      - uses: golangci/golangci-lint-action@v6
+      - uses: golangci/golangci-lint-action@v7
         with:
-          version: latest
+          version: v2.15.0
           args: --timeout 5m
 
       - name: bacen codegen drift guard
