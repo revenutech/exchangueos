@@ -74,18 +74,8 @@ jobs:
   test:
     name: test
     runs-on: ubuntu-latest
-    services:
-      cockroach:
-        image: cockroachdb/cockroach:v24.3.0
-        ports:
-          - 26257:26257
-        options: >-
-          --health-cmd "curl -f http://localhost:8080/health"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-        env:
-          COCKROACH_ARGS: "start-single-node --insecure"
+    # Só unitário (dono, 2026-11-18): sem service de banco nem DATABASE_URL; a integração com banco vai para o
+    # fechamento do plano (MS-024i 1.30). Os testes de banco têm a tag integration e ficam fora daqui.
     steps:
       - uses: actions/checkout@v4
 
@@ -95,17 +85,8 @@ jobs:
           cache: true
 
       - name: test em todos os módulos
-        env:
-          CRDB_HOST: localhost
-          CRDB_PORT: '26257'
-          CRDB_DB: defaultdb
         run: |
           set -euo pipefail
-          # A DSN é montada aqui em vez de literal no YAML: um literal
-          # postgresql://...:26257 dispara a regra cockroachdb-connection do
-          # gitleaks, que roda como pre-commit hook em parte dos repositórios.
-          DSN="postgresql://root@${CRDB_HOST}:${CRDB_PORT}/${CRDB_DB}?sslmode=disable"
-          export DATABASE_URL="$DSN" DB_DSN="$DSN"
           failed=0
           while IFS= read -r mod; do
             dir=$(dirname "$mod")
