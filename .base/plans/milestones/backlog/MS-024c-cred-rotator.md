@@ -46,7 +46,7 @@ Construir o rotator real dirigido por cron que orquestra rotação mensal de `cl
 
 ### Etapa 1.6 — Testes
 
-- **1.15** `RTSK.024.1115.01` ✏️ Teste de integração contra testcontainer KeycloakOS + Vault dev-server. *Aceite:* teste de rotação de 1 secret, idempotente em re-run, escrito; `mudanca` (N1) unitária verde (ADR-039); a rodada contra os testcontainers fica no fechamento do plano. *Entrega:* `tests/integration/cred_rotator_test.go`. *Escopo:* `tests/integration/`. *Depende:* `RTSK.024.1106.01`. *Espera:* gate — testes com banco. [registro](../registro/README.md)
+- **1.15** `RTSK.024.1115.01` ✏️ Teste de integração contra testcontainer KeycloakOS + Vault dev-server. *Aceite:* teste de rotação de 1 secret, idempotente em re-run, escrito; `mudanca` (N1) unitária verde (ADR-039); a rodada contra os testcontainers fica no fechamento do plano. *Entrega:* `tests/integration/cred_rotator_test.go`. *Escopo:* `tests/integration/`. *Depende:* `RTSK.024.1106.01`. *Espera:* gate — N1 unitária. [registro](../registro/README.md)
 
 ## Fase 2 — Aceite
 

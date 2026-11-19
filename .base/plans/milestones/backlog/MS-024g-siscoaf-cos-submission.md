@@ -45,7 +45,7 @@ Implementar geração + submissão de XML COS para SISCOAF. Inclui workflow de g
 ### Etapa 1.6 — Runbook + teste
 
 - **1.12** `RTSK.024.1412.01` ✏️ Runbook: rejeição, resubmit, resposta a query regulatória. *Aceite:* 3 fluxos documentados com comandos. *Entrega:* `docs/compliance/cos-workflow.md`. *Escopo:* `docs/compliance/`. *Depende:* `RTSK.024.1409.01`. *Espera:* jurídico — validação do procedimento. [registro](../registro/README.md)
-- **1.13** `RTSK.024.1413.01` ✏️ Teste de integração: abrir → 4-eyes approve → submeter → ACCEPTED. *Aceite:* teste completo em < 30s contra mock escrito; `mudanca` (N1) unitária verde (ADR-039); a rodada com banco fica no fechamento do plano. *Entrega:* `tests/integration/cos_workflow_test.go`. *Escopo:* `tests/integration/`. *Depende:* `RTSK.024.1405.01`, `RTSK.024.1409.01`. *Espera:* gate — testes com banco. [registro](../registro/README.md)
+- **1.13** `RTSK.024.1413.01` ✏️ Teste de integração: abrir → 4-eyes approve → submeter → ACCEPTED. *Aceite:* teste completo em < 30s contra mock escrito; `mudanca` (N1) unitária verde (ADR-039); a rodada com banco fica no fechamento do plano. *Entrega:* `tests/integration/cos_workflow_test.go`. *Escopo:* `tests/integration/`. *Depende:* `RTSK.024.1405.01`, `RTSK.024.1409.01`. *Espera:* gate — `mudanca` (N1) unitária (ADR-039). [registro](../registro/README.md)
 
 ## Fase 2 — Aceite
 
