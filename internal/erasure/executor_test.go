@@ -73,7 +73,7 @@ func (a *fakeAudit) EmitCompletion(_ context.Context, e erasure.CompletionAudit)
 
 func TestBuildSQL_Redact(t *testing.T) {
 	plan := &erasure.Plan{
-		Ticket: "LGPD-2026-0001",
+		Ticket:    "LGPD-2026-0001",
 		Approvals: []string{"dpo", "compliance_officer"},
 	}
 	sql := erasure.BuildSQL(plan, erasure.Operation{

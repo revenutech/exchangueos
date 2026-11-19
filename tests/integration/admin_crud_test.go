@@ -3,7 +3,8 @@
 // Package integration — admin CRUD round-trip against the live local stack.
 //
 // Run via:
-//   go test -tags "integration vivo" ./tests/integration/admin_crud_test.go
+//
+//	go test -tags "integration vivo" ./tests/integration/admin_crud_test.go
 //
 // Requires the local docker compose stack up (CRDB + api with
 // EXCHANGEOS_ENABLE_ADMIN_API=true). The smoke variant

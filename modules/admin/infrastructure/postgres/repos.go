@@ -20,8 +20,8 @@ import (
 )
 
 var (
-	_ application.EventRepo   = (*EventRepo)(nil)
-	_ application.EODJobRepo  = (*EODJobRepo)(nil)
+	_ application.EventRepo  = (*EventRepo)(nil)
+	_ application.EODJobRepo = (*EODJobRepo)(nil)
 )
 
 // ─── EventRepo ─────────────────────────────────────────────────────────────

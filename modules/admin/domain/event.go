@@ -12,14 +12,14 @@ import (
 type EventCode string
 
 const (
-	EventStartup        EventCode = "STARTUP"
-	EventShutdown       EventCode = "SHUTDOWN"
-	EventDegraded       EventCode = "DEGRADED"
-	EventRecovered      EventCode = "RECOVERED"
-	EventCycleOpen      EventCode = "CYCLE_OPEN"
-	EventCycleClose     EventCode = "CYCLE_CLOSE"
-	EventEODStarted     EventCode = "EOD_STARTED"
-	EventEODCompleted   EventCode = "EOD_COMPLETED"
+	EventStartup      EventCode = "STARTUP"
+	EventShutdown     EventCode = "SHUTDOWN"
+	EventDegraded     EventCode = "DEGRADED"
+	EventRecovered    EventCode = "RECOVERED"
+	EventCycleOpen    EventCode = "CYCLE_OPEN"
+	EventCycleClose   EventCode = "CYCLE_CLOSE"
+	EventEODStarted   EventCode = "EOD_STARTED"
+	EventEODCompleted EventCode = "EOD_COMPLETED"
 )
 
 // SystemEvent — operational event for audit + downstream listeners.

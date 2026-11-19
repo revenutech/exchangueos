@@ -18,9 +18,9 @@ type findKey struct {
 }
 
 type Repo struct {
-	mu      sync.RWMutex
-	byID    map[uuid.UUID]*domain.Limit
-	byFind  map[findKey]uuid.UUID
+	mu     sync.RWMutex
+	byID   map[uuid.UUID]*domain.Limit
+	byFind map[findKey]uuid.UUID
 }
 
 func NewRepo() *Repo {

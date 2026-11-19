@@ -50,7 +50,7 @@ func TestOpenCycle_RejectsBadInput(t *testing.T) {
 
 func TestCycle_AttachTrade_Idempotent(t *testing.T) {
 	c, _ := domain.OpenCycle(domain.OpenCycleInput{
-		TenantID: uuid.New(),
+		TenantID:  uuid.New(),
 		CycleDate: time.Date(2026, 5, 22, 0, 0, 0, 0, time.UTC),
 	})
 	tid := uuid.New()
@@ -67,7 +67,7 @@ func TestCycle_AttachTrade_Idempotent(t *testing.T) {
 
 func TestCycle_AttachTrade_RejectsAfterSettling(t *testing.T) {
 	c, _ := domain.OpenCycle(domain.OpenCycleInput{
-		TenantID: uuid.New(),
+		TenantID:  uuid.New(),
 		CycleDate: time.Date(2026, 5, 22, 0, 0, 0, 0, time.UTC),
 	})
 	_ = c.EnterPayInWindow(time.Now())
@@ -80,7 +80,7 @@ func TestCycle_AttachTrade_RejectsAfterSettling(t *testing.T) {
 
 func TestCycle_FullLifecycle_HappyPath(t *testing.T) {
 	c, _ := domain.OpenCycle(domain.OpenCycleInput{
-		TenantID: uuid.New(),
+		TenantID:  uuid.New(),
 		CycleDate: time.Date(2026, 5, 22, 0, 0, 0, 0, time.UTC),
 	})
 	_ = c.AttachTrade(uuid.New())
@@ -116,7 +116,7 @@ func TestCycle_FullLifecycle_HappyPath(t *testing.T) {
 
 func TestCycle_Fail_TerminalThenForbids(t *testing.T) {
 	c, _ := domain.OpenCycle(domain.OpenCycleInput{
-		TenantID: uuid.New(),
+		TenantID:  uuid.New(),
 		CycleDate: time.Date(2026, 5, 22, 0, 0, 0, 0, time.UTC),
 	})
 	if err := c.Fail(time.Now(), ""); !errors.Is(err, domain.ErrInvalidInput) {
@@ -135,7 +135,7 @@ func TestCycle_Fail_TerminalThenForbids(t *testing.T) {
 
 func TestCycle_VersionIncrements(t *testing.T) {
 	c, _ := domain.OpenCycle(domain.OpenCycleInput{
-		TenantID: uuid.New(),
+		TenantID:  uuid.New(),
 		CycleDate: time.Date(2026, 5, 22, 0, 0, 0, 0, time.UTC),
 	})
 	v0 := c.Version()
@@ -147,7 +147,7 @@ func TestCycle_VersionIncrements(t *testing.T) {
 
 func TestDeadlineFor_UnknownBand(t *testing.T) {
 	c, _ := domain.OpenCycle(domain.OpenCycleInput{
-		TenantID: uuid.New(),
+		TenantID:  uuid.New(),
 		CycleDate: time.Date(2026, 5, 22, 0, 0, 0, 0, time.UTC),
 	})
 	_, err := c.DeadlineFor("BOGUS")
