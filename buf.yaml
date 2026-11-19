@@ -11,6 +11,11 @@ lint:
     - STANDARD
   except:
     - PACKAGE_VERSION_SUFFIX
+  # StreamQuotes devolve `stream Quote` desde a v1; renomear para StreamQuotesResponse quebra o contrato v1
+  # (proto-contracts: nunca breaking em v1). Exceção só para este arquivo (MS-024i 1.32).
+  ignore_only:
+    RPC_RESPONSE_STANDARD_NAME:
+      - proto/exchangeos/v1/quote.proto
 
 breaking:
   use:
