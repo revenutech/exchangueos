@@ -47,6 +47,17 @@ fi
 # Base do PR: CI_LOCAL_BASE (ex.: origin/develop) ou o branch padrão do remoto.
 base_ref=${CI_LOCAL_BASE:-$(git symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)}
 git fetch -q origin "+refs/heads/${base_ref#origin/}:refs/remotes/$base_ref"
+# Base calculada ANTES da fila e do lock. Sem história comum (no exchangeos, main e develop são disjuntas) o
+# merge-base sai 1 calado: sem CI_LOCAL_BASE, tenta a origin/develop; senão para aqui, dizendo o que fazer.
+if ! base=$(git merge-base "$base_ref" HEAD 2>/dev/null); then
+  if [ -z "${CI_LOCAL_BASE:-}" ] && [ "$base_ref" != origin/develop ] \
+    && git fetch -q origin "+refs/heads/develop:refs/remotes/origin/develop" 2>/dev/null \
+    && base=$(git merge-base origin/develop HEAD 2>/dev/null); then
+    echo "$base_ref não tem história comum com o HEAD: base do PR = origin/develop"; base_ref=origin/develop
+  else
+    echo "sem merge-base entre $base_ref e o HEAD: rode com CI_LOCAL_BASE=<ref> (ex.: origin/develop)" >&2; exit 1
+  fi
+fi
 if ! command -v docker >/dev/null || ! docker info >/dev/null 2>&1; then echo "Docker não está rodando" >&2; exit 1; fi
 
 # Workflows que respondem a pull_request, menos os de deploy/nuvem/contexto de PR.
@@ -97,10 +108,14 @@ if ! docker image inspect "$imagem_local" >/dev/null 2>&1; then
   printf 'FROM %s\nRUN set -e; n=$(ls -d /opt/acttoolcache/node/*/x64/bin | sort -V | tail -1); for b in node npm npx; do ln -sf "$n/$b" /usr/local/bin/$b; done; node --version\n' "$RUNNER_IMAGE" \
     | docker build --platform linux/amd64 -q -t "$imagem_local" - >/dev/null
 fi
-# Token só pelo ambiente (em argv ele aparece no `ps`).
-GITHUB_TOKEN=$(gh auth token 2>/dev/null) || { echo "gh sem login: o act precisa do token para as ações privadas" >&2; exit 1; }
+# Token só pelo ambiente (em argv ele aparece no `ps`) e lido com o xtrace desligado: com `bash -x` a
+# atribuição e qualquer teste sobre ele imprimem o valor no log. Daqui em diante, só pelo nome (-s GITHUB_TOKEN).
+xt=""; case $- in *x*) xt=1;; esac; { set +x; } 2>/dev/null
+if ! GITHUB_TOKEN=$(gh auth token 2>/dev/null) || [ -z "$GITHUB_TOKEN" ]; then
+  echo "gh sem login: o act precisa do token para as ações privadas" >&2; exit 1
+fi
 export GITHUB_TOKEN
-base=$(git merge-base "$base_ref" HEAD)
+[ -z "$xt" ] || set -x
 event=$(mktemp)
 jq -n --arg b "$base" --arg h "$sha" --arg ref "$(git rev-parse --abbrev-ref HEAD)" --arg br "${base_ref#origin/}" \
   '{pull_request: {number: 0, base: {sha: $b, ref: $br}, head: {sha: $h, ref: $ref}, labels: []}}' > "$event"

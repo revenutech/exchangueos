@@ -36,6 +36,12 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
+
+      # proto/gen fica fora do git e o build padrão o importa (SettlementService, MS-079 7.5): gere antes
+      # de compilar (MS-024i 1.32).
+      - uses: bufbuild/buf-setup-action@v1
+      - name: buf generate
+        run: buf generate
       - run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
@@ -74,6 +80,12 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
+
+      # proto/gen fica fora do git e o build padrão o importa (SettlementService, MS-079 7.5): gere antes
+      # de compilar (MS-024i 1.32).
+      - uses: bufbuild/buf-setup-action@v1
+      - name: buf generate
+        run: buf generate
       - run: |
           go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@latest
           cyclonedx-gomod mod -json -output sbom.cdx.json

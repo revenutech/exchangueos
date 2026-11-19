@@ -2,3 +2,7 @@
 # message-repository-gate.yml usa secrets.PLATFORM_REPO_TOKEN; sob o act falha até a baremetal MS-024 1.24
 # (RTSK.086.803.01, token restrito do Keychain). Decisão do dono, 2026-11-18. Sai daqui quando a 1.24 entrar.
 message-repository-gate.yml
+# security.yml: sob o act, o trivy (versão 0.28.0 não resolve), o gitleaks-action (pede o evento real do GitHub) e
+# o CodeQL (não acha o Go) quebram por ambiente. O gitleaks roda no pre-commit e o govulncheck no go-floor.yml; trivy
+# e CodeQL ficam para o CI do baremetal. Decisão do dono, 2026-11-18 (MS-024i 1.32).
+security.yml
