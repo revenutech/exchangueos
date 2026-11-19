@@ -48,7 +48,12 @@ pre-push:
   parallel: false
   commands:
     ci-local:
-      run: scripts/ci-local/run.sh
+      # The pushed sha goes to run.sh as PRE_COMMIT_TO_REF (first non-deletion ref on stdin), so it refuses a push
+      # whose commit is not HEAD (baremetal ci-local-servico README, 2624932e; MS-024i 1.35).
+      use_stdin: true
+      run: >-
+        while read -r _ s _ _; do case "$s" in *[!0]*) t="$s"; break;; esac; done;
+        PRE_COMMIT_TO_REF="$t" scripts/ci-local/run.sh
       fail_text: "CI local (act) failed — see the output above; never --no-verify"
 
 # ─── commit-msg: Conventional Commits enforcement ───────────────────────────
