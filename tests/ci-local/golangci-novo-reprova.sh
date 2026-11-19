@@ -12,7 +12,9 @@ root=$(git rev-parse --show-toplevel)
 lint=${GOLANGCI_LINT:-golangci-lint}
 command -v "$lint" >/dev/null || { echo "golangci-novo-reprova: $lint not found (install the version pinned in ci.yml)" >&2; exit 2; }
 
-tmp=$(mktemp -d)
+# Physical path: on macOS mktemp lives under /var -> /private/var, and new-from-rev then fails to match the diff
+# paths and drops every issue (a blind ratchet that this control would wrongly blame on the config).
+tmp=$(cd "$(mktemp -d)" && pwd -P)
 trap 'rm -rf "$tmp"' EXIT
 git clone -q --no-hardlinks "$root" "$tmp/repo"
 cd "$tmp/repo"
@@ -39,6 +41,7 @@ git -c user.name=ci -c user.email=ci@localhost commit -q -m "test: new lint issu
 
 if "$lint" run --timeout 5m ./pkg/outbox/... >"$tmp/neg.log" 2>&1; then
   echo "FAIL negative control: a new unchecked error passed the ratchet" >&2
+  cat "$tmp/neg.log" >&2
   exit 1
 fi
 grep -q 'zz_ratchet_negativo.go' "$tmp/neg.log" || {
