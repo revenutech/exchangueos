@@ -59,12 +59,10 @@ jobs:
 
   # ─── Unit tests w/ race + coverage ───────────────────────────────────────
   test:
-    name: test (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+    name: test (ubuntu-latest)
+    # runs-on literal: com `${{ matrix.os }}` o act às vezes sobe esta perna sem imagem (MS-024i 1.32); macOS e
+    # Windows ficam no job test-os, que o act pula (sem -P para eles) e o GitHub roda.
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -85,12 +83,37 @@ jobs:
         run: go test -race -count=1 -coverprofile=coverage.out ./...
 
       - name: upload coverage
-        if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4
         with:
           name: coverage
           path: coverage.out
           retention-days: 7
+
+  test-os:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      # proto/gen fica fora do git e o build padrão o importa (SettlementService, MS-079 7.5): gere antes
+      # de compilar (MS-024i 1.32).
+      - uses: bufbuild/buf-setup-action@v1
+      - name: buf generate
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
+          buf generate
+
+      - name: test
+        run: go test -race -count=1 ./...
 
   # ─── Build all 7 binaries ────────────────────────────────────────────────
   build:
@@ -129,7 +152,7 @@ jobs:
   # ─── Docker build (only api for PR; multi-bin on main) ───────────────────
   docker-build:
     name: docker (${{ matrix.bin }})
-    needs: [build, test]
+    needs: [build, test, test-os]
     runs-on: ubuntu-latest
     strategy:
       matrix:
