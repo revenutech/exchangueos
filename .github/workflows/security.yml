@@ -41,7 +41,10 @@ jobs:
       # de compilar (MS-024i 1.32).
       - uses: bufbuild/buf-setup-action@v1
       - name: buf generate
-        run: buf generate
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
+          buf generate
       - run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
@@ -85,7 +88,10 @@ jobs:
       # de compilar (MS-024i 1.32).
       - uses: bufbuild/buf-setup-action@v1
       - name: buf generate
-        run: buf generate
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
+          buf generate
       - run: |
           go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@latest
           cyclonedx-gomod mod -json -output sbom.cdx.json
