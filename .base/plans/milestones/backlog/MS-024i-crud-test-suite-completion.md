@@ -59,7 +59,7 @@ Escrever os testes CRUD de integração remanescentes por BC × postgres backend
 
 - **1.8** `RTSK.024.1508.01` ✏️ Atualizar `tests/integration/README.md` com catálogo do que está coberto + fora de escopo. *Aceite:* README lista 131+ testes por BC + out-of-scope. *Entrega:* `tests/integration/README.md`. *Escopo:* `tests/integration/`. *Depende:* `RTSK.024.1501.01`, `RTSK.024.1502.01`, `RTSK.024.1503.01`, `RTSK.024.1504.01`. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
 - **1.9** `RTSK.024.1509.01` ✏️ Política de teste flaky: 2 falhas consecutivas → skip + issue + owner em 24h. *Aceite:* doc existe, processo descrito. *Entrega:* `docs/engineering/flaky-test-policy.md`. *Escopo:* `docs/engineering/`. *Espera:* dono — definição do processo. [registro](../registro/README.md)
-- **1.10** `RTSK.024.1510.01` ✏️ Lefthook pre-push rodando testes de integração com `-short`. *Aceite:* pre-push dispara subset rápido antes de permitir push. *Entrega:* atualização em `lefthook.yml`. *Escopo:* `lefthook.yml`. *Depende:* `RTSK.024.1505.01`. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
+- **1.10** `RTSK.024.1510.01` 🚫 **Cancelada em 2026-11-19 pelo dono, substituída pela 1.30 e pela ADR-039:** o pre-push é só unitário, e a integração fica no fechamento do plano (1.31). Lefthook pre-push rodando testes de integração com `-short`. *Aceite:* pre-push dispara subset rápido antes de permitir push. *Entrega:* atualização em `lefthook.yml`. *Escopo:* `lefthook.yml`. *Depende:* `RTSK.024.1505.01`. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
 
 ## Fase 2 — Aceite
 
