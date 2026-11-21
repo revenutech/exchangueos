@@ -102,18 +102,18 @@ func NewPayInInstruction(in NewPayInInput) (*PayInInstruction, error) {
 
 // ─── Accessors ─────────────────────────────────────────────────────────────
 
-func (p *PayInInstruction) ID() uuid.UUID            { return p.id }
-func (p *PayInInstruction) TenantID() uuid.UUID      { return p.tenantID }
-func (p *PayInInstruction) CycleID() uuid.UUID       { return p.cycleID }
-func (p *PayInInstruction) Currency() string         { return p.currency }
-func (p *PayInInstruction) Amount() decimal.Decimal  { return p.amount }
-func (p *PayInInstruction) Band() DeadlineBand       { return p.band }
-func (p *PayInInstruction) Deadline() time.Time      { return p.deadline }
-func (p *PayInInstruction) Status() PayInStatus      { return p.status }
-func (p *PayInInstruction) SubmittedAt() time.Time   { return p.submittedAt }
-func (p *PayInInstruction) ConfirmedAt() time.Time   { return p.confirmedAt }
-func (p *PayInInstruction) FailureReason() string    { return p.failureReason }
-func (p *PayInInstruction) Version() int             { return p.version }
+func (p *PayInInstruction) ID() uuid.UUID           { return p.id }
+func (p *PayInInstruction) TenantID() uuid.UUID     { return p.tenantID }
+func (p *PayInInstruction) CycleID() uuid.UUID      { return p.cycleID }
+func (p *PayInInstruction) Currency() string        { return p.currency }
+func (p *PayInInstruction) Amount() decimal.Decimal { return p.amount }
+func (p *PayInInstruction) Band() DeadlineBand      { return p.band }
+func (p *PayInInstruction) Deadline() time.Time     { return p.deadline }
+func (p *PayInInstruction) Status() PayInStatus     { return p.status }
+func (p *PayInInstruction) SubmittedAt() time.Time  { return p.submittedAt }
+func (p *PayInInstruction) ConfirmedAt() time.Time  { return p.confirmedAt }
+func (p *PayInInstruction) FailureReason() string   { return p.failureReason }
+func (p *PayInInstruction) Version() int            { return p.version }
 func (p *PayInInstruction) PendingEvents() []DomainEvent {
 	return append([]DomainEvent(nil), p.events...)
 }

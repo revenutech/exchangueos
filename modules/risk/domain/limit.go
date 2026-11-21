@@ -78,14 +78,14 @@ func NewLimit(in NewLimitInput) (*Limit, error) {
 }
 
 // Accessors
-func (l *Limit) ID() uuid.UUID            { return l.id }
-func (l *Limit) TenantID() uuid.UUID      { return l.tenantID }
-func (l *Limit) Type() LimitType          { return l.limitType }
-func (l *Limit) Scope() string            { return l.scope }
-func (l *Limit) Cap() decimal.Decimal     { return l.cap }
+func (l *Limit) ID() uuid.UUID             { return l.id }
+func (l *Limit) TenantID() uuid.UUID       { return l.tenantID }
+func (l *Limit) Type() LimitType           { return l.limitType }
+func (l *Limit) Scope() string             { return l.scope }
+func (l *Limit) Cap() decimal.Decimal      { return l.cap }
 func (l *Limit) Utilised() decimal.Decimal { return l.utilised }
-func (l *Limit) Currency() string         { return l.currency }
-func (l *Limit) Version() int             { return l.version }
+func (l *Limit) Currency() string          { return l.currency }
+func (l *Limit) Version() int              { return l.version }
 
 // Available returns Cap − Utilised (may be negative if previously breached).
 func (l *Limit) Available() decimal.Decimal { return l.cap.Sub(l.utilised) }

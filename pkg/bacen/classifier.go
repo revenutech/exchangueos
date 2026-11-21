@@ -291,6 +291,7 @@ func defaultKeywordRules() []keywordRule {
 //  1. Generated catalogue (AllNatureCodes — full 46-code BACEN Circ 3.690 set),
 //     compressed to the slim NatureCode shape via deriveNature().
 //  2. Constructor-supplied extra rows + builtin seed (legacy path).
+//
 // Returns false on miss.
 func (c *Classifier) ByCode(code string) (NatureCode, bool) {
 	code = strings.TrimSpace(code)

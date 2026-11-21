@@ -72,8 +72,8 @@ func (r *ClassificationRepo) Save(ctx context.Context, c *domain.Classification)
 
 func (r *ClassificationRepo) GetByTrade(ctx context.Context, tradeID uuid.UUID) (*domain.Classification, error) {
 	var (
-		id, tenantID, tid       uuid.UUID
-		code, description, nat  string
+		id, tenantID, tid      uuid.UUID
+		code, description, nat string
 	)
 	err := r.pool.QueryRow(ctx, `
 		SELECT classification_id, tenant_id, trade_id, code, description, nature
@@ -127,10 +127,10 @@ func (r *IOFRepo) Save(ctx context.Context, i *domain.IOFComputation) error {
 
 func (r *IOFRepo) GetByTrade(ctx context.Context, tradeID uuid.UUID) (*domain.IOFComputation, error) {
 	var (
-		id, tenantID, tid       uuid.UUID
-		operationType, ccy      string
-		notional, rate, amount  pgtype.Numeric
-		computedAt              time.Time
+		id, tenantID, tid      uuid.UUID
+		operationType, ccy     string
+		notional, rate, amount pgtype.Numeric
+		computedAt             time.Time
 	)
 	err := r.pool.QueryRow(ctx, `
 		SELECT iof_id, tenant_id, trade_id, operation_type,
@@ -206,15 +206,15 @@ func (r *ReportRepo) Save(ctx context.Context, x *domain.BACENReport) error {
 
 func (r *ReportRepo) Get(ctx context.Context, id uuid.UUID) (*domain.BACENReport, error) {
 	var (
-		rid, tenantID  uuid.UUID
-		reportType     string
-		referenceDate  time.Time
-		payloadHash    string
-		status         string
-		submitted      time.Time
-		responded      time.Time
-		rejection      string
-		version        int
+		rid, tenantID uuid.UUID
+		reportType    string
+		referenceDate time.Time
+		payloadHash   string
+		status        string
+		submitted     time.Time
+		responded     time.Time
+		rejection     string
+		version       int
 	)
 	err := r.pool.QueryRow(ctx, `
 		SELECT report_id, tenant_id, report_type, reference_date,
@@ -255,7 +255,7 @@ func (r *ScreeningRepo) Save(ctx context.Context, s *domain.ScreeningResult) err
 			risk_level, hits, screened_at
 		) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 		s.ID(), s.TenantID(), s.CounterpartyBIC(), nullableString(s.LEI()),
-		string(s.RiskLevel()), s.Hits(), s.ScreenedAt(),
+		string(s.RiskLevel()), textArray(s.Hits()), s.ScreenedAt(),
 	)
 	if err != nil {
 		return fmt.Errorf("screening.save: %w", err)
@@ -264,6 +264,15 @@ func (r *ScreeningRepo) Save(ctx context.Context, s *domain.ScreeningResult) err
 }
 
 // ─── helpers ───────────────────────────────────────────────────────────────
+
+// textArray returns an empty slice for nil: pgx encodes a nil slice as SQL NULL, and an explicit NULL does not fall
+// back to the column's DEFAULT '{}', so a NOT NULL STRING[] column would refuse it.
+func textArray(s []string) []string {
+	if s == nil {
+		return []string{}
+	}
+	return s
+}
 
 func nullableTime(t time.Time) any {
 	if t.IsZero() {

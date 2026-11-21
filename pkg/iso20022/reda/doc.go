@@ -42,18 +42,18 @@ type SettlementStandingInstructionRequestV01 struct {
 const Namespace061 = "urn:iso:std:iso:20022:tech:xsd:reda.061.001.01"
 
 type SettlementStandingInstructionConfirmationV01 struct {
-	XMLName        xml.Name    `xml:"urn:iso:std:iso:20022:tech:xsd:reda.061.001.01 SttlmStgInstrConf"`
-	SSIID          string      `xml:"SSIId"`
-	Requester      PartyID     `xml:"Reqstr"`
-	Counterparty   PartyID     `xml:"CtrPty"`
-	Currency       string      `xml:"Ccy"`
-	BeneficiaryBIC string      `xml:"BnfryBICFI"`
-	IntermediaryBIC string     `xml:"IntrmyBICFI,omitempty"`
-	AccountNumber  string      `xml:"AcctNb"`
-	IBAN           string      `xml:"IBAN,omitempty"`
-	ValidFrom      ISODate     `xml:"VldFr"`
-	ValidTo        ISODate     `xml:"VldTo,omitempty"`
-	ConfirmedAt    ISODateTime `xml:"ConfDtTm"`
+	XMLName         xml.Name    `xml:"urn:iso:std:iso:20022:tech:xsd:reda.061.001.01 SttlmStgInstrConf"`
+	SSIID           string      `xml:"SSIId"`
+	Requester       PartyID     `xml:"Reqstr"`
+	Counterparty    PartyID     `xml:"CtrPty"`
+	Currency        string      `xml:"Ccy"`
+	BeneficiaryBIC  string      `xml:"BnfryBICFI"`
+	IntermediaryBIC string      `xml:"IntrmyBICFI,omitempty"`
+	AccountNumber   string      `xml:"AcctNb"`
+	IBAN            string      `xml:"IBAN,omitempty"`
+	ValidFrom       ISODate     `xml:"VldFr"`
+	ValidTo         ISODate     `xml:"VldTo,omitempty"`
+	ConfirmedAt     ISODateTime `xml:"ConfDtTm"`
 }
 
 // ── reda.066.001.01 — Calendar Reference Data ──────────────────────────────

@@ -59,27 +59,27 @@ func NewCapture(in NewCaptureInput) (*CFETSCapture, error) {
 		version:      1,
 	}
 	c.recordEvent(EventCaptureDrafted{
-		CaptureID:   id,
-		TenantID:    in.TenantID,
-		TradeID:     in.TradeID,
+		CaptureID:    id,
+		TenantID:     in.TenantID,
+		TradeID:      in.TradeID,
 		SubmitterRef: in.SubmitterRef,
-		OccurredAt:  time.Now().UTC(),
+		OccurredAt:   time.Now().UTC(),
 	})
 	return c, nil
 }
 
 // ── Accessors ──────────────────────────────────────────────────────────────
-func (c *CFETSCapture) ID() uuid.UUID            { return c.id }
-func (c *CFETSCapture) TenantID() uuid.UUID      { return c.tenantID }
-func (c *CFETSCapture) TradeID() uuid.UUID       { return c.tradeID }
-func (c *CFETSCapture) SubmitterRef() string     { return c.submitterRef }
-func (c *CFETSCapture) CFETSDealID() string      { return c.cfetsDealID }
-func (c *CFETSCapture) Status() CaptureStatus    { return c.status }
-func (c *CFETSCapture) SubmittedAt() time.Time   { return c.submittedAt }
-func (c *CFETSCapture) AckAt() time.Time         { return c.ackAt }
-func (c *CFETSCapture) NotifiedAt() time.Time    { return c.notifiedAt }
-func (c *CFETSCapture) RejectionReason() string  { return c.rejectionReason }
-func (c *CFETSCapture) Version() int             { return c.version }
+func (c *CFETSCapture) ID() uuid.UUID           { return c.id }
+func (c *CFETSCapture) TenantID() uuid.UUID     { return c.tenantID }
+func (c *CFETSCapture) TradeID() uuid.UUID      { return c.tradeID }
+func (c *CFETSCapture) SubmitterRef() string    { return c.submitterRef }
+func (c *CFETSCapture) CFETSDealID() string     { return c.cfetsDealID }
+func (c *CFETSCapture) Status() CaptureStatus   { return c.status }
+func (c *CFETSCapture) SubmittedAt() time.Time  { return c.submittedAt }
+func (c *CFETSCapture) AckAt() time.Time        { return c.ackAt }
+func (c *CFETSCapture) NotifiedAt() time.Time   { return c.notifiedAt }
+func (c *CFETSCapture) RejectionReason() string { return c.rejectionReason }
+func (c *CFETSCapture) Version() int            { return c.version }
 func (c *CFETSCapture) PendingEvents() []DomainEvent {
 	return append([]DomainEvent(nil), c.events...)
 }

@@ -43,12 +43,12 @@ Implementar 4 providers por trás de uma interface comum `SanctionsProvider` + c
 
 - **1.13** `RTSK.024.1213.01` ✏️ Documentar vendor + URL + método de auth por lista. *Aceite:* `docs/security/sanctions-sources.md` com 4 seções e credencial em Vault path. *Entrega:* `docs/security/sanctions-sources.md`. *Escopo:* `docs/security/`. *Depende:* `RTSK.024.1203.01`, `RTSK.024.1204.01`, `RTSK.024.1205.01`, `RTSK.024.1206.01`. *Espera:* dono — definição de contratos com vendors. [registro](../registro/README.md)
 - **1.14** `RTSK.024.1214.01` ✏️ STRIDE: adicionar ameaça de list-poisoning + verificação (fontes assinadas). *Aceite:* modelo atualizado com mitigação (checksum ou signature verify). *Entrega:* `docs/security/threat-model.md`. *Escopo:* `docs/security/`. *Depende:* `RTSK.024.1213.01`. *Espera:* dono — definição de signatário confiável. [registro](../registro/README.md)
-- **1.15** `RTSK.024.1215.01` ✏️ Teste de integração contra fixture XML/CSV/XLSX capturados 2026-Q2. *Aceite:* 4 providers parseiam fixture e Match encontra entry conhecido. *Entrega:* `tests/integration/sanctions_test.go`. *Escopo:* `tests/integration/`. *Depende:* `RTSK.024.1203.01`, `RTSK.024.1204.01`, `RTSK.024.1205.01`, `RTSK.024.1206.01`, `RTSK.024.1212.01`. *Espera:* gate — testes sem banco. [registro](../registro/README.md)
+- **1.15** `RTSK.024.1215.01` ✏️ Integração com fixtures sintéticas no formato oficial, nomes inventados. *Aceite:* 4 providers parseiam a fixture e Match acha entrada conhecida. *Entrega:* `tests/integration/sanctions_test.go`. *Escopo:* `tests/integration/`. *Depende:* `RTSK.024.1203.01`, `RTSK.024.1204.01`, `RTSK.024.1205.01`, `RTSK.024.1206.01`, `RTSK.024.1212.01`. *Espera:* gate — testes sem banco. [registro](../registro/README.md)
 - **1.16** `RTSK.024.1218.01` ✏️ `GoString()` e JSON redigido no `MatchQuery`. *Aceite:* `%#v` e `json.Marshal` não imprimem o Name; teste com controle negativo. *Entrega:* `pkg/sanctions/provider.go` + teste. *Escopo:* `pkg/sanctions/`. *Espera:* sessão dona — implementação; revisor: IdentityOS (PII). [registro](../registro/README.md)
 
 ## Fase 2 — Aceite
 
-- **2.1** `RTSK.024.1216.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 ciclo horário de refresh em staging sem falha + 1 hit conhecido reproduzido por fixture. *Entrega:* relatório em `registro/ms-024d/`. *Escopo:* módulo inteiro + staging. *Espera:* gate — rodada N2. [registro](../registro/README.md)
+- **2.1** `RTSK.024.1216.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 ciclo horário de refresh em staging sem falha + 1 hit conhecido reproduzido por fixture. *Entrega:* relatório em `registro/ms-024d/`. *Escopo:* módulo inteiro + staging. *Espera:* gate — rodada `lote` do head de integração. [registro](../registro/README.md)
 
 ## Fase 3 — Fechamento
 

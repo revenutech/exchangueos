@@ -50,11 +50,11 @@ const (
 
 // Operation is one mutation against a single table.
 type Operation struct {
-	Table    string   `json:"table"`
-	Where    string   `json:"where"`
-	Op       Op       `json:"op"`
-	Fields   []string `json:"fields,omitempty"`
-	Comment  string   `json:"comment,omitempty"`
+	Table   string   `json:"table"`
+	Where   string   `json:"where"`
+	Op      Op       `json:"op"`
+	Fields  []string `json:"fields,omitempty"`
+	Comment string   `json:"comment,omitempty"`
 }
 
 // Plan is the signed instruction set produced by the DPO + Compliance Officer

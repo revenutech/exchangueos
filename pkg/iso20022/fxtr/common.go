@@ -169,8 +169,8 @@ type TradedAmounts struct {
 
 // AgreedRate carries the dealt FX rate + base/quote pair.
 type AgreedRate struct {
-	ExchangeRate Rate   `xml:"XchgRate"`
-	BaseCurrency string `xml:"BaseCcy"`
+	ExchangeRate   Rate   `xml:"XchgRate"`
+	BaseCurrency   string `xml:"BaseCcy"`
 	QuotedCurrency string `xml:"QtdCcy"`
 }
 
