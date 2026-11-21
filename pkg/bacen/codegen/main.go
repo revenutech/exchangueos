@@ -9,9 +9,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/csv"
 	"flag"
 	"fmt"
+	"go/format"
 	"io"
 	"log"
 	"os"
@@ -125,13 +127,8 @@ func main() {
 		log.Fatalf("template parse: %v", err)
 	}
 
-	outFile, err := os.Create(*out)
-	if err != nil {
-		log.Fatalf("create output: %v", err)
-	}
-	defer outFile.Close()
-
-	if err := tmpl.Execute(outFile, struct {
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, struct {
 		Source      string
 		GeneratedAt string
 		Codes       []natureCode
@@ -141,6 +138,15 @@ func main() {
 		Codes:       codes,
 	}); err != nil {
 		log.Fatalf("template execute: %v", err)
+	}
+
+	// gofmt the output so the committed file passes `gofmt -l` in CI (MS-024i 1.32).
+	src, err := format.Source(buf.Bytes())
+	if err != nil {
+		log.Fatalf("gofmt output: %v", err)
+	}
+	if err := os.WriteFile(*out, src, 0o644); err != nil {
+		log.Fatalf("write output: %v", err)
 	}
 
 	log.Printf("wrote %d codes to %s", len(codes), *out)

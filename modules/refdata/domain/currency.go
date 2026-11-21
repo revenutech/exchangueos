@@ -7,12 +7,12 @@ import (
 
 // Currency represents an ISO 4217 currency.
 type Currency struct {
-	code         string
-	name         string
-	minorUnits   int  // 0 (JPY), 2 (USD/EUR/most), 3 (BHD/KWD/OMR)
-	clsEligible  bool
+	code          string
+	name          string
+	minorUnits    int // 0 (JPY), 2 (USD/EUR/most), 3 (BHD/KWD/OMR)
+	clsEligible   bool
 	cfetsEligible bool
-	active       bool
+	active        bool
 }
 
 // NewCurrency constructs and validates a Currency.
@@ -44,12 +44,12 @@ func NewCurrency(code, name string, minorUnits int, clsEligible, cfetsEligible b
 	}, nil
 }
 
-func (c *Currency) Code() string         { return c.code }
-func (c *Currency) Name() string         { return c.name }
-func (c *Currency) MinorUnits() int      { return c.minorUnits }
-func (c *Currency) IsCLSEligible() bool  { return c.clsEligible }
+func (c *Currency) Code() string          { return c.code }
+func (c *Currency) Name() string          { return c.name }
+func (c *Currency) MinorUnits() int       { return c.minorUnits }
+func (c *Currency) IsCLSEligible() bool   { return c.clsEligible }
 func (c *Currency) IsCFETSEligible() bool { return c.cfetsEligible }
-func (c *Currency) IsActive() bool       { return c.active }
+func (c *Currency) IsActive() bool        { return c.active }
 
 // Deactivate marks the currency as inactive (admin op).
 func (c *Currency) Deactivate() { c.active = false }

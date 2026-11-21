@@ -64,3 +64,4 @@ lefthook-local.yml
 # Claude scratch
 .claude/cache/
 .claude/memory/local/
+.cache/ci-local/

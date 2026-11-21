@@ -12,13 +12,13 @@ import (
 // Position is the per-(tenant, currency) net open position aggregate.
 // Maintains long + short running totals (positive) and a signed net.
 type Position struct {
-	id        uuid.UUID
-	tenantID  uuid.UUID
-	currency  string
-	long      decimal.Decimal
-	short     decimal.Decimal
-	asOf      time.Time
-	version   int
+	id       uuid.UUID
+	tenantID uuid.UUID
+	currency string
+	long     decimal.Decimal
+	short    decimal.Decimal
+	asOf     time.Time
+	version  int
 }
 
 // NewPosition starts a flat position for (tenant, currency).
@@ -42,14 +42,14 @@ func NewPosition(tenantID uuid.UUID, currency string) (*Position, error) {
 }
 
 // Accessors
-func (p *Position) ID() uuid.UUID                 { return p.id }
-func (p *Position) TenantID() uuid.UUID           { return p.tenantID }
-func (p *Position) Currency() string              { return p.currency }
-func (p *Position) Long() decimal.Decimal         { return p.long }
-func (p *Position) Short() decimal.Decimal        { return p.short }
-func (p *Position) Net() decimal.Decimal          { return p.long.Sub(p.short) }
-func (p *Position) AsOf() time.Time               { return p.asOf }
-func (p *Position) Version() int                  { return p.version }
+func (p *Position) ID() uuid.UUID          { return p.id }
+func (p *Position) TenantID() uuid.UUID    { return p.tenantID }
+func (p *Position) Currency() string       { return p.currency }
+func (p *Position) Long() decimal.Decimal  { return p.long }
+func (p *Position) Short() decimal.Decimal { return p.short }
+func (p *Position) Net() decimal.Decimal   { return p.long.Sub(p.short) }
+func (p *Position) AsOf() time.Time        { return p.asOf }
+func (p *Position) Version() int           { return p.version }
 
 // IsLong reports a net-positive position.
 func (p *Position) IsLong() bool { return p.Net().IsPositive() }

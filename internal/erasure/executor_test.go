@@ -73,7 +73,7 @@ func (a *fakeAudit) EmitCompletion(_ context.Context, e erasure.CompletionAudit)
 
 func TestBuildSQL_Redact(t *testing.T) {
 	plan := &erasure.Plan{
-		Ticket: "LGPD-2026-0001",
+		Ticket:    "LGPD-2026-0001",
 		Approvals: []string{"dpo", "compliance_officer"},
 	}
 	sql := erasure.BuildSQL(plan, erasure.Operation{
@@ -82,9 +82,10 @@ func TestBuildSQL_Redact(t *testing.T) {
 		Op:     erasure.OpRedact,
 		Fields: []string{"name", "email"},
 	})
-	// Fields sort alphabetically for determinism.
+	// Fields sort alphabetically for determinism. Each value is the marker plus a per-row random token: a redacted
+	// field may sit under a UNIQUE constraint (actors.external_sub), and one shared marker would collide on row 2.
 	assert.Equal(t,
-		"UPDATE actors SET email = '[REDACTED PER LGPD ART 18 IV LGPD-2026-0001]', name = '[REDACTED PER LGPD ART 18 IV LGPD-2026-0001]' WHERE id = 'x'",
+		"UPDATE actors SET email = '[REDACTED PER LGPD ART 18 IV LGPD-2026-0001] ' || gen_random_uuid()::STRING, name = '[REDACTED PER LGPD ART 18 IV LGPD-2026-0001] ' || gen_random_uuid()::STRING WHERE id = 'x'",
 		sql,
 	)
 }

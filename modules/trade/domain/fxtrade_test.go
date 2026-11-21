@@ -73,7 +73,7 @@ func TestRN_FX_001_CurrencyMustBeISO4217Alpha3(t *testing.T) {
 
 func TestRN_FX_026_AmountsAndRateMustBePositive(t *testing.T) {
 	cases := []struct {
-		name  string
+		name   string
 		mutate func(in *domain.NewTradeInput)
 	}{
 		{"bought zero", func(in *domain.NewTradeInput) { in.BoughtAmount = decimal.Zero }},

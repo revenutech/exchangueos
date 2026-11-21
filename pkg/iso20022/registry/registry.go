@@ -20,10 +20,10 @@ import (
 type Organisation string
 
 const (
-	OrgISO    Organisation = "ISO20022"          // base/published spec
-	OrgCLS    Organisation = "CLSBUS33"          // CLS Bank variant
-	OrgCFETS  Organisation = "CFETS"             // China FX Trade System variant
-	OrgRevenu Organisation = "REVENU"            // Revenu internal (extension fields)
+	OrgISO    Organisation = "ISO20022" // base/published spec
+	OrgCLS    Organisation = "CLSBUS33" // CLS Bank variant
+	OrgCFETS  Organisation = "CFETS"    // China FX Trade System variant
+	OrgRevenu Organisation = "REVENU"   // Revenu internal (extension fields)
 )
 
 // BusinessDomain — ISO 20022 4-letter business area.
@@ -41,11 +41,11 @@ const (
 type Descriptor struct {
 	Organisation Organisation
 	Domain       BusinessDomain
-	MessageDef   string  // e.g. "014" — the 3-digit ID under the domain
-	Variant      string  // e.g. "001" — submitter variant suffix
-	Version      string  // semver/pinned, e.g. "2021-09-17"
-	XSDSourceURL string  // pinned URL for download / verification
-	Description  string  // human-readable summary
+	MessageDef   string // e.g. "014" — the 3-digit ID under the domain
+	Variant      string // e.g. "001" — submitter variant suffix
+	Version      string // semver/pinned, e.g. "2021-09-17"
+	XSDSourceURL string // pinned URL for download / verification
+	Description  string // human-readable summary
 }
 
 // URN returns the canonical ISO 20022 URN, e.g.

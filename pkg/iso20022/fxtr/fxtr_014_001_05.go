@@ -15,14 +15,14 @@ type FXTradeCaptureConfirmationV05 struct {
 	TradeIdentification TradeIdentification14 `xml:"TradId"`
 
 	// Side identification (CLS member or trader-of-record).
-	TradingSideIdentification     SideIdentification `xml:"TradgSdIdr"`
+	TradingSideIdentification      SideIdentification `xml:"TradgSdIdr"`
 	CounterpartySideIdentification SideIdentification `xml:"CtrPtySdIdr"`
 
 	// Trade economics.
-	TradeDate   ISODate     `xml:"TradDt"`
-	ValueDate   ISODate     `xml:"ValDt"`
-	TradedAmts  TradedAmounts `xml:"TraddAmts"`
-	AgreedRate  AgreedRate    `xml:"AgrdRate"`
+	TradeDate  ISODate       `xml:"TradDt"`
+	ValueDate  ISODate       `xml:"ValDt"`
+	TradedAmts TradedAmounts `xml:"TraddAmts"`
+	AgreedRate AgreedRate    `xml:"AgrdRate"`
 
 	// Optional: settlement instructions block.
 	SettlementInfo *SettlementInfo `xml:"SttlmInfo,omitempty"`
@@ -33,8 +33,8 @@ type FXTradeCaptureConfirmationV05 struct {
 
 // TradeIdentification14 — minimal identifier block (full XSD has more optional fields).
 type TradeIdentification14 struct {
-	TradeID         string      `xml:"TradId"`            // counterparty's id
+	TradeID         string      `xml:"TradId"` // counterparty's id
 	OurTradeRef     string      `xml:"OurTradRef,omitempty"`
-	CommonReference string      `xml:"CmnRef,omitempty"`  // optional CLS common reference
+	CommonReference string      `xml:"CmnRef,omitempty"` // optional CLS common reference
 	CapturedAt      ISODateTime `xml:"CaptrDtTm,omitempty"`
 }
