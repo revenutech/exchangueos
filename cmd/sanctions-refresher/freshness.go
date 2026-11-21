@@ -7,6 +7,8 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	"github.com/revenutech/exchangeos/pkg/sanctions"
 )
 
 // Freshness SLO (MS-024d 1.8, RTSK.024.1208.01): every list is refreshed within 24 hours. The refresher reports,
@@ -14,7 +16,7 @@ import (
 // deploy/helm/exchangeos/templates/sanctions-refresher-prometheusrule.yaml alerts when it exceeds 86400.
 const (
 	metricListAge = "sanctions_list_age_seconds"
-	freshnessSLO  = 24 * time.Hour
+	freshnessSLO  = sanctions.MaxSnapshotAge // 24h: the SLO and the staleness limit of MS-024d 1.9 are one number
 )
 
 // ageGauge is sanctions_list_age_seconds{list}. The metric goes out through the platform OTel pipeline
