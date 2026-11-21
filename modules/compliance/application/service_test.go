@@ -162,6 +162,9 @@ func TestSubmitBACENReport_PersistsPending(t *testing.T) {
 
 // The hits now come from the provider, so each case drives them through the
 // screener rather than through the caller's input.
+// hitOFACA is the screening hit of OFAC entry «a».
+const hitOFACA = "OFAC:a"
+
 func TestScreenCounterparty_RiskLevelDerivation(t *testing.T) {
 	tests := []struct {
 		hits      []string
@@ -169,7 +172,7 @@ func TestScreenCounterparty_RiskLevelDerivation(t *testing.T) {
 	}{
 		{nil, domain.RiskLow},
 		{[]string{"OFAC:SDN:demo"}, domain.RiskMedium},
-		{[]string{"OFAC:a", "UN:b", "EU:c"}, domain.RiskHigh},
+		{[]string{hitOFACA, "UN:b", "EU:c"}, domain.RiskHigh},
 	}
 	for _, tc := range tests {
 		t.Run(string(tc.wantLevel), func(t *testing.T) {
@@ -225,7 +228,7 @@ func TestNewService_NilScreenerFailsClosed(t *testing.T) {
 // Hits supplied by the caller must be ignored: only the provider decides.
 // Otherwise a client could declare itself clear.
 func TestScreenCounterparty_IgnoresCallerSuppliedHits(t *testing.T) {
-	svc, _, _ := newSvcWith(t, &fakeScreener{hits: []string{"OFAC:a", "UN:b", "EU:c"}})
+	svc, _, _ := newSvcWith(t, &fakeScreener{hits: []string{hitOFACA, "UN:b", "EU:c"}})
 
 	res, err := svc.ScreenCounterparty(context.Background(), domain.NewScreeningInput{
 		TenantID:        uuid.New(),

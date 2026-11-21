@@ -241,7 +241,7 @@ func TestCache_NoAuditWhenNothingScored(t *testing.T) {
 		name  string
 		cache func(t *testing.T, a HitAuditor) *Cache
 	}{
-		{"no candidate", func(t *testing.T, a HitAuditor) *Cache { return auditedCache(t, a) }},
+		{"no candidate", auditedCache},
 		{"empty cache", func(_ *testing.T, a HitAuditor) *Cache { return NewCache(WithHitAuditor(a)) }},
 	}
 	for _, tc := range cases {

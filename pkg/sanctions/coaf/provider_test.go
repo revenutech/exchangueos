@@ -27,17 +27,30 @@ var (
 
 const fixture = "testdata/coaf-sintetico.xlsx"
 
+// Cell values the synthetic sheets repeat.
+const (
+	headerReferencia    = "Referência"
+	headerNome          = "Nome"
+	headerTipo          = "Tipo"
+	tipoPessoaFisica    = "Pessoa Física"
+	refR1               = "R-1"
+	tipoEntidade        = "Entidade"
+	regimeCSNU1267      = "CSNU 1267"
+	nomePessoaSintetica = "Pessoa Sintética"
+	nomeSintetico       = "Sintético"
+)
+
 // fixtureRows is the synthetic list behind testdata/coaf-sintetico.xlsx: invented names, ISO 3166 user-assigned
 // country codes (XA, XB), the layout documented in provider.go. Row 4 is empty on purpose, «inline:» and «num:»
 // cover the two non-shared cell types.
 var fixtureRows = [][]string{
-	{"Referência", "Nome", "Tipo", "Outros Nomes", "Nacionalidade", "Regime"},
-	{"COAF-0001", "João Fictício da Silva", "Pessoa Física", "João F. Silva; Joao Ficticio", "XA", "CSNU 1267"},
+	{headerReferencia, headerNome, headerTipo, "Outros Nomes", "Nacionalidade", "Regime"},
+	{"COAF-0001", "João Fictício da Silva", tipoPessoaFisica, "João F. Silva; Joao Ficticio", "XA", regimeCSNU1267},
 	{"COAF-0002", "Empresa Sintética Ltda", "Pessoa Jurídica", "ESL; Sintética & Filhos", "XA; xb", "CSNU 1988"},
 	{},
 	{"COAF-0003", "inline:Navio Inventado", "Embarcação", "", "", "CSNU 2231"},
 	{"num:1004", "Aeronave Exemplo", "Aeronave", "", "00", "CSNU 2231; CSNU 1267"},
-	{"COAF-0005", "Organização Imaginária", "Entidade", "", "XB", "CSNU 1988"},
+	{"COAF-0005", "Organização Imaginária", tipoEntidade, "", "XB", "CSNU 1988"}, //nolint:misspell // Portuguese word in a synthetic name, not misspelt English
 }
 
 type memIndex struct {
@@ -89,20 +102,20 @@ func TestParse_HeaderByNameNotPosition(t *testing.T) {
 	// Columns reversed, header spelled without accents and in other case, plus an unknown column.
 	rows := [][]string{
 		{"Observação", "REGIME", "nacionalidade", "outros nomes", "TIPO", "  nome ", "Referencia"},
-		{"ignored", "CSNU 1267", "XA", "Alias Sintético", "Pessoa Física", "Pessoa Sintética", "R-1"},
+		{"ignored", regimeCSNU1267, "XA", "Alias Sintético", tipoPessoaFisica, nomePessoaSintetica, refR1},
 	}
 	got, err := Parse(bytes.NewReader(buildXLSX(t, rows)))
 	require.NoError(t, err)
 	require.Len(t, got, 1)
 	assert.Equal(t, sanctions.Entry{
-		Source: sanctions.SourceCOAF, ID: "R-1", Name: "Pessoa Sintética", Aliases: []string{"Alias Sintético"},
-		Kind: sanctions.KindIndividual, Countries: []string{"XA"}, Programs: []string{"CSNU 1267"},
+		Source: sanctions.SourceCOAF, ID: refR1, Name: nomePessoaSintetica, Aliases: []string{"Alias Sintético"},
+		Kind: sanctions.KindIndividual, Countries: []string{"XA"}, Programs: []string{regimeCSNU1267},
 	}, got[0])
 }
 
 func TestParse_OptionalColumnsMayBeAbsent(t *testing.T) {
 	t.Parallel()
-	got, err := Parse(bytes.NewReader(buildXLSX(t, [][]string{{"ID", "Nome", "Tipo"}, {"9", "Sintético", "Desconhecido"}})))
+	got, err := Parse(bytes.NewReader(buildXLSX(t, [][]string{{"ID", headerNome, headerTipo}, {"9", nomeSintetico, "Desconhecido"}})))
 	require.NoError(t, err)
 	require.Len(t, got, 1)
 	assert.Equal(t, sanctions.KindOther, got[0].Kind)
@@ -114,9 +127,9 @@ func TestParse_MissingRequiredColumn(t *testing.T) {
 	for i, col := range []string{"referencia", "nome", "tipo"} {
 		t.Run(col, func(t *testing.T) {
 			t.Parallel()
-			head := []string{"Referência", "Nome", "Tipo"}
+			head := []string{headerReferencia, headerNome, headerTipo}
 			head[i] = "Outra"
-			_, err := Parse(bytes.NewReader(buildXLSX(t, [][]string{head, {"1", "Sintético", "Entidade"}})))
+			_, err := Parse(bytes.NewReader(buildXLSX(t, [][]string{head, {"1", nomeSintetico, tipoEntidade}})))
 			assert.ErrorIs(t, err, ErrMissingColumn)
 			assert.Contains(t, err.Error(), col)
 		})
@@ -153,13 +166,13 @@ func TestParse_MissingSheet(t *testing.T) {
 
 func TestParse_AbsoluteSheetTargetAndRichText(t *testing.T) {
 	t.Parallel()
-	parts := xlsxParts([][]string{{"Referência", "Nome", "Tipo"}, {"1", "placeholder", "Entidade"}})
+	parts := xlsxParts([][]string{{headerReferencia, headerNome, headerTipo}, {"1", "placeholder", tipoEntidade}})
 	parts = replacePart(parts, "xl/_rels/workbook.xml.rels", strings.Replace(workbookRels, `Target="worksheets/sheet1.xml"`, `Target="/xl/worksheets/sheet1.xml"`, 1))
 	// Shared string 4 («placeholder») as rich text in two runs, with a phonetic run that must be ignored.
 	sst := `<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
 		`<si><t>Referência</t></si><si><t>Nome</t></si><si><t>Tipo</t></si><si><t>1</t></si>` +
 		`<si><r><t>Rich </t></r><r><t>Synthetic</t></r><rPh><t>IGNORED</t></rPh></si><si><t>Entidade</t></si></sst>`
-	parts = replacePart(parts, "xl/sharedStrings.xml", sst)
+	parts = replacePart(parts, partSharedStrings, sst)
 	got, err := Parse(bytes.NewReader(zipParts(t, parts)))
 	require.NoError(t, err)
 	require.Len(t, got, 1)
@@ -168,7 +181,7 @@ func TestParse_AbsoluteSheetTargetAndRichText(t *testing.T) {
 
 func TestParse_MalformedCells(t *testing.T) {
 	t.Parallel()
-	base := xlsxParts([][]string{{"Referência", "Nome", "Tipo"}, {"1", "Sintético", "Entidade"}})
+	base := xlsxParts([][]string{{headerReferencia, headerNome, headerTipo}, {"1", nomeSintetico, tipoEntidade}})
 	sheet := func(cells string) string {
 		return `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>` +
 			`<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="C1" t="s"><v>2</v></c></row>` +
@@ -191,7 +204,7 @@ func TestParse_MalformedCells(t *testing.T) {
 
 func TestParse_CellsWithoutReferenceAreSequential(t *testing.T) {
 	t.Parallel()
-	base := xlsxParts([][]string{{"Referência", "Nome", "Tipo"}})
+	base := xlsxParts([][]string{{headerReferencia, headerNome, headerTipo}})
 	sheet := `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>` +
 		`<row><c t="s"><v>0</v></c><c t="s"><v>1</v></c><c t="s"><v>2</v></c></row>` +
 		`<row><c t="inlineStr"><is><t>7</t></is></c><c t="str"><v>Sintético</v></c><c t="inlineStr"><is><t>Entidade</t></is></c></row>` +
@@ -200,7 +213,7 @@ func TestParse_CellsWithoutReferenceAreSequential(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, got, 1)
 	assert.Equal(t, "7", got[0].ID)
-	assert.Equal(t, "Sintético", got[0].Name)
+	assert.Equal(t, nomeSintetico, got[0].Name)
 	assert.Equal(t, sanctions.KindEntity, got[0].Kind)
 }
 
@@ -223,7 +236,7 @@ func TestParse_ZipBombDeclaredSize(t *testing.T) {
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 	for _, p := range xlsxParts(fixtureRows) {
-		if p.name == "xl/sharedStrings.xml" {
+		if p.name == partSharedStrings {
 			continue
 		}
 		w, err := zw.Create(p.name)
@@ -231,7 +244,7 @@ func TestParse_ZipBombDeclaredSize(t *testing.T) {
 		_, err = io.WriteString(w, p.body)
 		require.NoError(t, err)
 	}
-	w, err := zw.Create("xl/sharedStrings.xml")
+	w, err := zw.Create(partSharedStrings)
 	require.NoError(t, err)
 	chunk := bytes.Repeat([]byte(" "), 1<<20)
 	for written := int64(0); written <= MaxUncompressed; written += int64(len(chunk)) {
@@ -252,7 +265,7 @@ func TestParse_UncompressedBudgetIsShared(t *testing.T) {
 	var total, largest int64
 	for _, p := range parts {
 		switch p.name {
-		case "xl/workbook.xml", "xl/_rels/workbook.xml.rels", "xl/worksheets/sheet1.xml", "xl/sharedStrings.xml":
+		case "xl/workbook.xml", "xl/_rels/workbook.xml.rels", "xl/worksheets/sheet1.xml", partSharedStrings:
 			total += int64(len(p.body))
 			largest = max(largest, int64(len(p.body)))
 		}
@@ -289,12 +302,12 @@ func TestProvider_RefreshLoadsFixture(t *testing.T) {
 func TestProvider_EntityWithoutIDOrNameIsInvalid(t *testing.T) {
 	t.Parallel()
 	for name, row := range map[string][]string{
-		"without id":   {"", "Pessoa Sintética", "Pessoa Física"},
-		"without name": {"R-2", "", "Pessoa Física"},
+		"without id":   {"", nomePessoaSintetica, tipoPessoaFisica},
+		"without name": {"R-2", "", tipoPessoaFisica},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			rows := [][]string{{"Referência", "Nome", "Tipo"}, {"R-1", "Válido Sintético", "Entidade"}, row}
+			rows := [][]string{{headerReferencia, headerNome, headerTipo}, {refR1, "Válido Sintético", tipoEntidade}, row}
 			idx := &memIndex{}
 			p, err := New(fetchBytes(buildXLSX(t, rows)), idx)
 			require.NoError(t, err)
@@ -306,7 +319,7 @@ func TestProvider_EntityWithoutIDOrNameIsInvalid(t *testing.T) {
 
 func TestProvider_EmptyList(t *testing.T) {
 	t.Parallel()
-	p, err := New(fetchBytes(buildXLSX(t, [][]string{{"Referência", "Nome", "Tipo"}, {}, {}})), &memIndex{})
+	p, err := New(fetchBytes(buildXLSX(t, [][]string{{headerReferencia, headerNome, headerTipo}, {}, {}})), &memIndex{})
 	require.NoError(t, err)
 	assert.ErrorIs(t, p.Refresh(context.Background()), sanctions.ErrEmptyList)
 }
