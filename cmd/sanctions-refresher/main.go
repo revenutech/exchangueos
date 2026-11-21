@@ -95,7 +95,8 @@ type job struct {
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
-		fmt.Fprintf(os.Stderr, "fatal: %v\n", err)
+		// The exit status carries the failure; a failed write to stderr has nowhere else to be reported.
+		_, _ = fmt.Fprintf(os.Stderr, "fatal: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -391,8 +392,8 @@ func (r *refresher) refresh(ctx context.Context, j job) outcome {
 // measureAge sets out.age from the snapshot the list now has on disk and reports it on the age gauge. A failed
 // refresh left the previous snapshot in place, so its age keeps growing run after run until the SLO alert fires.
 func (r *refresher) measureAge(ctx context.Context, j job, now time.Time, out *outcome) {
-	switch {
-	case out.err == nil:
+	switch out.err {
+	case nil:
 		out.age, out.ageKnown = now.Sub(out.fetchedAt), true
 	default:
 		snap, err := sanctions.ReadSnapshot(r.dir, j.source)

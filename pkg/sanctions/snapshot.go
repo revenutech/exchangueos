@@ -98,7 +98,9 @@ func WriteSnapshot(dir string, snap Snapshot) (err error) {
 }
 
 func syncDir(dir string) error {
-	d, err := os.Open(dir)
+	// dir is the snapshot directory from the operator's configuration (--snapshot-dir /
+	// EXCHANGEOS_SANCTIONS_SNAPSHOT_DIR); it is opened only to fsync the directory entry, never read.
+	d, err := os.Open(filepath.Clean(dir)) //nolint:gosec // G304: dir is the configured snapshot directory, not input
 	if err != nil {
 		return err
 	}

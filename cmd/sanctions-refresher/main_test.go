@@ -27,17 +27,30 @@ import (
 	"github.com/revenutech/exchangeos/pkg/sanctions/un"
 )
 
+// The list names, URL variables and URLs the tests use most.
+const (
+	listOFAC   = "ofac"
+	listCOAF   = "coaf"
+	envOFACURL = "EXCHANGEOS_SANCTIONS_OFAC_URL"
+	envUNURL   = "EXCHANGEOS_SANCTIONS_UN_URL"
+	envEUURL   = "EXCHANGEOS_SANCTIONS_EU_URL"
+	envCOAFURL = "EXCHANGEOS_SANCTIONS_COAF_URL"
+	urlOFAC    = "https://ofac.example.test/sdn.xml"
+	urlUN      = "https://un.example.test/consolidated.xml"
+	urlCOAF    = "https://coaf.example.test/lista.xlsx"
+)
+
 var testNow = time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC)
 
 // fixtures are the synthetic lists already committed with each provider.
 var fixtures = map[string]string{
-	"ofac": filepath.Join("..", "..", "pkg", "sanctions", "ofac", "testdata", "sdn.xml"),
-	"un":   filepath.Join("..", "..", "pkg", "sanctions", "un", "testdata", "consolidated.xml"),
-	"eu":   filepath.Join("..", "..", "pkg", "sanctions", "eu", "testdata", "eu-fsf-sintetico.csv"),
-	"coaf": filepath.Join("..", "..", "pkg", "sanctions", "coaf", "testdata", "coaf-sintetico.xlsx"),
+	listOFAC: filepath.Join("..", "..", "pkg", "sanctions", listOFAC, "testdata", "sdn.xml"),
+	"un":     filepath.Join("..", "..", "pkg", "sanctions", "un", "testdata", "consolidated.xml"),
+	"eu":     filepath.Join("..", "..", "pkg", "sanctions", "eu", "testdata", "eu-fsf-sintetico.csv"),
+	listCOAF: filepath.Join("..", "..", "pkg", "sanctions", listCOAF, "testdata", "coaf-sintetico.xlsx"),
 }
 
-var parsers = map[string]sanctions.Parse{"ofac": ofac.Parse, "un": un.Parse, "eu": eu.Parse, "coaf": coaf.Parse}
+var parsers = map[string]sanctions.Parse{listOFAC: ofac.Parse, "un": un.Parse, "eu": eu.Parse, listCOAF: coaf.Parse}
 
 func fileFetch(path string) sanctions.Fetch {
 	return func(context.Context) (io.ReadCloser, error) { return os.Open(path) }
@@ -67,11 +80,11 @@ func TestParseProviders(t *testing.T) {
 		want    []string
 		wantErr bool
 	}{
-		{in: "all", want: []string{"ofac", "un", "eu", "coaf"}},
-		{in: "ofac", want: []string{"ofac"}},
-		{in: "un,coaf", want: []string{"un", "coaf"}},
-		{in: " EU , ofac ", want: []string{"eu", "ofac"}},
-		{in: "ofac,ofac", want: []string{"ofac"}},
+		{in: "all", want: []string{listOFAC, "un", "eu", listCOAF}},
+		{in: listOFAC, want: []string{listOFAC}},
+		{in: "un,coaf", want: []string{"un", listCOAF}},
+		{in: " EU , ofac ", want: []string{"eu", listOFAC}},
+		{in: "ofac,ofac", want: []string{listOFAC}},
 		{in: "", wantErr: true},
 		{in: "ofac,", wantErr: true},
 		{in: "sdn", wantErr: true},
@@ -106,28 +119,28 @@ func TestBuildJobs(t *testing.T) {
 		wantErr string
 	}{
 		{name: "every url set", env: map[string]string{
-			"EXCHANGEOS_SANCTIONS_OFAC_URL": "https://ofac.example.test/sdn.xml",
-			"EXCHANGEOS_SANCTIONS_UN_URL":   "https://un.example.test/consolidated.xml",
-			"EXCHANGEOS_SANCTIONS_EU_URL":   "https://eu.example.test/fsf.csv?token=" + secret,
-			"EXCHANGEOS_SANCTIONS_COAF_URL": "https://coaf.example.test/lista.xlsx",
+			envOFACURL: urlOFAC,
+			envUNURL:   urlUN,
+			envEUURL:   "https://eu.example.test/fsf.csv?token=" + secret,
+			envCOAFURL: urlCOAF,
 		}},
 		{name: "missing url", env: map[string]string{
-			"EXCHANGEOS_SANCTIONS_OFAC_URL": "https://ofac.example.test/sdn.xml",
-			"EXCHANGEOS_SANCTIONS_UN_URL":   "https://un.example.test/consolidated.xml",
-			"EXCHANGEOS_SANCTIONS_COAF_URL": "https://coaf.example.test/lista.xlsx",
-		}, wantErr: "EXCHANGEOS_SANCTIONS_EU_URL"},
+			envOFACURL: urlOFAC,
+			envUNURL:   urlUN,
+			envCOAFURL: urlCOAF,
+		}, wantErr: envEUURL},
 		{name: "plain http refused", env: map[string]string{
-			"EXCHANGEOS_SANCTIONS_OFAC_URL": "https://ofac.example.test/sdn.xml",
-			"EXCHANGEOS_SANCTIONS_UN_URL":   "https://un.example.test/consolidated.xml",
-			"EXCHANGEOS_SANCTIONS_EU_URL":   "http://eu.example.test/fsf.csv?token=" + secret,
-			"EXCHANGEOS_SANCTIONS_COAF_URL": "https://coaf.example.test/lista.xlsx",
-		}, wantErr: "EXCHANGEOS_SANCTIONS_EU_URL"},
+			envOFACURL: urlOFAC,
+			envUNURL:   urlUN,
+			envEUURL:   "http://eu.example.test/fsf.csv?token=" + secret,
+			envCOAFURL: urlCOAF,
+		}, wantErr: envEUURL},
 		{name: "unparseable url", env: map[string]string{
-			"EXCHANGEOS_SANCTIONS_OFAC_URL": "https://ofac.example.test/sdn.xml",
-			"EXCHANGEOS_SANCTIONS_UN_URL":   "https://un.example.test/consolidated.xml",
-			"EXCHANGEOS_SANCTIONS_EU_URL":   "https://eu.example.test/%zz?token=" + secret,
-			"EXCHANGEOS_SANCTIONS_COAF_URL": "https://coaf.example.test/lista.xlsx",
-		}, wantErr: "EXCHANGEOS_SANCTIONS_EU_URL"},
+			envOFACURL: urlOFAC,
+			envUNURL:   urlUN,
+			envEUURL:   "https://eu.example.test/%zz?token=" + secret,
+			envCOAFURL: urlCOAF,
+		}, wantErr: envEUURL},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -189,12 +202,12 @@ func TestHTTPFetch(t *testing.T) {
 		{name: "ok", url: srv.URL + "/ok?token=" + secret, maxBytes: 10, want: "0123456789"},
 		{name: "http error", url: srv.URL + "/down?token=" + secret, maxBytes: 10, openErr: "503"},
 		{name: "over the cap", url: srv.URL + "/big?token=" + secret, maxBytes: 10, readErr: errTooLarge},
-		{name: "unreachable", url: closedURL + "/ok?token=" + secret, maxBytes: 10, openErr: "ofac"},
+		{name: "unreachable", url: closedURL + "/ok?token=" + secret, maxBytes: 10, openErr: listOFAC},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			fetch := httpFetch(srv.Client(), "ofac", tt.url, tt.maxBytes)
+			fetch := httpFetch(srv.Client(), listOFAC, tt.url, tt.maxBytes)
 			rc, err := fetch(context.Background())
 			if tt.openErr != "" {
 				require.Error(t, err)
@@ -218,7 +231,7 @@ func TestHTTPFetch(t *testing.T) {
 // Every provider refreshes from its committed fixture into a snapshot that holds exactly what the parser produced.
 func TestRefresh_WritesSnapshotPerList(t *testing.T) {
 	t.Parallel()
-	for _, name := range []string{"ofac", "un", "eu", "coaf"} {
+	for _, name := range []string{listOFAC, "un", "eu", listCOAF} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			raw, err := os.Open(fixtures[name])
@@ -255,8 +268,8 @@ func TestRefresh_FailureKeepsPreviousSnapshot(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
 	r, logs := newTestRefresher(dir)
-	tg := mustTarget(t, "ofac")
-	require.NoError(t, r.refresh(context.Background(), job{target: tg, fetch: fileFetch(fixtures["ofac"])}).err)
+	tg := mustTarget(t, listOFAC)
+	require.NoError(t, r.refresh(context.Background(), job{target: tg, fetch: fileFetch(fixtures[listOFAC])}).err)
 	before, err := os.ReadFile(sanctions.SnapshotPath(dir, tg.source))
 	require.NoError(t, err)
 
@@ -287,12 +300,12 @@ func TestRun_ContinuesAfterFailure(t *testing.T) {
 	dir := t.TempDir()
 	r, _ := newTestRefresher(dir)
 	jobs := []job{
-		{target: mustTarget(t, "ofac"), fetch: failingFetch(errors.New("connection refused"))},
+		{target: mustTarget(t, listOFAC), fetch: failingFetch(errors.New("connection refused"))},
 		{target: mustTarget(t, "un"), fetch: fileFetch(fixtures["un"])},
 	}
 	err := r.run(context.Background(), jobs)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "ofac")
+	assert.Contains(t, err.Error(), listOFAC)
 
 	_, err = sanctions.ReadSnapshot(dir, sanctions.SourceUN)
 	require.NoError(t, err)
@@ -304,8 +317,9 @@ func TestRun_AllSucceed(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
 	r, logs := newTestRefresher(dir)
-	var jobs []job
-	for _, name := range []string{"ofac", "un", "eu", "coaf"} {
+	lists := []string{listOFAC, "un", "eu", listCOAF}
+	jobs := make([]job, 0, len(lists))
+	for _, name := range lists {
 		jobs = append(jobs, job{target: mustTarget(t, name), fetch: fileFetch(fixtures[name])})
 	}
 	require.NoError(t, r.run(context.Background(), jobs))
@@ -325,9 +339,9 @@ func TestRun_StaggerStopsOnCancel(t *testing.T) {
 	defer cancel()
 	var second atomic.Bool
 	jobs := []job{
-		{target: mustTarget(t, "ofac"), fetch: func(c context.Context) (io.ReadCloser, error) {
+		{target: mustTarget(t, listOFAC), fetch: func(c context.Context) (io.ReadCloser, error) {
 			cancel() // the signal arrives while the first list is downloading
-			return fileFetch(fixtures["ofac"])(c)
+			return fileFetch(fixtures[listOFAC])(c)
 		}},
 		{target: mustTarget(t, "un"), fetch: func(c context.Context) (io.ReadCloser, error) {
 			second.Store(true)
@@ -348,6 +362,6 @@ func TestRefresh_TimeoutBoundsTheFetch(t *testing.T) {
 		<-c.Done()
 		return nil, c.Err()
 	}
-	out := r.refresh(context.Background(), job{target: mustTarget(t, "ofac"), fetch: blocking})
+	out := r.refresh(context.Background(), job{target: mustTarget(t, listOFAC), fetch: blocking})
 	require.ErrorIs(t, out.err, context.DeadlineExceeded)
 }

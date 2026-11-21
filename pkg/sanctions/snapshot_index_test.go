@@ -20,7 +20,7 @@ func (c *testClock) set(d time.Duration)     { c.offset.Store(int64(d)) }
 func freshSnap(fetchedAt time.Time) Snapshot {
 	return Snapshot{Source: SourceOFAC, FetchedAt: fetchedAt, Entries: snapEntries()}
 }
-func shipQuery() MatchQuery { return MatchQuery{Name: "Mardok Shipping", MinScore: 0.9} }
+func shipQuery() MatchQuery { return MatchQuery{Name: shipName, MinScore: 0.9} }
 func newTestSnapshotIndex(c *testClock) *SnapshotIndex {
 	return NewSnapshotIndex(SourceOFAC, MaxSnapshotAge, c.now)
 }
@@ -150,17 +150,17 @@ func TestSnapshotIndex_ConcurrentLoadAndMatch(t *testing.T) {
 	idx := newTestSnapshotIndex(clk)
 	require.NoError(t, idx.Load(freshSnap(snapTime)))
 	var wg sync.WaitGroup
-	for i := 0; i < 4; i++ {
+	for range 4 {
 		wg.Add(2)
 		go func() {
 			defer wg.Done()
-			for j := 0; j < 50; j++ {
+			for range 50 {
 				_ = idx.Load(freshSnap(snapTime))
 			}
 		}()
 		go func() {
 			defer wg.Done()
-			for j := 0; j < 50; j++ {
+			for range 50 {
 				_, err := idx.Match(shipQuery())
 				assert.NoError(t, err)
 			}

@@ -236,12 +236,33 @@ func (c *Cache) MatchContext(ctx context.Context, q MatchQuery) ([]Match, error)
 	if s == nil {
 		return nil, nil
 	}
-	floor, ratio := min(tokenFloor, q.MinScore), min(tokenLenRatio, q.MinScore)
-	qtoks := distinct(toks)
-	need := (len(qtoks) + 1) / 2
 	sc := scratchPool.Get().(*scratch)
 	defer sc.release()
-	hits, tried, best := sc.hits, sc.tried, sc.best
+	qtoks := distinct(toks)
+	s.collectHits(sc, qtoks, min(tokenFloor, q.MinScore), min(tokenLenRatio, q.MinScore))
+	s.scoreHits(sc, q.Country, toks, (len(qtoks)+1)/2)
+	if len(sc.best) == 0 {
+		return nil, nil
+	}
+	// scored holds every scored entry, sub-threshold included; sorted best first, the matches are its prefix.
+	scored := s.ranked(sc.best)
+	n := 0
+	for n < len(scored) && scored[n].Score >= q.MinScore {
+		n++
+	}
+	if err := c.audit(ctx, scope, q.MinScore, scored[:n], scored[n:]); err != nil {
+		return nil, err
+	}
+	if n == 0 {
+		return nil, nil
+	}
+	return slices.Clip(scored[:n]), nil
+}
+
+// collectHits records in sc.hits, for every name sharing a block with a query token, the bit mask of the query
+// tokens whose similar dict tokens (length ratio >= ratio, Jaro >= floor) it holds.
+func (s *snapshot) collectHits(sc *scratch, qtoks []string, floor, ratio float64) {
+	hits, tried := sc.hits, sc.tried
 	for qi, t := range qtoks {
 		tr, bit := []rune(t), uint64(1)<<qi
 		for _, k := range blockKeys(tr) {
@@ -260,16 +281,19 @@ func (c *Cache) MatchContext(ctx context.Context, q MatchQuery) ([]Match, error)
 		}
 		clear(tried)
 	}
+}
+
+// scoreHits scores against the full query every name in sc.hits that hit at least need query tokens and whose
+// entry passes the country filter, keeping in sc.best the best name score of each entry.
+func (s *snapshot) scoreHits(sc *scratch, country string, toks []string, need int) {
 	qv := newVariant(toks)
 	multi := len(toks) > 1
-	for p, mask := range hits {
+	for p, mask := range sc.hits {
 		if bits.OnesCount64(mask) < need {
 			continue
 		}
 		ce := &s.entries[p.entry]
-		if q.Country != "" && len(ce.countries) > 0 && !slices.ContainsFunc(ce.countries, func(c string) bool {
-			return strings.EqualFold(c, q.Country)
-		}) {
+		if !ce.inCountry(country) {
 			continue
 		}
 		v := &ce.variants[p.variant]
@@ -277,14 +301,21 @@ func (c *Cache) MatchContext(ctx context.Context, q MatchQuery) ([]Match, error)
 		if multi && score < 1 && !(qv.inOrder && v.inOrder) {
 			score = max(score, jaroWinklerRunes(qv.sorted, v.sorted))
 		}
-		if prev, ok := best[p.entry]; !ok || score > prev {
-			best[p.entry] = score
+		if prev, ok := sc.best[p.entry]; !ok || score > prev {
+			sc.best[p.entry] = score
 		}
 	}
-	if len(best) == 0 {
-		return nil, nil
-	}
-	// scored holds every scored entry, sub-threshold included; sorted best first, the matches are its prefix.
+}
+
+// inCountry reports whether the entry passes a country filter: no filter, no countries listed, or country listed.
+func (ce *cachedEntry) inCountry(country string) bool {
+	return country == "" || len(ce.countries) == 0 || slices.ContainsFunc(ce.countries, func(c string) bool {
+		return strings.EqualFold(c, country)
+	})
+}
+
+// ranked turns the best score of each entry into Matches sorted best first, ties by source then entry id.
+func (s *snapshot) ranked(best map[int32]float64) []Match {
 	scored := make([]Match, 0, len(best))
 	for e, score := range best {
 		ce := &s.entries[e]
@@ -299,17 +330,7 @@ func (c *Cache) MatchContext(ctx context.Context, q MatchQuery) ([]Match, error)
 		}
 		return cmp.Compare(a.EntryID, b.EntryID)
 	})
-	n := 0
-	for n < len(scored) && scored[n].Score >= q.MinScore {
-		n++
-	}
-	if err := c.audit(ctx, scope, q.MinScore, scored[:n], scored[n:]); err != nil {
-		return nil, err
-	}
-	if n == 0 {
-		return nil, nil
-	}
-	return slices.Clip(scored[:n]), nil
+	return scored
 }
 
 // audit hands one HitBatch to the auditor: detail for the matches, only the count and best score for the entries

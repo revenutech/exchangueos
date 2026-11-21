@@ -12,6 +12,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	// urlOpGet is the url.Error Op net/http sets for a GET.
+	urlOpGet = "Get"
+	// listHost is the list host the redaction tests expect never to leak.
+	listHost = "list.example.invalid"
+)
+
 // A dial or DNS failure names the upstream host and port; stripURL drops them too, not only the URL.
 func TestStripURL_DropsDialAndDNSAddress(t *testing.T) {
 	t.Parallel()
@@ -22,17 +29,17 @@ func TestStripURL_DropsDialAndDNSAddress(t *testing.T) {
 		is     error
 	}{
 		"dial refused": {
-			err: &url.Error{Op: "Get", URL: "https://list.example.invalid:8443/x?token=s3cr3t", Err: &net.OpError{
+			err: &url.Error{Op: urlOpGet, URL: "https://" + listHost + ":8443/x?token=s3cr3t", Err: &net.OpError{
 				Op: "dial", Net: "tcp", Addr: &net.TCPAddr{IP: net.IPv4(192, 0, 2, 7), Port: 8443}, Err: refused,
 			}},
-			secret: []string{"192.0.2.7", "8443", "s3cr3t", "list.example.invalid"},
+			secret: []string{"192.0.2.7", "8443", "s3cr3t", listHost},
 			is:     syscall.ECONNREFUSED,
 		},
 		"dns not found": {
-			err: &url.Error{Op: "Get", URL: "https://list.example.invalid/x?token=s3cr3t", Err: &net.OpError{
-				Op: "dial", Net: "tcp", Err: &net.DNSError{Err: "no such host", Name: "list.example.invalid", IsNotFound: true},
+			err: &url.Error{Op: urlOpGet, URL: "https://" + listHost + "/x?token=s3cr3t", Err: &net.OpError{
+				Op: "dial", Net: "tcp", Err: &net.DNSError{Err: "no such host", Name: listHost, IsNotFound: true},
 			}},
-			secret: []string{"list.example.invalid", "s3cr3t"},
+			secret: []string{listHost, "s3cr3t"},
 		},
 	}
 	for name, c := range cases {
