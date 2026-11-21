@@ -61,7 +61,7 @@ check() {
 
 all=$(git show "$base:.ci-local/passos.conf" | grep ' -- ' | grep -vc '^n2 ' || true)
 # negative control: plan text only → gitleaks, nothing else
-check "negativo .base/plans" "$(first_file .base/plans/milestones/backlog md)" "<!-- passos controle -->" '^gitleaks$' '^(teste-|build|govulncheck|bacen-mock|helm|escopo|passos|lint-patterns|shellcheck|migracoes|catraca)' 1
+check "negativo .base/plans" "$(first_file .base/plans/milestones/backlog md)" "<!-- passos controle -->" '^gitleaks$' '^(teste-|build|govulncheck|bacen-mock|helm|escopo|passos|lint-patterns|shellcheck|migracoes|catraca|golangci)' 1
 # a leaf package (nobody imports pkg/sanctions): its own test step and the tree-wide Go steps; no disk gates
 check "pkg/sanctions" "$(first_file pkg/sanctions/ go)" "// passos controle" '^teste-pkg_sanctions$' '^(helm|escopo|passos|lint-patterns|bacen-mock|teste-cmd_healthcheck)$' 4
 # disk read declared in escopo.conf (le-disco pkg/bacen → data/bacen/): every Go test step enters
