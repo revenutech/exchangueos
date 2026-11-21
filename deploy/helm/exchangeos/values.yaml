@@ -124,6 +124,21 @@ observability:
     port: 8084
     path: /metrics
 
+# Freshness SLO of the sanctions lists (MS-024d 1.8): PrometheusRule rendered by
+# templates/sanctions-refresher-prometheusrule.yaml (needs the prometheus-operator CRDs).
+# The refresher pushes sanctions_list_age_seconds{list} over OTLP once per run; if the
+# collector exports it under another name (namespace prefix), set `metric` to match.
+sanctionsFreshness:
+  enabled: true
+  metric: sanctions_list_age_seconds
+  maxAgeSeconds: 86400   # 24h — above it screening against the list is blocked (MS-024d 1.9)
+  lookback: 2h           # window of the last sample; wider than the hourly schedule
+  absentFor: 3h          # no sample for this long → SanctionsListSilent
+  severity: critical
+  lists: [ofac, un, eu, coaf]
+  ruleLabels:
+    prometheus: kube-prometheus
+
 # Argo Rollouts canary spec (used by templates/rollout.yaml when binaries.api.runAs == "rollout").
 rollout:
   enabled: true

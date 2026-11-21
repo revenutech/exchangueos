@@ -24,6 +24,9 @@
 //	EXCHANGEOS_SANCTIONS_SNAPSHOT_DIR   default for --snapshot-dir (/var/lib/exchangeos/sanctions)
 //	EXCHANGEOS_ENV                      logger format (internal/config)
 //
+// Freshness (MS-024d 1.8): after each list the run records sanctions_list_age_seconds{list}, the age of the snapshot
+// the list has on disk, and exports it over OTLP (internal/telemetry) before exiting. See freshness.go.
+//
 // --stagger spaces the lists inside one run, so the upstreams are not hit at the same instant. Only public list
 // data passes through here; no screening query (counterparty name) ever does.
 package main
@@ -44,6 +47,7 @@ import (
 	"syscall"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 
 	"github.com/revenutech/exchangeos/internal/config"
@@ -134,7 +138,29 @@ func run(args []string) error {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	r := &refresher{dir: *dir, stagger: *stagger, timeout: *timeout, now: time.Now, log: logger}
+	shutdownTelemetry, err := telemetry.Init(ctx, telemetry.Options{
+		ServiceName:    serviceName,
+		ServiceVersion: serviceVersion,
+		OTLPEndpoint:   cfg.OTel.Endpoint,
+		Env:            cfg.Env,
+	})
+	if err != nil {
+		return fmt.Errorf("telemetry init: %w", err)
+	}
+	defer func() {
+		// A Job exits right after the run: the shutdown is what exports the age gauge.
+		shutdownCtx, c := context.WithTimeout(context.Background(), 10*time.Second)
+		defer c()
+		if err := shutdownTelemetry(shutdownCtx); err != nil {
+			logger.Warn("telemetry shutdown", zap.Error(err))
+		}
+	}()
+	age, err := newAgeGauge(otel.Meter("github.com/revenutech/exchangeos/cmd/sanctions-refresher"))
+	if err != nil {
+		return err
+	}
+
+	r := &refresher{dir: *dir, stagger: *stagger, timeout: *timeout, now: time.Now, log: logger, age: age}
 	return r.run(ctx, jobs)
 }
 
@@ -299,6 +325,7 @@ type refresher struct {
 	timeout time.Duration // per list; zero means only the parent context bounds it
 	now     func() time.Time
 	log     *zap.Logger
+	age     *ageGauge // sanctions_list_age_seconds; nil records nothing
 }
 
 // outcome is the result of one list's refresh.
@@ -307,6 +334,10 @@ type outcome struct {
 	fetchedAt time.Time
 	duration  time.Duration
 	err       error
+	// age is how old the list's snapshot on disk is once the refresh ended: the one just written, or the previous
+	// one when the refresh failed. ageKnown is false when the list has no readable snapshot at all.
+	age      time.Duration
+	ageKnown bool
 }
 
 // run refreshes the jobs in order, waiting stagger between two of them. A failed list does not stop the others; the
@@ -339,16 +370,38 @@ func (r *refresher) refresh(ctx context.Context, j job) outcome {
 	start := r.now()
 	out := outcome{fetchedAt: start.UTC()}
 	out.err = r.publish(ctx, j, out.fetchedAt, &out.entries)
-	out.duration = r.now().Sub(start)
+	end := r.now()
+	out.duration = end.Sub(start)
+	r.measureAge(ctx, j, end, &out)
 	if out.err != nil {
-		r.log.Error("list refresh failed",
-			zap.String("list", j.name), zap.Duration("duration", out.duration), zap.Error(out.err))
+		fields := []zap.Field{zap.String("list", j.name), zap.Duration("duration", out.duration), zap.Error(out.err)}
+		if out.ageKnown {
+			fields = append(fields, zap.Duration("snapshot_age", out.age))
+		}
+		r.log.Error("list refresh failed", fields...)
 		return out
 	}
 	r.log.Info("list refreshed",
 		zap.String("list", j.name), zap.Int("entries", out.entries), zap.Duration("duration", out.duration),
 		zap.Time("fetched_at", out.fetchedAt))
 	return out
+}
+
+// measureAge sets out.age from the snapshot the list now has on disk and reports it on the age gauge. A failed
+// refresh left the previous snapshot in place, so its age keeps growing run after run until the SLO alert fires.
+func (r *refresher) measureAge(ctx context.Context, j job, now time.Time, out *outcome) {
+	switch {
+	case out.err == nil:
+		out.age, out.ageKnown = now.Sub(out.fetchedAt), true
+	default:
+		snap, err := sanctions.ReadSnapshot(r.dir, j.source)
+		if err != nil {
+			r.log.Warn("no snapshot to report the age of", zap.String("list", j.name), zap.Error(err))
+			return
+		}
+		out.age, out.ageKnown = now.Sub(snap.FetchedAt), true
+	}
+	r.age.record(context.WithoutCancel(ctx), j.name, out.age)
 }
 
 func (r *refresher) publish(ctx context.Context, j job, fetchedAt time.Time, entries *int) error {
