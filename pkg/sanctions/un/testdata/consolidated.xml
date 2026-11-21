@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SYNTHETIC fixture in the layout of the UN Security Council Consolidated List (consolidated.xml).
+     Every name, reference number and DATAID is invented; nothing was copied from the real list
+     (owner decision 2026-11-10: never download the real lists). -->
+<CONSOLIDATED_LIST xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://scsanctions.un.org/resources/xml/sc-sanctions.xsd" dateGenerated="2026-11-10T00:00:00.000Z">
+  <INDIVIDUALS>
+    <INDIVIDUAL>
+      <DATAID>9900001</DATAID>
+      <VERSIONNUM>1</VERSIONNUM>
+      <FIRST_NAME>TAVEK</FIRST_NAME>
+      <SECOND_NAME>ORMANDI</SECOND_NAME>
+      <THIRD_NAME>SYNTHETOV</THIRD_NAME>
+      <FOURTH_NAME></FOURTH_NAME>
+      <UN_LIST_TYPE>Al-Qaida</UN_LIST_TYPE>
+      <REFERENCE_NUMBER>QDi.990</REFERENCE_NUMBER>
+      <LISTED_ON>2026-01-15</LISTED_ON>
+      <COMMENTS1>Synthetic entry for tests.</COMMENTS1>
+      <NATIONALITY>
+        <VALUE>Afghanistan</VALUE>
+        <VALUE>Pakistan</VALUE>
+      </NATIONALITY>
+      <LIST_TYPE>
+        <VALUE>UN List</VALUE>
+      </LIST_TYPE>
+      <LAST_DAY_UPDATED>
+        <VALUE>2026-02-01</VALUE>
+      </LAST_DAY_UPDATED>
+      <INDIVIDUAL_ALIAS>
+        <QUALITY>Good</QUALITY>
+        <ALIAS_NAME>Tavek the Synthetic</ALIAS_NAME>
+      </INDIVIDUAL_ALIAS>
+      <INDIVIDUAL_ALIAS>
+        <QUALITY>Low</QUALITY>
+        <ALIAS_NAME>Abu Ormandi</ALIAS_NAME>
+      </INDIVIDUAL_ALIAS>
+      <INDIVIDUAL_ALIAS>
+        <QUALITY></QUALITY>
+        <ALIAS_NAME></ALIAS_NAME>
+      </INDIVIDUAL_ALIAS>
+      <INDIVIDUAL_ADDRESS>
+        <CITY>Kandahar</CITY>
+        <COUNTRY>Afghanistan</COUNTRY>
+      </INDIVIDUAL_ADDRESS>
+      <INDIVIDUAL_ADDRESS>
+        <COUNTRY>Ruritania</COUNTRY>
+      </INDIVIDUAL_ADDRESS>
+      <INDIVIDUAL_DATE_OF_BIRTH>
+        <TYPE_OF_DATE>EXACT</TYPE_OF_DATE>
+        <DATE>1970-01-01</DATE>
+      </INDIVIDUAL_DATE_OF_BIRTH>
+      <INDIVIDUAL_PLACE_OF_BIRTH>
+        <CITY>Synthetic City</CITY>
+        <COUNTRY>Iraq</COUNTRY>
+      </INDIVIDUAL_PLACE_OF_BIRTH>
+      <INDIVIDUAL_DOCUMENT>
+        <TYPE_OF_DOCUMENT>Passport</TYPE_OF_DOCUMENT>
+        <NUMBER>ZZ0000002</NUMBER>
+      </INDIVIDUAL_DOCUMENT>
+    </INDIVIDUAL>
+    <INDIVIDUAL>
+      <DATAID>9900002</DATAID>
+      <VERSIONNUM>2</VERSIONNUM>
+      <FIRST_NAME>MIRELA</FIRST_NAME>
+      <SECOND_NAME>KOSTADIN</SECOND_NAME>
+      <UN_LIST_TYPE>DPRK</UN_LIST_TYPE>
+      <REFERENCE_NUMBER>KPi.990</REFERENCE_NUMBER>
+      <LISTED_ON>2026-03-02</LISTED_ON>
+      <NATIONALITY>
+        <VALUE>Democratic People's Republic of Korea</VALUE>
+      </NATIONALITY>
+      <LIST_TYPE>
+        <VALUE>UN List</VALUE>
+      </LIST_TYPE>
+      <INDIVIDUAL_ALIAS>
+        <QUALITY>Good</QUALITY>
+        <ALIAS_NAME>Mira Kost</ALIAS_NAME>
+      </INDIVIDUAL_ALIAS>
+      <INDIVIDUAL_ADDRESS/>
+    </INDIVIDUAL>
+  </INDIVIDUALS>
+  <ENTITIES>
+    <ENTITY>
+      <DATAID>9900101</DATAID>
+      <VERSIONNUM>1</VERSIONNUM>
+      <FIRST_NAME>CRESCENT DUNE RELIEF FOUNDATION</FIRST_NAME>
+      <UN_LIST_TYPE>Al-Qaida</UN_LIST_TYPE>
+      <REFERENCE_NUMBER>QDe.990</REFERENCE_NUMBER>
+      <LISTED_ON>2026-01-15</LISTED_ON>
+      <LIST_TYPE>
+        <VALUE>UN List</VALUE>
+      </LIST_TYPE>
+      <ENTITY_ALIAS>
+        <QUALITY>a.k.a.</QUALITY>
+        <ALIAS_NAME>Crescent Dune Foundation</ALIAS_NAME>
+      </ENTITY_ALIAS>
+      <ENTITY_ALIAS>
+        <QUALITY>f.k.a.</QUALITY>
+        <ALIAS_NAME>Dune Relief Society</ALIAS_NAME>
+      </ENTITY_ALIAS>
+      <ENTITY_ADDRESS>
+        <STREET>1 Synthetic Road</STREET>
+        <CITY>Sana'a</CITY>
+        <COUNTRY>Yemen</COUNTRY>
+      </ENTITY_ADDRESS>
+      <ENTITY_ADDRESS>
+        <CITY>Mogadishu</CITY>
+        <COUNTRY>Somalia</COUNTRY>
+      </ENTITY_ADDRESS>
+    </ENTITY>
+    <ENTITY>
+      <DATAID>9900102</DATAID>
+      <VERSIONNUM>1</VERSIONNUM>
+      <FIRST_NAME>NORTHGATE MARITIME SHIPPING CO.</FIRST_NAME>
+      <UN_LIST_TYPE>DPRK</UN_LIST_TYPE>
+      <REFERENCE_NUMBER></REFERENCE_NUMBER>
+      <LISTED_ON>2026-04-20</LISTED_ON>
+      <LIST_TYPE>
+        <VALUE>UN List</VALUE>
+      </LIST_TYPE>
+    </ENTITY>
+  </ENTITIES>
+</CONSOLIDATED_LIST>

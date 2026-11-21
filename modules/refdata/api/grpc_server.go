@@ -34,11 +34,11 @@ func (s *GRPCServer) ListCurrencies(ctx context.Context, _ *pb.ListCurrenciesReq
 	out := make([]*pb.Currency, 0, len(list))
 	for _, c := range list {
 		out = append(out, &pb.Currency{
-			Code:           c.Code(),
-			Name:           c.Name(),
-			MinorUnits:     int32(c.MinorUnits()),
-			ClsEligible:    c.IsCLSEligible(),
-			CfetsEligible:  c.IsCFETSEligible(),
+			Code:          c.Code(),
+			Name:          c.Name(),
+			MinorUnits:    int32(c.MinorUnits()),
+			ClsEligible:   c.IsCLSEligible(),
+			CfetsEligible: c.IsCFETSEligible(),
 		})
 	}
 	return &pb.ListCurrenciesResponse{Currencies: out}, nil

@@ -82,7 +82,7 @@ func (v *XSDValidator) Validate(desc registry.Descriptor, raw []byte) Result {
 
 // BusinessRule defines a single RN_FX_* check.
 type BusinessRule struct {
-	Code string                                     // e.g. "RN_FX_001"
+	Code string                                      // e.g. "RN_FX_001"
 	Run  func(payload interface{}) (Violation, bool) // returns (violation, hasViolation)
 }
 

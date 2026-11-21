@@ -72,15 +72,15 @@ func (r *CycleRepo) FindByDate(ctx context.Context, tenantID uuid.UUID, business
 
 func (r *CycleRepo) scanOne(ctx context.Context, where string, args ...any) (*domain.CLSCycle, error) {
 	var (
-		id, tenantID       uuid.UUID
-		cycleDate          time.Time
-		status             string
-		openedAt           time.Time
-		pin1, pin2, pin3   time.Time
-		scheduledClose     time.Time
-		closedAtNullable   *time.Time
-		failureReason      string
-		version            int
+		id, tenantID     uuid.UUID
+		cycleDate        time.Time
+		status           string
+		openedAt         time.Time
+		pin1, pin2, pin3 time.Time
+		scheduledClose   time.Time
+		closedAtNullable *time.Time
+		failureReason    string
+		version          int
 	)
 	q := `SELECT cycle_id, tenant_id, cycle_date, status, opened_at,
 	             pin1_deadline, pin2_deadline, pin3_deadline, scheduled_close,

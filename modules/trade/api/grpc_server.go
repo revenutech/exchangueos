@@ -156,14 +156,14 @@ func parseTenant(t *pb.TenantContext) (uuid.UUID, error) {
 
 func toPB(t *domain.FXTrade) *pb.Trade {
 	return &pb.Trade{
-		TradeId:     t.ID().String(),
-		TenantId:    t.TenantID().String(),
-		ExternalRef: t.ExternalRef(),
-		Type:        pb.TradeType(pb.TradeType_value["TRADE_TYPE_"+string(t.Type())]),
-		Status:      pb.TradeStatus(pb.TradeStatus_value["TRADE_STATUS_"+string(t.Status())]),
-		Venue:       pb.SettlementVenue(pb.SettlementVenue_value["SETTLEMENT_VENUE_"+string(t.Venue())]),
-		Buyer:       &pb.Party{Bic: t.BuyerBIC()},
-		Seller:      &pb.Party{Bic: t.SellerBIC()},
+		TradeId:      t.ID().String(),
+		TenantId:     t.TenantID().String(),
+		ExternalRef:  t.ExternalRef(),
+		Type:         pb.TradeType(pb.TradeType_value["TRADE_TYPE_"+string(t.Type())]),
+		Status:       pb.TradeStatus(pb.TradeStatus_value["TRADE_STATUS_"+string(t.Status())]),
+		Venue:        pb.SettlementVenue(pb.SettlementVenue_value["SETTLEMENT_VENUE_"+string(t.Venue())]),
+		Buyer:        &pb.Party{Bic: t.BuyerBIC()},
+		Seller:       &pb.Party{Bic: t.SellerBIC()},
 		BoughtAmount: &pb.Money{Amount: t.BoughtAmount().String(), Currency: t.BoughtCurrency()},
 		SoldAmount:   &pb.Money{Amount: t.SoldAmount().String(), Currency: t.SoldCurrency()},
 		DealRate:     &pb.FxRate{Rate: t.DealRate().String(), BaseCcy: t.BoughtCurrency(), QuoteCcy: t.SoldCurrency()},

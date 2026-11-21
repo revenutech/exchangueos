@@ -15,8 +15,8 @@ import (
 // ─── CycleRepo ─────────────────────────────────────────────────────────────
 
 type CycleRepo struct {
-	mu       sync.RWMutex
-	byID     map[uuid.UUID]*domain.CLSCycle
+	mu        sync.RWMutex
+	byID      map[uuid.UUID]*domain.CLSCycle
 	byTenDate map[string]uuid.UUID // tenant:yyyy-mm-dd → cycle_id (uniqueness)
 }
 

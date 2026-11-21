@@ -48,17 +48,18 @@ Provisionar projeto GCP de produção + cluster GKE Autopilot + infra de apoio v
 - **1.20** `RTSK.024.1820.01` ✏️ `k6 run tests/load/k6-trade-book.js` contra staging atende SLO. *Aceite:* p95 trade-book < limite SLO. *Entrega:* relatório k6. *Escopo:* staging. *Espera:* gate — load. [registro](../registro/README.md)
 - **1.21** `RTSK.024.1821.01` ✏️ 1 canary rollout 10→30→60→100 com AnalysisTemplate Prometheus verde. *Aceite:* rollout completa sem rollback automático. *Entrega:* evento ArgoRollouts. *Escopo:* cluster de produção. *Depende:* `RTSK.024.1815.01`. *Espera:* gate — canary. [registro](../registro/README.md)
 - **1.22** `RTSK.024.1822.01` ✏️ CHAOS-01 + CHAOS-02 em staging via Litmus. *Aceite:* 2 experimentos completam sem derrubar SLO. *Entrega:* relatórios Litmus. *Escopo:* staging. *Depende:* `RTSK.024.1811.01`. *Espera:* gate — chaos. [registro](../registro/README.md)
-- **1.23** `RTSK.024.1823.01` ✏️ Drill de restore-from-backup + RTO/RPO medidos. *Aceite:* restore bem-sucedido em janela < RTO acordado. *Entrega:* relatório em `.audit-bundles/`. *Escopo:* DR. *Espera:* gate — DR drill. [registro](../registro/README.md)
+- **1.23** `RTSK.024.1823.01` ✏️ Drill de restore-from-backup + RTO/RPO medidos. *Aceite:* restore ≤ 30 min (RTO) e perda ≤ 1 min (RPO), 0 para liquidação aceita (ADR-038 classe 2). *Entrega:* relatório em `.audit-bundles/`. *Escopo:* DR. *Depende:* `RTSK.086.752.01`. *Espera:* gate — DR drill (alvo do ADR-038 `RADR.076.002.01`, Aceito em 2026-11-12). [registro](../registro/README.md)
 
 ### Etapa 1.5 — Handover operacional
 
 - **1.24** `RTSK.024.1824.01` ✏️ On-call enrolled em PagerDuty `exchangeos-api-prod`. *Aceite:* rotation configurada, 1 teste de alerta recebido. *Entrega:* configuração PagerDuty. *Escopo:* PagerDuty. *Espera:* dono — definição da rotation. [registro](../registro/README.md)
-- **1.25** `RTSK.024.1825.01` ✏️ Runbook index validado (todos os links resolvem). *Aceite:* verificador link-checker 0 falhas em `docs/operations/`. *Entrega:* evidência. *Escopo:* `docs/operations/`. *Espera:* sessão dona — validação. [registro](../registro/README.md)
+- **1.25** `RTSK.024.1825.01` ⬜ Runbook index validado (todos os links resolvem). *Aceite:* verificador link-checker 0 falhas em `docs/operations/`. *Entrega:* evidência. *Escopo:* `docs/operations/`. *Espera:* sessão dona — validação. [registro](../registro/README.md)
+- **1.27** `RTSK.024.1829.01` ✏️ Rodar de novo o link-checker de `docs/operations/` perto do go-live (a 1.25 roda agora, por decisão do dono em 2026-11-12). *Aceite:* 0 falhas na semana do go-live. *Entrega:* evidência. *Escopo:* `docs/operations/`. *Depende:* `RTSK.024.1825.01`. *Espera:* dono — data do go-live. [registro](../registro/README.md)
 - **1.26** `RTSK.024.1826.01` ✏️ Primeiro chaos day agendado + primeira revisão trimestral de custo + primeira revisão LGPD + primeiro DR drill. *Aceite:* 4 eventos no calendário com responsável. *Entrega:* convites de calendário. *Escopo:* calendário. *Espera:* dono — agenda. [registro](../registro/README.md)
 
 ## Fase 2 — Aceite
 
-- **2.1** `RTSK.024.1827.01` ✏️ Rodar aceite da MS. *Aceite:* todas as tarefas da Fase 1 cumpridas + `docs/operations/go-live-checklist.md` com todas as linhas ✅ assinadas + sistema serve 1 trade real. *Entrega:* `.audit-bundles/prod-bringup-YYYYMMDD/` completo + checklist. *Escopo:* módulo inteiro + produção. *Espera:* gate — rodada N2 + canary. [registro](../registro/README.md)
+- **2.1** `RTSK.024.1827.01` ✏️ Rodar aceite da MS. *Aceite:* todas as tarefas da Fase 1 cumpridas + `docs/operations/go-live-checklist.md` com todas as linhas ✅ assinadas + sistema serve 1 trade real. *Entrega:* `.audit-bundles/prod-bringup-YYYYMMDD/` completo + checklist. *Escopo:* módulo inteiro + produção. *Espera:* gate — rodada `lote` + canary. [registro](../registro/README.md)
 
 ## Fase 3 — Fechamento
 

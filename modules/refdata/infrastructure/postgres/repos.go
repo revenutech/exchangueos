@@ -43,9 +43,9 @@ func (r *CurrencyRepo) List(ctx context.Context, activeOnly bool) ([]*domain.Cur
 	out := make([]*domain.Currency, 0, 32)
 	for rows.Next() {
 		var (
-			code, name              string
-			minor                   int
-			cls, cfets, active      bool
+			code, name         string
+			minor              int
+			cls, cfets, active bool
 		)
 		if err := rows.Scan(&code, &name, &minor, &cls, &cfets, &active); err != nil {
 			return nil, fmt.Errorf("currencies.scan: %w", err)
@@ -60,8 +60,8 @@ func (r *CurrencyRepo) List(ctx context.Context, activeOnly bool) ([]*domain.Cur
 
 func (r *CurrencyRepo) Get(ctx context.Context, code string) (*domain.Currency, error) {
 	var (
-		name              string
-		minor             int
+		name               string
+		minor              int
 		cls, cfets, active bool
 	)
 	err := r.pool.QueryRow(ctx,
@@ -150,11 +150,11 @@ func NewSSIRepo(pool *pgxpool.Pool) *SSIRepo { return &SSIRepo{pool: pool} }
 
 func (r *SSIRepo) Find(ctx context.Context, tenantID uuid.UUID, cpBIC, currency string, atTime time.Time) (*domain.SSI, error) {
 	var (
-		id                            uuid.UUID
-		benBIC, intBIC                string
-		acct, iban                    string
-		validFrom, validTo            time.Time
-		hasValidTo                    bool
+		id                 uuid.UUID
+		benBIC, intBIC     string
+		acct, iban         string
+		validFrom, validTo time.Time
+		hasValidTo         bool
 	)
 	row := r.pool.QueryRow(ctx, `
 		SELECT ssi_id,

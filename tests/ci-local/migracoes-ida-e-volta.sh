@@ -124,13 +124,22 @@ checks pass || fails=$((fails + $?))
 echo "ok   up again: $n migrations"
 
 if [ -f tests/ci-local/migracoes/go-integracao.txt ]; then
-  while IFS= read -r pkg || [ -n "$pkg" ]; do
-    case "$pkg" in ''|'#'*) continue ;; esac
-    if EXCHANGEOS_TEST_DSN="$EXCHANGEOS_DB_DSN" go test -tags integration -count=1 -v "$pkg" > "$tmp/go.log" 2>&1 </dev/null \
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in ''|'#'*) continue ;; esac
+    # «<pkg>» or «<pkg> -run <regex>»: the filter is for packages that mix DB tests with tests of the live server.
+    read -r pkg run <<< "$line"
+    run_args=()
+    if [ -n "$run" ]; then
+      case "$run" in "-run "*) run_args=(-run "${run#-run }") ;; *) echo "FAIL go-integracao.txt: «$line»"; fails=$((fails + 1)); continue ;; esac
+    fi
+    if EXCHANGEOS_TEST_DSN="$EXCHANGEOS_DB_DSN" go test -tags integration -count=1 -v ${run_args[@]+"${run_args[@]}"} "$pkg" > "$tmp/go.log" 2>&1 </dev/null \
       && grep -q -- '--- PASS' "$tmp/go.log" && ! grep -q -- '--- SKIP' "$tmp/go.log"; then
+      # The go test -v result lines go to stdout: the driver counts them on a banco step (MS-023 1.39, item 13).
+      grep -E -- '^(=== RUN|--- (PASS|FAIL|SKIP)|ok |FAIL|PASS$)' "$tmp/go.log"
       echo "ok   go integration: $pkg ($(grep -c -- '--- PASS' "$tmp/go.log") passed)"
     else
-      echo "FAIL go integration: $pkg"; grep -E -- '--- (FAIL|SKIP)|Error|error' "$tmp/go.log" | head -30; tail -5 "$tmp/go.log"
+      # The whole go.log (bounded): testify puts the database message on the line after «Error:», which a filter loses.
+      echo "FAIL go integration: $pkg"; head -400 "$tmp/go.log"
       fails=$((fails + 1))
     fi
   done < tests/ci-local/migracoes/go-integracao.txt
