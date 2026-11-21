@@ -18,10 +18,10 @@ type FXTradeAmendmentConfirmationV05 struct {
 	TradingSideIdentification      SideIdentification `xml:"TradgSdIdr"`
 	CounterpartySideIdentification SideIdentification `xml:"CtrPtySdIdr"`
 
-	AmendedTradeDate   ISODate       `xml:"AmddTradDt"`
-	AmendedValueDate   ISODate       `xml:"AmddValDt"`
-	AmendedTradedAmts  TradedAmounts `xml:"AmddTraddAmts"`
-	AmendedAgreedRate  AgreedRate    `xml:"AmddAgrdRate"`
+	AmendedTradeDate  ISODate       `xml:"AmddTradDt"`
+	AmendedValueDate  ISODate       `xml:"AmddValDt"`
+	AmendedTradedAmts TradedAmounts `xml:"AmddTraddAmts"`
+	AmendedAgreedRate AgreedRate    `xml:"AmddAgrdRate"`
 
 	// Amendment metadata.
 	AmendmentReason string      `xml:"AmdmntRsn,omitempty"`

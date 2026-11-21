@@ -81,6 +81,7 @@ Mapping each milestone to the gap it closes from the v4.19.0 honesty review:
 | MS-024l | CRDB Hub TLS Cross-repo PR | PR never opened |
 | MS-024m | Production Deployment | GKE + Litmus + Chaos Mesh + ArgoCD never live |
 | MS-024n | Vuln-fix: `klauspost/compress` GO-2026-6865 | indirect bump v1.17.9 → v1.20.2 (DELIVERED 2026-11-08) |
+| MS-024o | Publicador de taxa (`cambio.taxa_publicada`) | no rate event for treasuryos MS-016 2.3 (RMLS.024.020.01, 2026-11-12) |
 
 ### MS-023 file inventory (in `delivered/`)
 
@@ -136,6 +137,7 @@ Mapping each milestone to the gap it closes from the v4.19.0 honesty review:
 | backlog/ | MS-024k | `MS-024k-pattern-catalogue-buildout.md` |
 | backlog/ | MS-024l | `MS-024l-crdb-hub-cross-repo-pr.md` |
 | backlog/ | MS-024m | `MS-024m-production-deployment.md` |
+| backlog/ | MS-024o | `MS-024o-publicador-de-taxa.md` |
 
 ## MS-024 sprint plan (suggested)
 

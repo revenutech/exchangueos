@@ -31,8 +31,8 @@ const (
 // owns the audit trail and the outbox event — see docs/security/data-
 // lifecycle/erasure-workflow.md Stage 3 for the rationale.
 type PgxAudit struct {
-	pool            *pgxpool.Pool
-	operatorTenant  uuid.UUID
+	pool           *pgxpool.Pool
+	operatorTenant uuid.UUID
 }
 
 // NewPgxAudit constructs the adapter. operatorTenant is the tenant_id of the

@@ -72,12 +72,12 @@ func NewScreeningResult(in NewScreeningInput) (*ScreeningResult, error) {
 }
 
 // Accessors
-func (s *ScreeningResult) ID() uuid.UUID            { return s.id }
-func (s *ScreeningResult) TenantID() uuid.UUID      { return s.tenantID }
-func (s *ScreeningResult) CounterpartyBIC() string  { return s.counterpartyBIC }
-func (s *ScreeningResult) LEI() string              { return s.lei }
-func (s *ScreeningResult) Hits() []string           { return append([]string(nil), s.hits...) }
-func (s *ScreeningResult) RiskLevel() RiskLevel     { return s.riskLevel }
-func (s *ScreeningResult) ScreenedAt() time.Time    { return s.screenedAt }
-func (s *ScreeningResult) IsClear() bool            { return s.riskLevel == RiskLow }
-func (s *ScreeningResult) RequiresCOS() bool        { return s.riskLevel == RiskHigh }
+func (s *ScreeningResult) ID() uuid.UUID           { return s.id }
+func (s *ScreeningResult) TenantID() uuid.UUID     { return s.tenantID }
+func (s *ScreeningResult) CounterpartyBIC() string { return s.counterpartyBIC }
+func (s *ScreeningResult) LEI() string             { return s.lei }
+func (s *ScreeningResult) Hits() []string          { return append([]string(nil), s.hits...) }
+func (s *ScreeningResult) RiskLevel() RiskLevel    { return s.riskLevel }
+func (s *ScreeningResult) ScreenedAt() time.Time   { return s.screenedAt }
+func (s *ScreeningResult) IsClear() bool           { return s.riskLevel == RiskLow }
+func (s *ScreeningResult) RequiresCOS() bool       { return s.riskLevel == RiskHigh }

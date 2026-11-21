@@ -1,8 +1,9 @@
 // cmd/erasure-worker — LGPD Art. 18 IV right-to-erasure executor.
 //
 // Usage:
-//   erasure-worker --ticket LGPD-2026-0001 --plan plan.yaml --dry-run
-//   erasure-worker --ticket LGPD-2026-0001 --plan plan.yaml --execute
+//
+//	erasure-worker --ticket LGPD-2026-0001 --plan plan.yaml --dry-run
+//	erasure-worker --ticket LGPD-2026-0001 --plan plan.yaml --execute
 //
 // --dry-run prints the SQL each operation would issue + the affected row count
 // per the WHERE clause, WITHOUT mutating data. Safe to run any time.
@@ -36,7 +37,8 @@ import (
 )
 
 // Required approver roles for --execute. Matches the AC for MS-024a:
-//   EXCHANGEOS_ERASURE_APPROVERS=dpo,compliance_officer
+//
+//	EXCHANGEOS_ERASURE_APPROVERS=dpo,compliance_officer
 const (
 	roleDPO        = "dpo"
 	roleCompliance = "compliance_officer"

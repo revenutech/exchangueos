@@ -13,12 +13,12 @@ import (
 )
 
 type Config struct {
-	Env     string
-	HTTP    HTTPConfig
-	GRPC    GRPCConfig
-	DB      DBConfig
-	OTel    OTelConfig
-	Repos   ReposConfig
+	Env   string
+	HTTP  HTTPConfig
+	GRPC  GRPCConfig
+	DB    DBConfig
+	OTel  OTelConfig
+	Repos ReposConfig
 }
 
 // ReposConfig selects the repository backend (memory bootstrap vs postgres).
@@ -44,9 +44,9 @@ type DBConfig struct {
 }
 
 type OTelConfig struct {
-	Endpoint   string // OTLP gRPC endpoint
-	Sampling   float64
-	Insecure   bool
+	Endpoint string // OTLP gRPC endpoint
+	Sampling float64
+	Insecure bool
 }
 
 // Load reads configuration. Order: process env > .env (if exists) > defaults.

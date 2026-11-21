@@ -10,18 +10,18 @@ import (
 
 // Record is one row of the outbox_events table.
 type Record struct {
-	OutboxID       uuid.UUID
-	TenantID       uuid.UUID
-	AggregateType  string
-	AggregateID    uuid.UUID
-	EventName      string
-	EventPayload   []byte // JSONB
-	Topic          string
-	PartitionKey   string
-	OccurredAt     time.Time
-	DispatchedAt   time.Time
-	AttemptCount   int
-	LastError      string
+	OutboxID      uuid.UUID
+	TenantID      uuid.UUID
+	AggregateType string
+	AggregateID   uuid.UUID
+	EventName     string
+	EventPayload  []byte // JSONB
+	Topic         string
+	PartitionKey  string
+	OccurredAt    time.Time
+	DispatchedAt  time.Time
+	AttemptCount  int
+	LastError     string
 }
 
 // Store persists outbox rows transactionally and is used by:

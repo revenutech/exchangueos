@@ -82,14 +82,14 @@ func NewSSI(in NewSSIInput) (*SSI, error) {
 	}, nil
 }
 
-func (s *SSI) ID() uuid.UUID            { return s.id }
-func (s *SSI) TenantID() uuid.UUID      { return s.tenantID }
-func (s *SSI) Currency() string         { return s.currency }
-func (s *SSI) CounterpartyBIC() string  { return s.counterpartyBIC }
-func (s *SSI) BeneficiaryBIC() string   { return s.beneficiaryBIC }
-func (s *SSI) IntermediaryBIC() string  { return s.intermediaryBIC }
-func (s *SSI) AccountNumber() string    { return s.accountNumber }
-func (s *SSI) IBAN() string             { return s.iban }
+func (s *SSI) ID() uuid.UUID           { return s.id }
+func (s *SSI) TenantID() uuid.UUID     { return s.tenantID }
+func (s *SSI) Currency() string        { return s.currency }
+func (s *SSI) CounterpartyBIC() string { return s.counterpartyBIC }
+func (s *SSI) BeneficiaryBIC() string  { return s.beneficiaryBIC }
+func (s *SSI) IntermediaryBIC() string { return s.intermediaryBIC }
+func (s *SSI) AccountNumber() string   { return s.accountNumber }
+func (s *SSI) IBAN() string            { return s.iban }
 
 // IsActiveAt reports whether the SSI is valid at the given instant.
 func (s *SSI) IsActiveAt(t time.Time) bool {

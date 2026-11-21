@@ -4,7 +4,6 @@ package exchangeos.v1;
 
 option go_package = "github.com/revenutech/exchangeos/proto/gen/exchangeos/v1;exchangeosv1";
 
-import "google/protobuf/timestamp.proto";
 import "exchangeos/v1/common.proto";
 
 // RiskService — pre-trade limit checks + intraday exposure tracking.

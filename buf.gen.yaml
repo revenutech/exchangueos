@@ -7,10 +7,11 @@ managed:
       value: github.com/revenutech/exchangeos/proto/gen
 
 plugins:
-  - remote: buf.build/protocolbuffers/go
+  # Plugins locais, versões fixas no CI (MS-024i 1.32): o remoto do BSR, sem login, devolve «too many requests».
+  - local: protoc-gen-go
     out: proto/gen
     opt: paths=source_relative
-  - remote: buf.build/grpc/go
+  - local: protoc-gen-go-grpc
     out: proto/gen
     opt:
       - paths=source_relative

@@ -14,9 +14,9 @@ import (
 
 // Config parameterises the Publisher.
 type Config struct {
-	Brokers   []string      // bootstrap brokers (e.g. ["kafka-0:9092", "kafka-1:9092"])
-	ClientID  string        // GroupId-style identifier reported to broker (e.g. "exchangeos-worker")
-	Timeout   time.Duration // per-publish deadline (default 10s)
+	Brokers  []string      // bootstrap brokers (e.g. ["kafka-0:9092", "kafka-1:9092"])
+	ClientID string        // GroupId-style identifier reported to broker (e.g. "exchangeos-worker")
+	Timeout  time.Duration // per-publish deadline (default 10s)
 }
 
 // Publisher implements outbox.Publisher.
