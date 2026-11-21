@@ -2,6 +2,7 @@ package sanctions
 
 import (
 	"cmp"
+	"context"
 	"fmt"
 	"math/bits"
 	"slices"
@@ -39,16 +40,29 @@ const blockLen = 3
 // «FAKERTON, Zebulon» meets «Zebulon Fakerton»); an entry scores its best name.
 //
 // Load builds the next snapshot aside and swaps it in one atomic store; Match reads whichever snapshot is current,
-// without locks. The zero value is an empty cache ready for use.
+// without locks. The zero value is an empty cache ready for use, with no hit audit.
+//
+// Every entry Match scores is audited through the cache's HitAuditor (see audit.go): in detail at or above MinScore,
+// as an aggregate below it. Without an auditor nothing is audited.
 type Cache struct {
-	mu   sync.Mutex // serialises Load
-	snap atomic.Pointer[snapshot]
+	mu      sync.Mutex // serialises Load
+	snap    atomic.Pointer[snapshot]
+	auditor HitAuditor // set at construction only; nil means NopHitAuditor
 }
 
-var _ Index = (*Cache)(nil)
+var (
+	_ Index          = (*Cache)(nil)
+	_ contextMatcher = (*Cache)(nil)
+)
 
 // NewCache returns an empty cache.
-func NewCache() *Cache { return &Cache{} }
+func NewCache(opts ...CacheOption) *Cache {
+	c := &Cache{}
+	for _, o := range opts {
+		o(c)
+	}
+	return c
+}
 
 type variant struct {
 	norm, sorted []rune
@@ -191,11 +205,28 @@ func blockKeys(t []rune) []string {
 	return []string{"<" + string(t[:blockLen]), ">" + string(t[len(t)-blockLen:])}
 }
 
-// Match returns the entries whose similarity to q reaches q.MinScore, best first, ties by source then entry id.
-// When q.Country is set, entries listing countries must list it; entries without countries always pass.
+// Match is MatchContext without a context. With an auditor wired it always fails with ErrHitAudit (no tenant to
+// audit under), so it is not a production path then; it serves the no-op default.
 func (c *Cache) Match(q MatchQuery) ([]Match, error) {
+	return c.MatchContext(context.Background(), q)
+}
+
+// MatchContext returns the entries whose similarity to q reaches q.MinScore, best first, ties by source then entry
+// id. When q.Country is set, entries listing countries must list it; entries without countries always pass.
+//
+// With an auditor, ctx must carry a HitScope with a tenant (WithHitScope), or MatchContext fails with ErrHitAudit
+// before scoring. The scored entries are then audited as one HitBatch: detail for those at or above q.MinScore, an
+// aggregate for those below. If the auditor fails, MatchContext returns no matches and an error wrapping ErrHitAudit.
+func (c *Cache) MatchContext(ctx context.Context, q MatchQuery) ([]Match, error) {
 	if err := q.Validate(); err != nil {
 		return nil, err
+	}
+	var scope HitScope
+	if c.auditor != nil {
+		var err error
+		if scope, err = auditScope(ctx); err != nil {
+			return nil, err
+		}
 	}
 	toks := strings.Fields(normalize(q.Name))
 	if len(toks) == 0 {
@@ -250,14 +281,16 @@ func (c *Cache) Match(q MatchQuery) ([]Match, error) {
 			best[p.entry] = score
 		}
 	}
-	var out []Match
-	for e, score := range best {
-		if score >= q.MinScore {
-			ce := &s.entries[e]
-			out = append(out, Match{Source: ce.source, EntryID: ce.id, Name: ce.name, Score: score})
-		}
+	if len(best) == 0 {
+		return nil, nil
 	}
-	slices.SortFunc(out, func(a, b Match) int {
+	// scored holds every scored entry, sub-threshold included; sorted best first, the matches are its prefix.
+	scored := make([]Match, 0, len(best))
+	for e, score := range best {
+		ce := &s.entries[e]
+		scored = append(scored, Match{Source: ce.source, EntryID: ce.id, Name: ce.name, Score: score})
+	}
+	slices.SortFunc(scored, func(a, b Match) int {
 		if c := cmp.Compare(b.Score, a.Score); c != 0 {
 			return c
 		}
@@ -266,5 +299,34 @@ func (c *Cache) Match(q MatchQuery) ([]Match, error) {
 		}
 		return cmp.Compare(a.EntryID, b.EntryID)
 	})
-	return out, nil
+	n := 0
+	for n < len(scored) && scored[n].Score >= q.MinScore {
+		n++
+	}
+	if err := c.audit(ctx, scope, q.MinScore, scored[:n], scored[n:]); err != nil {
+		return nil, err
+	}
+	if n == 0 {
+		return nil, nil
+	}
+	return slices.Clip(scored[:n]), nil
+}
+
+// audit hands one HitBatch to the auditor: detail for the matches, only the count and best score for the entries
+// below the threshold (below is sorted best first). The query name is never passed on.
+func (c *Cache) audit(ctx context.Context, scope HitScope, minScore float64, matches, below []Match) error {
+	if c.auditor == nil {
+		return nil
+	}
+	b := HitBatch{Scope: scope, MinScore: minScore, Hits: make([]Hit, len(matches))}
+	for i, m := range matches {
+		b.Hits[i] = Hit{Source: m.Source, EntryID: m.EntryID, Score: m.Score}
+	}
+	if len(below) > 0 {
+		b.BelowThreshold = SubThreshold{Count: len(below), BestScore: below[0].Score}
+	}
+	if err := c.auditor.RecordHits(ctx, b); err != nil {
+		return fmt.Errorf("%w: %w", ErrHitAudit, err)
+	}
+	return nil
 }
