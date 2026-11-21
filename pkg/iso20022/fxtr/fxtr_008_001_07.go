@@ -19,9 +19,9 @@ type FXTradeNotificationV07 struct {
 	CounterpartySideIdentification SideIdentification `xml:"CtrPtySdIdr"`
 
 	// Settlement queue context.
-	QueuedAt        ISODateTime `xml:"QudDtTm"`
-	CLSCycleID      string      `xml:"ClsCyclId,omitempty"` // YYYY-MM-DD-NNN
-	SettlementDate  ISODate     `xml:"SttlmDt"`
+	QueuedAt       ISODateTime `xml:"QudDtTm"`
+	CLSCycleID     string      `xml:"ClsCyclId,omitempty"` // YYYY-MM-DD-NNN
+	SettlementDate ISODate     `xml:"SttlmDt"`
 
 	// Optional reason if the notification carries a status (otherwise SUCCESS implicit).
 	StatusReason string `xml:"StsRsn,omitempty"`

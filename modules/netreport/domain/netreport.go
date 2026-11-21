@@ -12,15 +12,15 @@ import (
 // NetReport summarises CLS netting for a (cycle, currency) pair. Aligned with
 // the line-level model of camt.088.001.02.
 type NetReport struct {
-	id             uuid.UUID
-	tenantID       uuid.UUID
-	cycleID        uuid.UUID
-	currency       string
-	grossPayIn     decimal.Decimal
-	grossPayOut    decimal.Decimal
-	netSettlement  decimal.Decimal
-	tradeCount     int
-	generatedAt    time.Time
+	id            uuid.UUID
+	tenantID      uuid.UUID
+	cycleID       uuid.UUID
+	currency      string
+	grossPayIn    decimal.Decimal
+	grossPayOut   decimal.Decimal
+	netSettlement decimal.Decimal
+	tradeCount    int
+	generatedAt   time.Time
 }
 
 // NewNetReportInput parameterises construction.
@@ -66,15 +66,15 @@ func NewNetReport(in NewNetReportInput) (*NetReport, error) {
 	}, nil
 }
 
-func (n *NetReport) ID() uuid.UUID                { return n.id }
-func (n *NetReport) TenantID() uuid.UUID          { return n.tenantID }
-func (n *NetReport) CycleID() uuid.UUID           { return n.cycleID }
-func (n *NetReport) Currency() string             { return n.currency }
-func (n *NetReport) GrossPayIn() decimal.Decimal  { return n.grossPayIn }
-func (n *NetReport) GrossPayOut() decimal.Decimal { return n.grossPayOut }
+func (n *NetReport) ID() uuid.UUID                  { return n.id }
+func (n *NetReport) TenantID() uuid.UUID            { return n.tenantID }
+func (n *NetReport) CycleID() uuid.UUID             { return n.cycleID }
+func (n *NetReport) Currency() string               { return n.currency }
+func (n *NetReport) GrossPayIn() decimal.Decimal    { return n.grossPayIn }
+func (n *NetReport) GrossPayOut() decimal.Decimal   { return n.grossPayOut }
 func (n *NetReport) NetSettlement() decimal.Decimal { return n.netSettlement }
-func (n *NetReport) TradeCount() int              { return n.tradeCount }
-func (n *NetReport) GeneratedAt() time.Time       { return n.generatedAt }
+func (n *NetReport) TradeCount() int                { return n.tradeCount }
+func (n *NetReport) GeneratedAt() time.Time         { return n.generatedAt }
 
 // IsReceivable reports whether net settlement is positive (counterparty owes the tenant).
 func (n *NetReport) IsReceivable() bool { return n.netSettlement.IsPositive() }

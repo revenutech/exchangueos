@@ -64,13 +64,13 @@ func (r *TradeRepo) Save(ctx context.Context, t *domain.FXTrade) error {
 
 func (r *TradeRepo) Get(ctx context.Context, id uuid.UUID) (*domain.FXTrade, error) {
 	var (
-		tenantID                    uuid.UUID
-		externalRef                 string
-		tradeType, status, venue    string
-		buyerBIC, sellerBIC         string
-		boughtCcy, soldCcy          string
-		boughtAmt, soldAmt, rate    decimal.Decimal
-		tradeDate, valueDate        time.Time
+		tenantID                 uuid.UUID
+		externalRef              string
+		tradeType, status, venue string
+		buyerBIC, sellerBIC      string
+		boughtCcy, soldCcy       string
+		boughtAmt, soldAmt, rate decimal.Decimal
+		tradeDate, valueDate     time.Time
 	)
 	err := r.pool.QueryRow(ctx, `
 		SELECT t.tenant_id,
@@ -145,13 +145,13 @@ func (r *TradeRepo) List(ctx context.Context, tenantID uuid.UUID, status domain.
 	var out []*domain.FXTrade
 	for rows.Next() {
 		var (
-			id, tenant                  uuid.UUID
-			externalRef                 string
-			tradeType, st, venue        string
-			buyerBIC, sellerBIC         string
-			boughtCcy, soldCcy          string
-			boughtAmt, soldAmt, rate    decimal.Decimal
-			tradeDate, valueDate        time.Time
+			id, tenant               uuid.UUID
+			externalRef              string
+			tradeType, st, venue     string
+			buyerBIC, sellerBIC      string
+			boughtCcy, soldCcy       string
+			boughtAmt, soldAmt, rate decimal.Decimal
+			tradeDate, valueDate     time.Time
 		)
 		if err := rows.Scan(
 			&id, &tenant, &externalRef,

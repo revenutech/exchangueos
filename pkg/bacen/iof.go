@@ -20,12 +20,12 @@ import (
 //
 // Source: Receita Federal Decreto 12.499/2025 + Receita interpretation notes.
 const (
-	IOFExport      = "0.0000"
-	IOFDefault     = "0.0038"
-	IOFTravelCash  = "0.0110"
-	IOFLoan        = "0.0638"
-	IOFCreditCard  = "0.0110"
-	IOFInsurance   = "0.0625"
+	IOFExport     = "0.0000"
+	IOFDefault    = "0.0038"
+	IOFTravelCash = "0.0110"
+	IOFLoan       = "0.0638"
+	IOFCreditCard = "0.0110"
+	IOFInsurance  = "0.0625"
 )
 
 // ErrUnknown signals that no rule matched.
@@ -40,16 +40,16 @@ type IOFCalculator struct {
 // Override / extend via `extra`.
 func NewIOFCalculator(extra ...map[string]decimal.Decimal) *IOFCalculator {
 	rates := map[string]decimal.Decimal{
-		"EXPORT":           decimal.RequireFromString(IOFExport),
-		"DEFAULT":          decimal.RequireFromString(IOFDefault),
-		"REMESSA":          decimal.RequireFromString(IOFDefault),
-		"IMPORT":           decimal.RequireFromString(IOFDefault),
-		"TRAVEL_CASH":      decimal.RequireFromString(IOFTravelCash),
-		"TRAVEL_CARD":      decimal.RequireFromString(IOFTravelCash),
-		"CREDIT_CARD":      decimal.RequireFromString(IOFCreditCard),
-		"LOAN_SHORT":       decimal.RequireFromString(IOFLoan),
+		"EXPORT":            decimal.RequireFromString(IOFExport),
+		"DEFAULT":           decimal.RequireFromString(IOFDefault),
+		"REMESSA":           decimal.RequireFromString(IOFDefault),
+		"IMPORT":            decimal.RequireFromString(IOFDefault),
+		"TRAVEL_CASH":       decimal.RequireFromString(IOFTravelCash),
+		"TRAVEL_CARD":       decimal.RequireFromString(IOFTravelCash),
+		"CREDIT_CARD":       decimal.RequireFromString(IOFCreditCard),
+		"LOAN_SHORT":        decimal.RequireFromString(IOFLoan),
 		"INSURANCE_FOREIGN": decimal.RequireFromString(IOFInsurance),
-		"INVESTMENT":       decimal.RequireFromString(IOFDefault),
+		"INVESTMENT":        decimal.RequireFromString(IOFDefault),
 	}
 	for _, m := range extra {
 		for k, v := range m {
