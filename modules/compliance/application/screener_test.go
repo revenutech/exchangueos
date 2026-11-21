@@ -156,7 +156,7 @@ func TestRN_FX_039_ScreenCounterparty_HitOrdering(t *testing.T) {
 				nil, nil,
 				[]sanctions.Match{hit(sanctions.SourceCOAF, "z", 0.9)},
 			),
-			want: []string{"COAF:z", "OFAC:a", "OFAC:b"},
+			want: []string{"COAF:z", hitOFACA, "OFAC:b"},
 		},
 		{
 			name: "a duplicate entry keeps its best score",

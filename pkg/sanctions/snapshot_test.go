@@ -12,13 +12,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// shipName is the synthetic entity name the snapshot tests match against.
+const shipName = "Mardok Shipping"
+
 var snapTime = time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC)
 
 func snapEntries() []Entry {
 	return []Entry{
 		{Source: SourceOFAC, ID: "990001", Name: "Elvaro QUINTESSA", Aliases: []string{"QUINTESSA"}, Kind: KindIndividual,
 			Countries: []string{"CO"}, Programs: []string{"SDNTK"}},
-		{Source: SourceOFAC, ID: "990002", Name: "Mardok Shipping", Kind: KindEntity},
+		{Source: SourceOFAC, ID: "990002", Name: shipName, Kind: KindEntity},
 	}
 }
 
@@ -141,7 +144,7 @@ func TestReadSnapshot_LoadsIntoCache(t *testing.T) {
 	c := NewCache()
 	require.NoError(t, c.Load(snap.Entries))
 	assert.Equal(t, 2, c.Len())
-	hits, err := c.Match(MatchQuery{Name: "Mardok Shipping", MinScore: 0.9})
+	hits, err := c.Match(MatchQuery{Name: shipName, MinScore: 0.9})
 	require.NoError(t, err)
 	require.NotEmpty(t, hits)
 	assert.Equal(t, "990002", hits[0].EntryID)

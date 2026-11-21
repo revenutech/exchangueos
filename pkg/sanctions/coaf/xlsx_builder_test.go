@@ -73,12 +73,15 @@ func colLetters(i int) string {
 	return s
 }
 
+// partSharedStrings is the archive path of the shared-strings part.
+const partSharedStrings = "xl/sharedStrings.xml"
+
 // sheetParts renders rows into the sheet and shared-strings parts.
 func sheetParts(rows [][]string) (sheet, sst string) {
 	var strs []string
 	index := map[string]int{}
 	var sb strings.Builder
-	sb.WriteString(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` + "\n" +
+	_, _ = sb.WriteString(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` + "\n" +
 		`<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>`)
 	for r, row := range rows {
 		fmt.Fprintf(&sb, `<row r="%d">`, r+1)
@@ -101,16 +104,16 @@ func sheetParts(rows [][]string) (sheet, sst string) {
 				fmt.Fprintf(&sb, `<c r="%s" t="s"><v>%d</v></c>`, ref, i)
 			}
 		}
-		sb.WriteString(`</row>`)
+		_, _ = sb.WriteString(`</row>`)
 	}
-	sb.WriteString(`</sheetData></worksheet>`)
+	_, _ = sb.WriteString(`</sheetData></worksheet>`)
 	var ss strings.Builder
 	fmt.Fprintf(&ss, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`+"\n"+
 		`<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="%d" uniqueCount="%d">`, len(strs), len(strs))
 	for _, s := range strs {
 		fmt.Fprintf(&ss, `<si><t xml:space="preserve">%s</t></si>`, esc(s))
 	}
-	ss.WriteString(`</sst>`)
+	_, _ = ss.WriteString(`</sst>`)
 	return sb.String(), ss.String()
 }
 
@@ -123,7 +126,7 @@ func xlsxParts(rows [][]string) []part {
 		{"xl/workbook.xml", workbookXML},
 		{"xl/_rels/workbook.xml.rels", workbookRels},
 		{"xl/worksheets/sheet1.xml", sheet},
-		{"xl/sharedStrings.xml", sst},
+		{partSharedStrings, sst},
 	}
 }
 

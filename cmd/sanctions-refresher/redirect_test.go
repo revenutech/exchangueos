@@ -91,7 +91,7 @@ func TestHTTPFetch_RedirectPolicy(t *testing.T) {
 func TestCheckRedirect(t *testing.T) {
 	t.Parallel()
 	mk := func(raw string) *http.Request {
-		r, err := http.NewRequest(http.MethodGet, raw, nil)
+		r, err := http.NewRequestWithContext(t.Context(), http.MethodGet, raw, nil)
 		require.NoError(t, err)
 		return r
 	}
@@ -132,7 +132,7 @@ func TestNewHTTPClient_RedirectPolicyWired(t *testing.T) {
 	t.Parallel()
 	c := newHTTPClient(time.Minute)
 	require.NotNil(t, c.CheckRedirect)
-	req, err := http.NewRequest(http.MethodGet, "http://cdn.example.test/", nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://cdn.example.test/", nil)
 	require.NoError(t, err)
 	require.ErrorIs(t, c.CheckRedirect(req, nil), errInsecureRedirect)
 }

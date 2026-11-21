@@ -27,7 +27,7 @@ func TestStripURL_KeepsSentinelDropsURL(t *testing.T) {
 	t.Parallel()
 	const target = "http://mirror.example.test/fsf.csv?token=s3cr3t-token"
 	for _, sentinel := range []error{errInsecureRedirect, errTooManyRedirects} {
-		ue := &url.Error{Op: "Get", URL: target, Err: sentinel}
+		ue := &url.Error{Op: urlOpGet, URL: target, Err: sentinel}
 		err := fmt.Errorf("%w: eu: download: %w", errUpstream, stripURL(ue))
 		require.ErrorIs(t, err, sentinel)
 		assert.NotContains(t, err.Error(), "mirror.example.test")
