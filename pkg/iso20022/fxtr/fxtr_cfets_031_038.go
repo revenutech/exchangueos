@@ -23,17 +23,17 @@ import "encoding/xml"
 
 // CFETSTradeIdentification — CFETS uses its own deal id alongside the submitter's ref.
 type CFETSTradeIdentification struct {
-	CFETSDealID    string      `xml:"CfetDealId"`           // 16-char CFETS deal id
-	SubmitterRef   string      `xml:"SubmRef,omitempty"`
-	CapturedAt     ISODateTime `xml:"CaptrDtTm,omitempty"`
+	CFETSDealID  string      `xml:"CfetDealId"` // 16-char CFETS deal id
+	SubmitterRef string      `xml:"SubmRef,omitempty"`
+	CapturedAt   ISODateTime `xml:"CaptrDtTm,omitempty"`
 }
 
 // CFETSEconomics — common trade economics block.
 type CFETSEconomics struct {
-	TradeDate   ISODate     `xml:"TradDt"`
-	ValueDate   ISODate     `xml:"ValDt"`
-	TradedAmts  TradedAmounts `xml:"TraddAmts"`
-	AgreedRate  AgreedRate    `xml:"AgrdRate"`
+	TradeDate  ISODate       `xml:"TradDt"`
+	ValueDate  ISODate       `xml:"ValDt"`
+	TradedAmts TradedAmounts `xml:"TraddAmts"`
+	AgreedRate AgreedRate    `xml:"AgrdRate"`
 }
 
 // ─── fxtr.031.001.02 — Trade Capture Request ───────────────────────────────
@@ -63,10 +63,10 @@ const (
 type FXTradeCaptureAck032V02 struct {
 	XMLName xml.Name `xml:"urn:iso:std:iso:20022:tech:xsd:fxtr.032.001.02 FXTradCaptrAck"`
 
-	TradeID        CFETSTradeIdentification `xml:"TradId"`
-	Status         CFETSAckStatus           `xml:"Sts"`
-	StatusReason   string                   `xml:"StsRsn,omitempty"`
-	AckAt          ISODateTime              `xml:"AckDtTm"`
+	TradeID      CFETSTradeIdentification `xml:"TradId"`
+	Status       CFETSAckStatus           `xml:"Sts"`
+	StatusReason string                   `xml:"StsRsn,omitempty"`
+	AckAt        ISODateTime              `xml:"AckDtTm"`
 }
 
 // ─── fxtr.033.001.02 — Trade Capture Notification ──────────────────────────
@@ -103,11 +103,11 @@ const Namespace035 = "urn:iso:std:iso:20022:tech:xsd:fxtr.035.001.02"
 type FXTradeConfirmation035V02 struct {
 	XMLName xml.Name `xml:"urn:iso:std:iso:20022:tech:xsd:fxtr.035.001.02 FXTradConf"`
 
-	TradeID    CFETSTradeIdentification `xml:"TradId"`
-	Trading    SideIdentification       `xml:"TradgSdIdr"`
-	Counterp   SideIdentification       `xml:"CtrPtySdIdr"`
-	Econ       CFETSEconomics           `xml:"Econs"`
-	ConfirmedAt ISODateTime             `xml:"ConfDtTm"`
+	TradeID     CFETSTradeIdentification `xml:"TradId"`
+	Trading     SideIdentification       `xml:"TradgSdIdr"`
+	Counterp    SideIdentification       `xml:"CtrPtySdIdr"`
+	Econ        CFETSEconomics           `xml:"Econs"`
+	ConfirmedAt ISODateTime              `xml:"ConfDtTm"`
 }
 
 // ─── fxtr.036.001.02 — Trade Confirmation Status ───────────────────────────
@@ -125,10 +125,10 @@ const (
 type FXTradeConfirmationStatus036V02 struct {
 	XMLName xml.Name `xml:"urn:iso:std:iso:20022:tech:xsd:fxtr.036.001.02 FXTradConfSts"`
 
-	TradeID       CFETSTradeIdentification `xml:"TradId"`
-	Status        CFETSConfStatus          `xml:"Sts"`
-	StatusReason  string                   `xml:"StsRsn,omitempty"`
-	StatusAt      ISODateTime              `xml:"StsDtTm"`
+	TradeID      CFETSTradeIdentification `xml:"TradId"`
+	Status       CFETSConfStatus          `xml:"Sts"`
+	StatusReason string                   `xml:"StsRsn,omitempty"`
+	StatusAt     ISODateTime              `xml:"StsDtTm"`
 }
 
 // ─── fxtr.037.001.02 — Trade Amendment ─────────────────────────────────────

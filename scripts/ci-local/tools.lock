@@ -1,0 +1,11 @@
+# Ferramentas do CI local (RFLW.070.004). Pinadas por versão E sha256 — RN_CI_001 vale aqui também.
+# Atualizar: novo release do nektos/act → checksums.txt do release → as quatro linhas abaixo.
+ACT_VERSION=0.2.89
+ACT_SHA256_Darwin_arm64=48ae218af96725f7635a66de2b87e1e346893b02add0f16b92f560296b2151fc
+ACT_SHA256_Darwin_x86_64=41b31488e7c254baec31cce12c7dade3e35973b8a31b9486206ad43f233d814e
+ACT_SHA256_Linux_arm64=daa8679ba9615a74d2d0cec321dc593f21948a2a11bb65862b063d8b930f4bcb
+ACT_SHA256_Linux_x86_64=0191d6f1f3b716b5c55820032605d05fc3c1cdbf581ebeff655019e5dd1524c0
+# Imagem que faz o papel do runner `ubuntu-26.04` do GitHub — digest do ÍNDICE multi-arquitetura
+# (amd64 e arm64). O run.sh usa a arquitetura nativa; os binários linux-amd64 do tools.json rodam
+# via binfmt quando a máquina é arm64.
+RUNNER_IMAGE=ghcr.io/catthehacker/ubuntu:act-24.04@sha256:62d572b92f9f32d3427b6d220ad1f9dca9c7b6ffad37d295425037dbff78abaf

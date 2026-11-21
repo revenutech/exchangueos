@@ -126,12 +126,12 @@ type scannable interface {
 
 func scanPayIn(s scannable) (*domain.PayInInstruction, error) {
 	var (
-		id, tenantID, cycleID  uuid.UUID
-		currency               string
-		amount                 pgtype.Numeric
-		band, status, reason   string
+		id, tenantID, cycleID          uuid.UUID
+		currency                       string
+		amount                         pgtype.Numeric
+		band, status, reason           string
 		deadline, submitted, confirmed time.Time
-		version                int
+		version                        int
 	)
 	if err := s.Scan(
 		&id, &tenantID, &cycleID, &currency, &amount,

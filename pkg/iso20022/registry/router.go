@@ -13,9 +13,9 @@ import (
 //   - Counterparty country = CN OR BIC bank code = CFETSCN…    → OrgCFETS
 //   - Otherwise                                                 → OrgISO (generic ISO 20022)
 type OrganisationRouter struct {
-	clsMembers   map[string]struct{} // set of BICs (uppercase)
-	cfetsPrefix  string              // BIC prefix that signals CFETS (e.g. "CFETS")
-	defaultOrg   Organisation
+	clsMembers  map[string]struct{} // set of BICs (uppercase)
+	cfetsPrefix string              // BIC prefix that signals CFETS (e.g. "CFETS")
+	defaultOrg  Organisation
 }
 
 // NewOrganisationRouter constructs a Router with the given CLS member set + CFETS BIC prefix.

@@ -31,10 +31,10 @@ func TestCurrency_Valid(t *testing.T) {
 
 func TestCurrency_RejectsBadInputs(t *testing.T) {
 	cases := []struct {
-		name              string
-		code              string
-		curName           string
-		minor             int
+		name    string
+		code    string
+		curName string
+		minor   int
 	}{
 		{"short code", "US", "Dollar", 2},
 		{"long code", "USDX", "Dollar", 2},

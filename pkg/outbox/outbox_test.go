@@ -14,10 +14,10 @@ import (
 
 // fakeStore — minimal in-memory Store for testing Dispatch.
 type fakeStore struct {
-	mu          sync.Mutex
-	pending     []outbox.Record
-	dispatched  []uuid.UUID
-	failed      map[uuid.UUID]string
+	mu         sync.Mutex
+	pending    []outbox.Record
+	dispatched []uuid.UUID
+	failed     map[uuid.UUID]string
 }
 
 func newFakeStore(rs ...outbox.Record) *fakeStore {
