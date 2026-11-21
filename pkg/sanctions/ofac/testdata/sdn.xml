@@ -1,0 +1,131 @@
+<?xml version="1.0" standalone="yes"?>
+<!-- SYNTHETIC fixture in the OFAC SDN XML layout (sdn.xml). Every name, uid and designation is invented;
+     nothing here was copied from the real list (owner decision 2026-11-10: never download the real lists). -->
+<sdnList xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/XML">
+  <publshInformation>
+    <Publish_Date>11/10/2026</Publish_Date>
+    <Record_Count>4</Record_Count>
+  </publshInformation>
+  <sdnEntry>
+    <uid>990001</uid>
+    <firstName>Elvaro</firstName>
+    <lastName>QUINTESSA MARDOK</lastName>
+    <sdnType>Individual</sdnType>
+    <programList>
+      <program>SDNTK</program>
+    </programList>
+    <idList>
+      <id>
+        <uid>880001</uid>
+        <idType>Passport</idType>
+        <idNumber>ZZ0000001</idNumber>
+        <idCountry>Colombia</idCountry>
+      </id>
+    </idList>
+    <akaList>
+      <aka>
+        <uid>770001</uid>
+        <type>a.k.a.</type>
+        <category>strong</category>
+        <lastName>MARDOK</lastName>
+        <firstName>El</firstName>
+      </aka>
+      <aka>
+        <uid>770002</uid>
+        <type>a.k.a.</type>
+        <category>weak</category>
+        <lastName>QUINTESSA</lastName>
+      </aka>
+    </akaList>
+    <addressList>
+      <address>
+        <uid>660001</uid>
+        <city>Cartagena</city>
+        <country>Colombia</country>
+      </address>
+    </addressList>
+    <nationalityList>
+      <nationality>
+        <uid>550001</uid>
+        <country>Colombia</country>
+        <mainEntry>true</mainEntry>
+      </nationality>
+    </nationalityList>
+    <citizenshipList>
+      <citizenship>
+        <uid>540001</uid>
+        <country>Venezuela</country>
+        <mainEntry>false</mainEntry>
+      </citizenship>
+    </citizenshipList>
+    <dateOfBirthList>
+      <dateOfBirthItem>
+        <uid>530001</uid>
+        <dateOfBirth>01 Jan 1970</dateOfBirth>
+        <mainEntry>true</mainEntry>
+      </dateOfBirthItem>
+    </dateOfBirthList>
+  </sdnEntry>
+  <sdnEntry>
+    <uid>990002</uid>
+    <lastName>ZEPHYRA TRADING HOLDINGS LTD.</lastName>
+    <sdnType>Entity</sdnType>
+    <programList>
+      <program>IRAN</program>
+      <program>SDGT</program>
+    </programList>
+    <akaList>
+      <aka>
+        <uid>770003</uid>
+        <type>f.k.a.</type>
+        <category>strong</category>
+        <lastName>ZEPHYRA HOLDINGS</lastName>
+      </aka>
+    </akaList>
+    <addressList>
+      <address>
+        <uid>660002</uid>
+        <city>Dubai</city>
+        <country>United Arab Emirates</country>
+      </address>
+      <address>
+        <uid>660003</uid>
+        <city>Tehran</city>
+        <country>Iran</country>
+      </address>
+      <address>
+        <uid>660004</uid>
+        <city>Nowhere</city>
+        <country>Atlantis</country>
+      </address>
+    </addressList>
+  </sdnEntry>
+  <sdnEntry>
+    <uid>990003</uid>
+    <lastName>MORNING CORAL</lastName>
+    <sdnType>Vessel</sdnType>
+    <programList>
+      <program>IRAN</program>
+    </programList>
+    <vesselInfo>
+      <callSign>ZZZZ9</callSign>
+      <vesselType>Crude Oil Tanker</vesselType>
+      <vesselFlag>Panama</vesselFlag>
+      <grossRegisteredTonnage>1000</grossRegisteredTonnage>
+    </vesselInfo>
+  </sdnEntry>
+  <sdnEntry>
+    <uid>990004</uid>
+    <lastName>SKY-ORBIT 7Q-ZZZ</lastName>
+    <sdnType>Aircraft</sdnType>
+    <programList>
+      <program>VENEZUELA-EO13850</program>
+    </programList>
+    <addressList>
+      <address>
+        <uid>660005</uid>
+        <country>Venezuela</country>
+      </address>
+    </addressList>
+  </sdnEntry>
+</sdnList>

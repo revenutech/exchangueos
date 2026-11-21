@@ -6,8 +6,9 @@
 // on HTTP 200. Used by the docker-compose healthcheck stanza for exchangeos-api.
 //
 // Usage:
-//   healthcheck                       # defaults to http://localhost:8084/healthz
-//   healthcheck http://1.2.3.4:8084/readyz
+//
+//	healthcheck                       # defaults to http://localhost:8084/healthz
+//	healthcheck http://1.2.3.4:8084/readyz
 //
 // Build cost: ~3 MB statically linked.
 package main

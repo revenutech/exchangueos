@@ -1,0 +1,60 @@
+[
+  {
+    "Source": "OFAC",
+    "ID": "990001",
+    "Name": "Elvaro QUINTESSA MARDOK",
+    "Aliases": [
+      "El MARDOK",
+      "QUINTESSA"
+    ],
+    "Kind": "INDIVIDUAL",
+    "Countries": [
+      "CO",
+      "VE"
+    ],
+    "Programs": [
+      "SDNTK"
+    ]
+  },
+  {
+    "Source": "OFAC",
+    "ID": "990002",
+    "Name": "ZEPHYRA TRADING HOLDINGS LTD.",
+    "Aliases": [
+      "ZEPHYRA HOLDINGS"
+    ],
+    "Kind": "ENTITY",
+    "Countries": [
+      "AE",
+      "IR"
+    ],
+    "Programs": [
+      "IRAN",
+      "SDGT"
+    ]
+  },
+  {
+    "Source": "OFAC",
+    "ID": "990003",
+    "Name": "MORNING CORAL",
+    "Aliases": null,
+    "Kind": "VESSEL",
+    "Countries": null,
+    "Programs": [
+      "IRAN"
+    ]
+  },
+  {
+    "Source": "OFAC",
+    "ID": "990004",
+    "Name": "SKY-ORBIT 7Q-ZZZ",
+    "Aliases": null,
+    "Kind": "AIRCRAFT",
+    "Countries": [
+      "VE"
+    ],
+    "Programs": [
+      "VENEZUELA-EO13850"
+    ]
+  }
+]

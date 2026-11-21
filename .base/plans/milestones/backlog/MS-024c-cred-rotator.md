@@ -46,11 +46,11 @@ Construir o rotator real dirigido por cron que orquestra rotação mensal de `cl
 
 ### Etapa 1.6 — Testes
 
-- **1.15** `RTSK.024.1115.01` ✏️ Teste de integração contra testcontainer KeycloakOS + Vault dev-server. *Aceite:* teste roda rotação completa de 1 secret e valida idempotência em re-run. *Entrega:* `tests/integration/cred_rotator_test.go`. *Escopo:* `tests/integration/`. *Depende:* `RTSK.024.1106.01`. *Espera:* gate — testes com banco. [registro](../registro/README.md)
+- **1.15** `RTSK.024.1115.01` ✏️ Teste de integração contra testcontainer KeycloakOS + Vault dev-server. *Aceite:* teste de rotação de 1 secret, idempotente em re-run, escrito; `mudanca` (N1) unitária verde (ADR-039); a rodada contra os testcontainers fica no fechamento do plano. *Entrega:* `tests/integration/cred_rotator_test.go`. *Escopo:* `tests/integration/`. *Depende:* `RTSK.024.1106.01`. *Espera:* gate — N1 unitária. [registro](../registro/README.md)
 
 ## Fase 2 — Aceite
 
-- **2.1** `RTSK.024.1116.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 rotação mensal real em staging sem incidente + rollback testado uma vez. *Entrega:* relatório em `registro/ms-024c/`. *Escopo:* módulo inteiro + staging. *Espera:* gate — rodada N2. [registro](../registro/README.md)
+- **2.1** `RTSK.024.1116.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 rotação mensal real em staging sem incidente + rollback testado uma vez. *Entrega:* relatório em `registro/ms-024c/`. *Escopo:* módulo inteiro + staging. *Espera:* gate — rodada `lote` do head de integração. [registro](../registro/README.md)
 
 ## Fase 3 — Fechamento
 

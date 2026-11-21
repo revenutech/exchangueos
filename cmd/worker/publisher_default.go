@@ -23,5 +23,5 @@ func newPublisher(logger *zap.Logger) outbox.Publisher {
 	})
 }
 
-func publisherName() string { return "noop (logs only)" }
+func publisherName() string             { return "noop (logs only)" }
 func closePublisher(_ outbox.Publisher) {}

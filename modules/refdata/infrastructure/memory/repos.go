@@ -119,8 +119,8 @@ type ssiKey struct {
 }
 
 type SSIRepo struct {
-	mu       sync.RWMutex
-	byKey    map[ssiKey][]*domain.SSI
+	mu    sync.RWMutex
+	byKey map[ssiKey][]*domain.SSI
 }
 
 func NewSSIRepo() *SSIRepo {
