@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// syntheticName is invented; it is the marker the redaction tests look for.
-const syntheticName = "Zebulon Quixfeather"
+// redactMarkerName is invented; it is the marker the redaction tests look for.
+const redactMarkerName = "Zebulon Quixfeather"
 
 // rawMatchQuery has MatchQuery's fields and none of its methods: the negative control. Converting a MatchQuery to
 // it must leak the name, which proves the detector below would catch a leak in MatchQuery itself.
@@ -30,12 +30,12 @@ type wrapsQueryPtr struct {
 }
 
 func leaksName(out string) bool {
-	return strings.Contains(out, syntheticName) || strings.Contains(out, "Zebulon") || strings.Contains(out, "Quixfeather")
+	return strings.Contains(out, redactMarkerName) || strings.Contains(out, "Zebulon") || strings.Contains(out, "Quixfeather")
 }
 
 func TestMatchQuery_GoStringAndJSONNeverLeakName(t *testing.T) {
 	t.Parallel()
-	q := MatchQuery{Name: syntheticName, Country: "BR", MinScore: 0.85}
+	q := MatchQuery{Name: redactMarkerName, Country: "BR", MinScore: 0.85}
 	mustJSON := func(v any) string {
 		b, err := json.Marshal(v)
 		require.NoError(t, err)
@@ -68,7 +68,7 @@ func TestMatchQuery_GoStringAndJSONNeverLeakName(t *testing.T) {
 
 func TestMatchQuery_JSONRedactedShape(t *testing.T) {
 	t.Parallel()
-	b, err := json.Marshal(MatchQuery{Name: syntheticName, Country: "BR", MinScore: 0.85})
+	b, err := json.Marshal(MatchQuery{Name: redactMarkerName, Country: "BR", MinScore: 0.85})
 	require.NoError(t, err)
 	var got map[string]any
 	require.NoError(t, json.Unmarshal(b, &got))
@@ -79,7 +79,7 @@ func TestMatchQuery_JSONRedactedShape(t *testing.T) {
 // methods do print the name, under both %#v and json.Marshal.
 func TestMatchQuery_RedactionNegativeControl(t *testing.T) {
 	t.Parallel()
-	raw := rawMatchQuery(MatchQuery{Name: syntheticName, Country: "BR", MinScore: 0.85})
+	raw := rawMatchQuery(MatchQuery{Name: redactMarkerName, Country: "BR", MinScore: 0.85})
 	b, err := json.Marshal(raw)
 	require.NoError(t, err)
 	cases := []struct {
