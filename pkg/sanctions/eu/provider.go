@@ -71,38 +71,10 @@ func parse(r io.Reader, limit int64) (entries []sanctions.Entry, err error) {
 			entries, err = nil, ErrListTooLarge
 		}
 	}()
-	br := bufio.NewReader(lim)
-	if b, err := br.Peek(len(bom)); err == nil && bytes.Equal(b, bom) {
-		_, _ = br.Discard(len(bom))
-	}
-	cr := csv.NewReader(br)
-	cr.Comma = ';'
-	cr.LazyQuotes = true
-	cr.FieldsPerRecord = -1
-	cr.ReuseRecord = true
-
-	head, err := cr.Read()
-	if errors.Is(err, io.EOF) {
-		return nil, fmt.Errorf("%w: no header", ErrMissingColumn)
-	}
+	cr := newCSVReader(lim)
+	col, err := readHeader(cr)
 	if err != nil {
-		return nil, fmt.Errorf("eu: header: %w", err)
-	}
-	col := map[string]int{}
-	for i, h := range head {
-		col[strings.TrimSpace(h)] = i
-	}
-	for _, req := range []string{colID, colName, colSubject} {
-		if _, ok := col[req]; !ok {
-			return nil, fmt.Errorf("%w: %s", ErrMissingColumn, req)
-		}
-	}
-	field := func(rec []string, name string) string {
-		i, ok := col[name]
-		if !ok || i >= len(rec) {
-			return ""
-		}
-		return strings.TrimSpace(rec[i])
+		return nil, err
 	}
 
 	var order []string
@@ -115,35 +87,87 @@ func parse(r io.Reader, limit int64) (entries []sanctions.Entry, err error) {
 		if err != nil {
 			return nil, fmt.Errorf("eu: row: %w", err)
 		}
-		id := field(rec, colID)
+		id := col.field(rec, colID)
 		e, seen := byID[id]
 		if !seen {
-			e = &sanctions.Entry{Source: sanctions.SourceEU, ID: id, Kind: kindOf(field(rec, colClass), field(rec, colSubject))}
+			e = &sanctions.Entry{Source: sanctions.SourceEU, ID: id, Kind: kindOf(col.field(rec, colClass), col.field(rec, colSubject))}
 			byID[id] = e
 			order = append(order, id)
 		}
-		if n := field(rec, colName); n != "" {
-			switch {
-			case e.Name == "":
-				e.Name = n
-			case n != e.Name:
-				e.Aliases = appendUnique(e.Aliases, n)
-			}
-		}
-		if p := field(rec, colProgram); p != "" {
-			e.Programs = appendUnique(e.Programs, p)
-		}
-		for _, c := range []string{field(rec, colCitizen), field(rec, colAddrCtry)} {
-			if c = strings.ToUpper(c); isISO2(c) {
-				e.Countries = appendUnique(e.Countries, c)
-			}
-		}
+		col.merge(e, rec)
 	}
 	out := make([]sanctions.Entry, 0, len(order))
 	for _, id := range order {
 		out = append(out, *byID[id])
 	}
 	return out, nil
+}
+
+// newCSVReader skips a leading BOM and reads the FSF dialect: «;»-separated, lazy quotes, rows of any width.
+func newCSVReader(r io.Reader) *csv.Reader {
+	br := bufio.NewReader(r)
+	if b, err := br.Peek(len(bom)); err == nil && bytes.Equal(b, bom) {
+		_, _ = br.Discard(len(bom))
+	}
+	cr := csv.NewReader(br)
+	cr.Comma = ';'
+	cr.LazyQuotes = true
+	cr.FieldsPerRecord = -1
+	cr.ReuseRecord = true
+	return cr
+}
+
+// columns maps a trimmed header name to its column; the last column wins when a name repeats.
+type columns map[string]int
+
+// readHeader reads the header row and checks it has the required columns.
+func readHeader(cr *csv.Reader) (columns, error) {
+	head, err := cr.Read()
+	if errors.Is(err, io.EOF) {
+		return nil, fmt.Errorf("%w: no header", ErrMissingColumn)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("eu: header: %w", err)
+	}
+	col := columns{}
+	for i, h := range head {
+		col[strings.TrimSpace(h)] = i
+	}
+	for _, req := range []string{colID, colName, colSubject} {
+		if _, ok := col[req]; !ok {
+			return nil, fmt.Errorf("%w: %s", ErrMissingColumn, req)
+		}
+	}
+	return col, nil
+}
+
+// field is the trimmed cell of rec under the column name; empty when the column or the cell is absent.
+func (col columns) field(rec []string, name string) string {
+	i, ok := col[name]
+	if !ok || i >= len(rec) {
+		return ""
+	}
+	return strings.TrimSpace(rec[i])
+}
+
+// merge adds the name alias, programme and countries of one row of e's entity to e.
+func (col columns) merge(e *sanctions.Entry, rec []string) {
+	if n := col.field(rec, colName); n != "" {
+		switch {
+		case e.Name == "":
+			e.Name = n
+		case n != e.Name:
+			e.Aliases = appendUnique(e.Aliases, n)
+		}
+	}
+	if p := col.field(rec, colProgram); p != "" {
+		e.Programs = appendUnique(e.Programs, p)
+	}
+	for _, c := range []string{col.field(rec, colCitizen), col.field(rec, colAddrCtry)} {
+		if c = strings.ToUpper(c); isISO2(c) {
+			e.Countries = appendUnique(e.Countries, c)
+		}
+	}
 }
 
 func kindOf(class, subject string) sanctions.EntryKind {
