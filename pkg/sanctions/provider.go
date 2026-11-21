@@ -4,6 +4,7 @@ package sanctions
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -25,6 +26,14 @@ const (
 )
 
 // MatchQuery is a screening request against one list.
+//
+// PII: Name is the counterparty's name. String, GoString, LogValue and MarshalJSON never print it, only the country,
+// the threshold and the name length. They use value receivers on purpose, so a pointer or a dereferenced copy is
+// redacted as well. MarshalJSON is a redacted view, not a wire format: a MatchQuery does not round-trip through JSON.
+//
+// fmt calls these methods only on exported fields. A MatchQuery kept in an unexported field of another struct is
+// printed raw, Name included, by %v, %+v or %#v of the outer struct (and encoding/json skips unexported fields). Never
+// keep a MatchQuery in an unexported field of a struct that gets formatted.
 type MatchQuery struct {
 	// Name is the party name as captured, before normalisation. Required.
 	Name string
@@ -34,9 +43,23 @@ type MatchQuery struct {
 	MinScore float64
 }
 
-// String never includes Name: the party name is PII. fmt uses it for %v, %+v and %s.
-func (q MatchQuery) String() string {
+func (q MatchQuery) redacted() string {
 	return fmt.Sprintf("MatchQuery{Country:%s MinScore:%v name_len:%d}", q.Country, q.MinScore, len(q.Name))
+}
+
+// String never includes Name: the party name is PII. fmt uses it for %v, %+v and %s.
+func (q MatchQuery) String() string { return q.redacted() }
+
+// GoString covers %#v; it never includes Name.
+func (q MatchQuery) GoString() string { return q.redacted() }
+
+// MarshalJSON is the redacted view (country, min_score, name_len); it never includes Name.
+func (q MatchQuery) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Country  string  `json:"country"`
+		MinScore float64 `json:"min_score"`
+		NameLen  int     `json:"name_len"`
+	}{q.Country, q.MinScore, len(q.Name)})
 }
 
 // LogValue never includes Name: the party name is PII.
