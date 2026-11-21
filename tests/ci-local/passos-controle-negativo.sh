@@ -45,7 +45,10 @@ check() {
   git worktree add -q --detach "$wt" "$head"
   # proto/gen is generated and ignored by git; `go list` needs it.
   if [ -d "$top/proto/gen" ]; then cp -R "$top/proto/gen" "$wt/proto/"; fi
-  out=$(cd "$wt" && bash "$driver" lista "$base" 2>&1) || { echo "FAIL $1 → lista failed:"; printf '%s\n' "$out" | sed 's/^/     /'; fails=$((fails + 1)); cleanup; return 0; }
+  # The cases prove the passos.conf mapping at the full level (DB steps included). A unit-level round
+  # (RODADA_NIVEL=unitaria, ADR-039) exports the level to this step; without the unset, the migrations case
+  # expects `migracoes` to enter and fails (MS-024i 1.36).
+  out=$(cd "$wt" && env -u RODADA_NIVEL bash "$driver" lista "$base" 2>&1) || { echo "FAIL $1 → lista failed:"; printf '%s\n' "$out" | sed 's/^/     /'; fails=$((fails + 1)); cleanup; return 0; }
   cleanup
   entram=$(printf '%s\n' "$out" | awk '$1 == "entra" { print $2 }')
   local ok=1 n

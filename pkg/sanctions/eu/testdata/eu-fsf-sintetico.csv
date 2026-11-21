@@ -1,0 +1,9 @@
+﻿fileGenerationDate;Entity_LogicalId;Entity_EU_ReferenceNumber;Entity_UnitedNationId;Entity_DesignationDate;Entity_Remark;Entity_SubjectType;Entity_SubjectType_ClassificationCode;Entity_Regulation_Type;Entity_Regulation_Programme;Entity_Regulation_NumberTitle;NameAlias_LastName;NameAlias_FirstName;NameAlias_MiddleName;NameAlias_WholeName;NameAlias_NameLanguage;NameAlias_Gender;NameAlias_Title;NameAlias_Function;Citizenship_CountryIso2Code;Citizenship_CountryDescription;Address_City;Address_CountryIso2Code;Address_CountryDescription
+2026-11-10;900001;EU.9001.01;;2026-01-15;Synthetic test entry, invented name;person;P;Regulation;SYN-A;2026/0001 (SYN);Exemplo;Ana;;Ana Ficticia Exemplo;EN;F;;;XA;Synthetic Land A;;;
+2026-11-10;900001;EU.9001.01;;2026-01-15;;person;P;Regulation;SYN-A;2026/0001 (SYN);Fiktiva;Anna;;Anna Fiktiva;;F;;;;;Synthville;XB;Synthetic Land B
+2026-11-10;900001;EU.9001.01;;2026-01-15;;person;P;Regulation;SYN-A;2026/0001 (SYN);Exemplo;Ana;;Ana Ficticia Exemplo;PT;F;;;00;Unknown;;;
+2026-11-10;900002;EU.9002.02;;2026-02-01;;enterprise;E;Regulation;SYN-B;2026/0002 (SYN);;;;"Synthetic Trading; Holdings Ltd";EN;;;;;;Synthburg;XB;Synthetic Land B
+2026-11-10;900002;EU.9002.02;;2026-02-01;;enterprise;E;Regulation;SYN-A;2026/0001 (SYN);;;;STH Ltd;;;;;;;;;
+2026-11-10;900002;EU.9002.02;;2026-02-01;;enterprise;E;Regulation;SYN-B;2026/0002 (SYN);;;;"Exemplo ""Quoted"" Group";;;;;;;;xb;Synthetic Land B
+2026-11-10;900003;EU.9003.03;;2026-03-01;;enterprise;;Regulation;SYN-C;2026/0003 (SYN);;;;Fictional Shipping Co;EN;;;;;;;;
+
