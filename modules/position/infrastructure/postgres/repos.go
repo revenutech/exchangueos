@@ -43,10 +43,10 @@ func (r *PositionRepo) Save(ctx context.Context, p *domain.Position) error {
 
 func (r *PositionRepo) Get(ctx context.Context, tenantID uuid.UUID, currency string) (*domain.Position, error) {
 	var (
-		id              uuid.UUID
-		long, short     decimal.Decimal
-		asOf            time.Time
-		version         int
+		id          uuid.UUID
+		long, short decimal.Decimal
+		asOf        time.Time
+		version     int
 	)
 	err := r.pool.QueryRow(ctx, `
 		SELECT position_id, long_amount, short_amount, as_of, version

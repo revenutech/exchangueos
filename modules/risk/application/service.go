@@ -41,9 +41,9 @@ func (s *Service) CreateLimit(ctx context.Context, in domain.NewLimitInput) (*do
 
 // CheckResult is the outcome of CheckLimit.
 type CheckResult struct {
-	Allowed         bool
-	BreachedLimits  []string // limit IDs that would be breached
-	Explanation     string
+	Allowed        bool
+	BreachedLimits []string // limit IDs that would be breached
+	Explanation    string
 }
 
 // CheckLimit performs a pre-trade check against the listed limit (type, scope) for

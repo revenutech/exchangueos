@@ -44,7 +44,7 @@ const Namespace004 = "urn:iso:std:iso:20022:tech:xsd:admi.004.001.02"
 
 type SystemEventNotificationV02 struct {
 	XMLName    xml.Name    `xml:"urn:iso:std:iso:20022:tech:xsd:admi.004.001.02 SysEvtNtfctn"`
-	EventCode  string      `xml:"EvtCd"`            // e.g. "STRT","STOP","DEGR","RCVR","CYCO","CYCC"
+	EventCode  string      `xml:"EvtCd"` // e.g. "STRT","STOP","DEGR","RCVR","CYCO","CYCC"
 	Component  string      `xml:"Cmpnt,omitempty"`
 	OccurredAt ISODateTime `xml:"EvtDtTm"`
 	Detail     string      `xml:"EvtDesc,omitempty"`
@@ -79,11 +79,11 @@ type StaticDataReportV01 struct {
 const Namespace011 = "urn:iso:std:iso:20022:tech:xsd:admi.011.001.01"
 
 type SystemEventAcknowledgementV01 struct {
-	XMLName  xml.Name    `xml:"urn:iso:std:iso:20022:tech:xsd:admi.011.001.01 SysEvtAck"`
-	EventID  string      `xml:"EvtId"`
-	AckBy    PartyID     `xml:"AckBy"`
-	AckAt    ISODateTime `xml:"AckDtTm"`
-	Status   string      `xml:"Sts,omitempty"`
+	XMLName xml.Name    `xml:"urn:iso:std:iso:20022:tech:xsd:admi.011.001.01 SysEvtAck"`
+	EventID string      `xml:"EvtId"`
+	AckBy   PartyID     `xml:"AckBy"`
+	AckAt   ISODateTime `xml:"AckDtTm"`
+	Status  string      `xml:"Sts,omitempty"`
 }
 
 // ── admi.017.001.02 — AdministrationProprietary ────────────────────────────
@@ -102,10 +102,10 @@ type AdministrationProprietaryV02 struct {
 const Namespace024 = "urn:iso:std:iso:20022:tech:xsd:admi.024.001.01"
 
 type NotificationOfCorrespondenceV01 struct {
-	XMLName    xml.Name    `xml:"urn:iso:std:iso:20022:tech:xsd:admi.024.001.01 NtfctnOfCrspdc"`
-	From       PartyID     `xml:"Fr"`
-	To         PartyID     `xml:"To"`
-	Subject    string      `xml:"Sbjct"`
-	Body       string      `xml:"Body"`
-	IssuedAt   ISODateTime `xml:"IssDtTm"`
+	XMLName  xml.Name    `xml:"urn:iso:std:iso:20022:tech:xsd:admi.024.001.01 NtfctnOfCrspdc"`
+	From     PartyID     `xml:"Fr"`
+	To       PartyID     `xml:"To"`
+	Subject  string      `xml:"Sbjct"`
+	Body     string      `xml:"Body"`
+	IssuedAt ISODateTime `xml:"IssDtTm"`
 }

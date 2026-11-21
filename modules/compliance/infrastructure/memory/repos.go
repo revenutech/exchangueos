@@ -11,8 +11,8 @@ import (
 )
 
 type ClassificationRepo struct {
-	mu       sync.RWMutex
-	byTrade  map[uuid.UUID]*domain.Classification
+	mu      sync.RWMutex
+	byTrade map[uuid.UUID]*domain.Classification
 }
 
 func NewClassificationRepo() *ClassificationRepo {
@@ -85,7 +85,7 @@ func (r *ReportRepo) Get(_ context.Context, id uuid.UUID) (*domain.BACENReport, 
 }
 
 type ScreeningRepo struct {
-	mu sync.Mutex
+	mu    sync.Mutex
 	Saved []*domain.ScreeningResult // exposed for tests
 }
 

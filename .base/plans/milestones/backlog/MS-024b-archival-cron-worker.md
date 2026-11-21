@@ -43,13 +43,13 @@ Implementar `cmd/archiver/main.go` como CronJob Kubernetes que envelhece linhas 
 ### Etapa 1.6 — Restauração e observabilidade externa
 
 - **1.11** `RTSK.024.1011.01` ✏️ Harness `scripts/archive-restore-test.sh` para ensaio trimestral. *Aceite:* script restaura 1 batch de fixture e valida contagem de linhas + SHA256. *Entrega:* `scripts/archive-restore-test.sh`. *Escopo:* `scripts/`. *Depende:* `RTSK.024.1004.01`. *Espera:* sessão dona — implementação. [registro](../registro/README.md)
-- **1.12** `RTSK.024.1012.01` ✏️ Teste de integração archive → manifest → marcação → hard-delete. *Aceite:* teste passa contra CRDB testcontainer. *Entrega:* `tests/integration/archiver_test.go`. *Escopo:* `tests/integration/`. *Depende:* `RTSK.024.1006.01`, `RTSK.024.1011.01`. *Espera:* gate — testes com banco. [registro](../registro/README.md)
+- **1.12** `RTSK.024.1012.01` ✏️ Teste de integração archive → manifest → marcação → hard-delete. *Aceite:* teste escrito; `mudanca` (N1) unitária verde (ADR-039); a rodada contra CRDB testcontainer fica no fechamento do plano. *Entrega:* `tests/integration/archiver_test.go`. *Escopo:* `tests/integration/`. *Depende:* `RTSK.024.1006.01`, `RTSK.024.1011.01`. *Espera:* gate — `mudanca` (N1) unitária (ADR-039). [registro](../registro/README.md)
 - **1.13** `RTSK.024.1013.01` ✏️ Painel Grafana no dashboard de FinOps (crescimento de storage + projeção de custo). *Aceite:* painel renderiza com dados das métricas de 1.8. *Entrega:* JSON do painel em `deploy/grafana/`. *Escopo:* `deploy/grafana/`. *Depende:* `RTSK.024.1008.01`. *Espera:* dono — definição da fórmula de projeção. [registro](../registro/README.md)
 - **1.14** `RTSK.024.1016.01` ✏️ Lifecycle do bucket de arquivo igual à `archive_policy`. *Aceite:* regra por prefixo no bucket apaga os objetos das tabelas erasáveis no `retention_after`; tabela sob guarda não expira. *Entrega:* `deploy/terraform/`. *Escopo:* `deploy/terraform/`. *Depende:* `RTSK.024.1003.01`. *Espera:* dono — provisionamento do bucket GCS; revisor: IdentityOS (PII: retenção LGPD). [registro](../registro/README.md)
 
 ## Fase 2 — Aceite
 
-- **2.1** `RTSK.024.1014.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 ciclo noturno completo em staging com batch > 0 + restauração de 1 batch bem sucedida. *Entrega:* relatório em `registro/ms-024b/`. *Escopo:* módulo inteiro + staging. *Espera:* gate — rodada N2. [registro](../registro/README.md)
+- **2.1** `RTSK.024.1014.01` ✏️ Rodar aceite da MS em staging. *Aceite:* todas as tarefas da Fase 1 cumpridas + 1 ciclo noturno completo em staging com batch > 0 + restauração de 1 batch bem sucedida. *Entrega:* relatório em `registro/ms-024b/`. *Escopo:* módulo inteiro + staging. *Espera:* gate — rodada `lote` do head de integração. [registro](../registro/README.md)
 
 ## Fase 3 — Fechamento
 

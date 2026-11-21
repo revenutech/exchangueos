@@ -18,7 +18,7 @@ func TestDBConfig_Redacted_NeverLeaksPassword(t *testing.T) {
 	const senhaDeTeste = "SENHA_DE_TESTE"
 
 	cases := map[string]string{
-		"url_form": "postgresql://usuario:" + senhaDeTeste + "@host:26257/db?sslmode=verify-full",
+		"url_form":           "postgresql://usuario:" + senhaDeTeste + "@host:26257/db?sslmode=verify-full",
 		"keyword_value_form": "host=x port=26257 user=usuario password=" + senhaDeTeste + " dbname=db",
 	}
 

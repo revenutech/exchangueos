@@ -10,18 +10,14 @@
     "padding": 1
   },
   "env": {
-    "EXCHANGEOS_PROJECT_ROOT": "/Users/guga/projects/revenu-tech/revenu-platform/exchangeos",
     "EXCHANGEOS_MODULE": "exchangeos",
-    "CRDB_HUB_PATH": "../cockroachdb",
     "LEFTHOOK_QUIET": "skips,success",
     "DOCKER_BUILDKIT": "1",
-    "COMPOSE_DOCKER_CLI_BUILD": "1",
-    "GO_VERSION": "1.25"
+    "COMPOSE_DOCKER_CLI_BUILD": "1"
   },
   "permissions": {
     "defaultMode": "acceptEdits",
     "additionalDirectories": [
-      "../cockroachdb",
       "../ledgeros",
       "../paymentos",
       "../authorityos",

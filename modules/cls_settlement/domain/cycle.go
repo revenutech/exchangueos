@@ -12,11 +12,11 @@ import (
 type CycleStatus string
 
 const (
-	StatusOpen         CycleStatus = "OPEN"
-	StatusPayInWindow  CycleStatus = "PAY_IN_WINDOW"
-	StatusSettling     CycleStatus = "SETTLING"
-	StatusClosed       CycleStatus = "CLOSED"
-	StatusFailed       CycleStatus = "FAILED"
+	StatusOpen        CycleStatus = "OPEN"
+	StatusPayInWindow CycleStatus = "PAY_IN_WINDOW"
+	StatusSettling    CycleStatus = "SETTLING"
+	StatusClosed      CycleStatus = "CLOSED"
+	StatusFailed      CycleStatus = "FAILED"
 )
 
 // CETLocation is the canonical Europe/Zurich location (CET / CEST).
@@ -32,23 +32,23 @@ var CETLocation = func() *time.Location {
 
 // CLSCycle is the aggregate root for one CLS settlement day.
 type CLSCycle struct {
-	id              uuid.UUID
-	tenantID        uuid.UUID
-	cycleDate       time.Time // date-only UTC
+	id        uuid.UUID
+	tenantID  uuid.UUID
+	cycleDate time.Time // date-only UTC
 
-	status          CycleStatus
-	openedAt        time.Time
-	pin1Deadline    time.Time
-	pin2Deadline    time.Time
-	pin3Deadline    time.Time
-	scheduledClose  time.Time
-	closedAt        time.Time
-	failureReason   string
+	status         CycleStatus
+	openedAt       time.Time
+	pin1Deadline   time.Time
+	pin2Deadline   time.Time
+	pin3Deadline   time.Time
+	scheduledClose time.Time
+	closedAt       time.Time
+	failureReason  string
 
-	tradeIDs        []uuid.UUID
+	tradeIDs []uuid.UUID
 
-	version         int
-	events          []DomainEvent
+	version int
+	events  []DomainEvent
 }
 
 // OpenCycleInput parameterises OpenCycle.
@@ -89,10 +89,10 @@ func OpenCycle(in OpenCycleInput) (*CLSCycle, error) {
 		version:        1,
 	}
 	c.recordEvent(EventCycleOpened{
-		CycleID:    id,
-		TenantID:   in.TenantID,
-		CycleDate:  bd,
-		OpenedAt:   c.openedAt,
+		CycleID:        id,
+		TenantID:       in.TenantID,
+		CycleDate:      bd,
+		OpenedAt:       c.openedAt,
 		ScheduledClose: c.scheduledClose,
 	})
 	return c, nil
@@ -100,16 +100,16 @@ func OpenCycle(in OpenCycleInput) (*CLSCycle, error) {
 
 // ─── Accessors ─────────────────────────────────────────────────────────────
 
-func (c *CLSCycle) ID() uuid.UUID              { return c.id }
-func (c *CLSCycle) TenantID() uuid.UUID        { return c.tenantID }
-func (c *CLSCycle) CycleDate() time.Time       { return c.cycleDate }
-func (c *CLSCycle) Status() CycleStatus        { return c.status }
-func (c *CLSCycle) OpenedAt() time.Time        { return c.openedAt }
-func (c *CLSCycle) ClosedAt() time.Time        { return c.closedAt }
-func (c *CLSCycle) ScheduledClose() time.Time  { return c.scheduledClose }
-func (c *CLSCycle) FailureReason() string      { return c.failureReason }
-func (c *CLSCycle) Version() int               { return c.version }
-func (c *CLSCycle) TradeIDs() []uuid.UUID      { return append([]uuid.UUID(nil), c.tradeIDs...) }
+func (c *CLSCycle) ID() uuid.UUID             { return c.id }
+func (c *CLSCycle) TenantID() uuid.UUID       { return c.tenantID }
+func (c *CLSCycle) CycleDate() time.Time      { return c.cycleDate }
+func (c *CLSCycle) Status() CycleStatus       { return c.status }
+func (c *CLSCycle) OpenedAt() time.Time       { return c.openedAt }
+func (c *CLSCycle) ClosedAt() time.Time       { return c.closedAt }
+func (c *CLSCycle) ScheduledClose() time.Time { return c.scheduledClose }
+func (c *CLSCycle) FailureReason() string     { return c.failureReason }
+func (c *CLSCycle) Version() int              { return c.version }
+func (c *CLSCycle) TradeIDs() []uuid.UUID     { return append([]uuid.UUID(nil), c.tradeIDs...) }
 func (c *CLSCycle) PendingEvents() []DomainEvent {
 	return append([]DomainEvent(nil), c.events...)
 }

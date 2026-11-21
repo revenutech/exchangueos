@@ -42,8 +42,8 @@ type SSIRepository interface {
 // ─── Sentinel errors ───────────────────────────────────────────────────────
 
 var (
-	ErrNotFound      = errors.New("refdata: not found")
-	ErrInvalidInput  = errors.New("refdata: invalid input")
+	ErrNotFound     = errors.New("refdata: not found")
+	ErrInvalidInput = errors.New("refdata: invalid input")
 )
 
 // ─── Service ───────────────────────────────────────────────────────────────

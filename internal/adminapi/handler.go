@@ -56,12 +56,12 @@ func (h *Handler) listSchemas(c *gin.Context) {
 	out := make([]gin.H, 0, len(schemas))
 	for _, s := range schemas {
 		out = append(out, gin.H{
-			"url":      s.URL,
-			"table":    s.Table,
-			"pk":       s.PK,
-			"tenant":   s.TenantColumn != "",
-			"mutable":  s.Mutable,
-			"filters":  filterKeys(s.AllowedFilters),
+			"url":     s.URL,
+			"table":   s.Table,
+			"pk":      s.PK,
+			"tenant":  s.TenantColumn != "",
+			"mutable": s.Mutable,
+			"filters": filterKeys(s.AllowedFilters),
 		})
 	}
 	c.JSON(http.StatusOK, gin.H{"count": len(out), "schemas": out})

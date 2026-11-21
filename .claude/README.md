@@ -134,7 +134,7 @@ Loaded once per session, cached.
 | `includeCoAuthoredBy` | `true` |
 | `enableAllProjectMcpServers` | `true` — auto-load `.mcp.json` |
 | `statusLine` | Custom via `.claude/scripts/statusline.sh` |
-| `env` | Project-wide env vars (EXCHANGEOS_PROJECT_ROOT, GO_VERSION, etc) |
+| `env` | Project-wide env vars (EXCHANGEOS_MODULE, LEFTHOOK_QUIET, etc) |
 | `permissions.defaultMode` | `acceptEdits` (smart UX) |
 | `permissions.additionalDirectories` | 7 sibling repos (cockroachdb, ledgeros, etc) |
 | `permissions.allow` | 80+ Bash patterns + WebFetch + WebSearch |
