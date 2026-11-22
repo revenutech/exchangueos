@@ -1,0 +1,2 @@
+# Modo do pre-push (baremetal run.sh, #461/#463): só a N1 unitária enquanto o plano do módulo não fecha (dono, DV 2397).
+unitario
