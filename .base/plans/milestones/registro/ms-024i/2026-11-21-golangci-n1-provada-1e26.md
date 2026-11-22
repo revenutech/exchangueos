@@ -1,7 +1,7 @@
 ---
 data: 2026-11-21
 tarefa: 1.37
-estado: ☑️
+estado: ✅
 evidencia: N1 verde em 1e83bdf; develop 7d3f93c; N2 unitária verde em 837237f; na origin/develop
 pr:
 ---
@@ -10,7 +10,7 @@ Tarefa `RTSK.024.1539.01` (MS-024i 1.37), provada em 2026-11-21 na série da ord
 - **entrega:** golangci-lint com ratchet e o controle `golangci-novo-reprova.sh` como passos da N1.
 - **prova:** N1 unitária (ADR-039) verde pela fila; merge na develop local; N2 unitária verde no head 837237f; origin/develop 837237f (push pelo hook, 2026-11-21 15:43 BRT, select do dono).
 - **nota:** Os passos `golangci` e `golangci-controle` rodaram verdes na N1; R10 conferida pelo DV (ratchet_lint sem violação nova).
-- **estado:** ☑️. O ✅ espera a conferência do dono (select de 2026-11-22, «Registros e ☑️»).
+- **estado:** ✅ em 2026-11-22, conferido pelo dono (select «Passar as 14 a ✅»; a prova unitária basta, DV 2397).
 
 ```prova
 n1: 1e83bdf132cb7d3b429df87e95c10f4ddc691fe1 rodada exchangeos/MS-024i-1.37/n1 14:52 BRT 2026-11-21

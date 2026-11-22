@@ -1,7 +1,7 @@
 ---
 data: 2026-11-21
 tarefa: 1.6
-estado: ☑️
+estado: ✅
 evidencia: N1 verde em c236765; develop 3fbf51b; N2 unitária verde em 837237f; na origin/develop
 pr:
 ---
@@ -9,7 +9,7 @@ Tarefa `RTSK.024.1206.01` (MS-024d 1.6), provada em 2026-11-21 na série da orde
 
 - **entrega:** leitor do XLSX do COAF só com a biblioteca padrão, limites contra zip bomb.
 - **prova:** N1 unitária (ADR-039) verde pela fila; merge na develop local; N2 unitária verde no head 837237f; origin/develop 837237f (push pelo hook, 2026-11-21 15:43 BRT, select do dono).
-- **estado:** ☑️. O ✅ espera a conferência do dono (select de 2026-11-22, «Registros e ☑️»).
+- **estado:** ✅ em 2026-11-22, conferido pelo dono (select «Passar as 14 a ✅»; a prova unitária basta, DV 2397).
 
 ```prova
 n1: c2367658c846f229b2c91509b9f072f24ca36fcc rodada exchangeos/MS-024d-1.6/n1 13:55 BRT 2026-11-21

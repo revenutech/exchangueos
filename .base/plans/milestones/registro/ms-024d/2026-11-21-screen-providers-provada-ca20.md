@@ -1,7 +1,7 @@
 ---
 data: 2026-11-21
 tarefa: 1.12
-estado: ☑️
+estado: ✅
 evidencia: N1 verde em 41b634e; develop 33ba891; N2 unitária verde em 837237f; na origin/develop
 pr:
 ---
@@ -9,7 +9,7 @@ Tarefa `RTSK.024.1212.01` (MS-024d 1.12), provada em 2026-11-21 na série da ord
 
 - **entrega:** `ProviderScreener` com os 4 provedores por DI e falha fechada.
 - **prova:** N1 unitária (ADR-039) verde pela fila; merge na develop local; N2 unitária verde no head 837237f; origin/develop 837237f (push pelo hook, 2026-11-21 15:43 BRT, select do dono).
-- **estado:** ☑️. O ✅ espera a conferência do dono (select de 2026-11-22, «Registros e ☑️»).
+- **estado:** ✅ em 2026-11-22, conferido pelo dono (select «Passar as 14 a ✅»; a prova unitária basta, DV 2397).
 
 ```prova
 n1: 41b634e2b3771b5685bf8ffc32696165158d5a9d rodada exchangeos/MS-024d-1.12/n1 14:06 BRT 2026-11-21

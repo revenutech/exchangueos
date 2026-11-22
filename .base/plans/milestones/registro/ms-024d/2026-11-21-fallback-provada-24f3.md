@@ -1,7 +1,7 @@
 ---
 data: 2026-11-21
 tarefa: 1.9
-estado: ☑️
+estado: ✅
 evidencia: N1 verde em 22c5be9; develop b4313d9; N2 unitária verde em 837237f; na origin/develop
 pr:
 ---
@@ -10,7 +10,7 @@ Tarefa `RTSK.024.1209.01` (MS-024d 1.9), provada em 2026-11-21 na série da orde
 - **entrega:** queda do provedor cai para o snapshot de até 24 h; snapshot velho ou íntegro-falho bloqueia.
 - **prova:** N1 unitária (ADR-039) verde pela fila; merge na develop local; N2 unitária verde no head 837237f; origin/develop 837237f (push pelo hook, 2026-11-21 15:43 BRT, select do dono).
 - **nota:** A 1ª N1 (ab01c39, 14:05) reprovou no controle `passos` pelo mesmo defeito da base (MS-024i 1.36).
-- **estado:** ☑️. O ✅ espera a conferência do dono (select de 2026-11-22, «Registros e ☑️»).
+- **estado:** ✅ em 2026-11-22, conferido pelo dono (select «Passar as 14 a ✅»; a prova unitária basta, DV 2397).
 
 ```prova
 n1: 22c5be91fbc4899ca870f2f04125647c4cc97704 rodada exchangeos/MS-024d-1.9/n1 14:20 BRT 2026-11-21
