@@ -93,9 +93,34 @@ esac
 sem_env='(TEST_)?(DB|DATABASE)_(URL|DSN)|_IT_DATABASE_URL|TEST_DSN|COCKROACH|CRDB|KAFKA'
 sem_env="$sem_env|REDPANDA|BROKER|BOOTSTRAP_SERVERS|SCHEMA_REGISTRY"
 sem_env="$sem_env|^PG(HOST|HOSTADDR|PORT|USER|PASSWORD|DATABASE|SERVICE|SSLMODE)\$"
+# Texto do passo da N1 (2ª camada; a 1ª é o runtime: sem `docker:`, o docker recusa). Act, mutante,
+# compose e testcontainers casam no texto inteiro. Banco e broker casam só como ferramenta ou imagem:
+# o n1_sem_caminhos tira os caminhos (FlinkOS, 22/11: `cd revenu/connectors/kafka` não é broker).
+# Atribuição no texto a uma variável do $sem_env (KAFKA=…, DATABASE_URL=…) também recusa.
 n1_proibido='(^|[^[:alnum:]_.-])act([[:space:]]|$)|mutac|mutant|mutation|gremlins|mutesting'
-n1_proibido="$n1_proibido|cockroach|crdb|postgres|kafka|redpanda|strimzi|docker[ -]compose"
-n1_proibido="$n1_proibido|testcontainers"
+n1_proibido="$n1_proibido|docker[ -]compose|testcontainers"
+n1_ferramenta='(^|[^[:alnum:]_.-])(kafka-(server-start|topics|console-[a-z]+|storage|configs'
+n1_ferramenta="$n1_ferramenta|consumer-groups|run-class)|cockroach|postgres|pg_ctl|redpanda|rpk)"
+n1_ferramenta="$n1_ferramenta([^[:alnum:]_]|\$)|confluentinc/|apache/kafka|bitnami/kafka"
+n1_ferramenta="$n1_ferramenta|redpandadata/|cockroachdb/|postgres:|strimzi"
+n1_sem_caminhos() { # <texto>: token com / sai, salvo imagem (depois de docker run|pull|create até o
+  # fim do comando, ou depois de image:/FROM), URL, atribuição e comando chamado por caminho (fica
+  # o nome do arquivo)
+  printf '%s\n' "$1" | awk '{
+    cmd = 1; img = 0; dk = 0; o = ""
+    for (i = 1; i <= NF; i++) {
+      t = $i; sep = (t ~ /^(&&|\|\||\||;)$/ || t ~ /;$/)
+      lit = (t ~ /:\/\// || t ~ /^[A-Za-z_][A-Za-z0-9_]*=/)  # URL e atribuição ficam inteiras
+      if (t ~ /\// && !lit && !img && dk < 2) { if (!cmd) t = ""; else { n = split(t, p, "/"); t = p[n] } }
+      o = o " " t
+      if (sep) { cmd = 1; img = 0; dk = 0; continue }
+      img = (tolower($i) ~ /^(image:|from)$/)
+      if (dk == 1) dk = ($i ~ /^(run|pull|create)$/) ? 2 : 0
+      else if (dk == 0 && cmd && $i ~ /(^|\/)docker$/) dk = 1
+      cmd = (t ~ /^[A-Za-z_][A-Za-z0-9_]*=/ || t ~ /^(sudo|env|exec|time|nice|sh|bash|xargs)$/)
+    }
+    print o }'
+}
 passo_conf() { # <nome>: «<marcadores>\t<comando>» do passo de disco <nome> no .ci-local/passos.conf
   awk -v p="$1" '!/^[[:space:]]*#/ && index($0, " -- ") {
     i0 = index($0, " -- "); n = split(substr($0, 1, i0 - 1), t, " "); m = ""; i = 1
@@ -123,7 +148,10 @@ n1_plano() { # lê o .ci-local-modo-n1: N1_CMD[i], N1_DOCKER[i] (0|1); sai 1 com
         fi
         c=${r#*"$tab"};;
     esac
-    if printf '%s\n' "$c" | grep -qiE -- "$n1_proibido"; then
+    if printf '%s\n' "$c" | grep -qiE -- "$n1_proibido" \
+      || n1_sem_caminhos "$c" | grep -qiE -- "$n1_ferramenta" \
+      || printf '%s\n' "$c" | grep -oE '(^|[[:space:]])[A-Za-z_][A-Za-z0-9_]*=' | tr -d '[:space:]=' \
+        | grep -qE -- "$sem_env"; then
       echo ".ci-local-modo-n1:$nl: banco, broker, act ou mutante não entram na N1 unitária" \
         "(DV 2397): $c" >&2; exit 1
     fi
@@ -155,6 +183,22 @@ n1_unitaria() {
   for v in $(compgen -e | grep -E -- "$sem_env" | grep -Ev '^(REVENU_GATE|RODADA)_' || true); do
     limpa+=(-u "$v")
   done
+  # Os passos rodam sem os GIT_* que o hook herda (OnboardOS, 22/11: com o GIT_DIR do pre-push, o
+  # `git init` em tempdir dos testes lia o repo real, 13485/2 contra 13488/0 no clone). O run.sh
+  # já os usou; só os passos rodam limpos. Lista do próprio git (--local-env-vars) e a do hook.
+  for v in $(git rev-parse --local-env-vars 2>/dev/null) GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE \
+    GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_PREFIX \
+    GIT_QUARANTINE_PATH $(compgen -e | grep -E '^GIT_(PUSH_OPTION_|CONFIG_(KEY|VALUE)_)' || true); do
+    limpa+=(-u "$v")
+  done
+  # Ferramentas Go (golangci-lint & cia.) moram no $(go env GOPATH)/bin, fora do PATH do hook
+  # (SocketOS, 22/11: rc 127): entra no fim do PATH, se houver go e o diretório existir.
+  if command -v go >/dev/null 2>&1; then
+    v=$(go env GOPATH 2>/dev/null || true); v=${v%%:*}
+    if [ -n "$v" ] && [ -d "$v/bin" ]; then
+      case ":$PATH:" in *":$v/bin:"*) ;; *) PATH="$PATH:$v/bin";; esac
+    fi
+  fi
   # shellcheck source=/dev/null
   . "$here/fila-pesado.sh"
   trap fila_sair EXIT
