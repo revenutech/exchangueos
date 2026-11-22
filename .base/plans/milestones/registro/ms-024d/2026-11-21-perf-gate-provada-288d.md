@@ -1,7 +1,7 @@
 ---
 data: 2026-11-21
 tarefa: 1.18
-estado: ☑️
+estado: ✅
 evidencia: N1 verde em db16ee3; develop 837237f; N2 unitária verde em 837237f; na origin/develop
 pr:
 ---
@@ -10,7 +10,7 @@ Tarefa `RTSK.024.1220.01` (MS-024d 1.18), provada em 2026-11-21 na série da ord
 - **entrega:** o aceite de 10 ms do cache (1.2) só roda com `EXCHANGEOS_PERF=1`.
 - **prova:** N1 unitária (ADR-039) verde pela fila; merge na develop local; N2 unitária verde no head 837237f; origin/develop 837237f (push pelo hook, 2026-11-21 15:43 BRT, select do dono).
 - **nota:** Notas da revisora, sem bloquear: medir o p99 < 10 ms com a máquina livre e registrar máquina e comando; a linha de perf com `EXCHANGEOS_PERF=1` entra no fechamento do plano (MS-024i 1.31); o pulo também tira da N2 o Load de 100k e os 1000 Match sem erro, que um `TestCache_Load100k` sem asserção de tempo devolveria.
-- **estado:** ☑️. O ✅ espera a conferência do dono (select de 2026-11-22, «Registros e ☑️»).
+- **estado:** ✅ em 2026-11-22, conferido pelo dono (select «Passar as 14 a ✅»; a prova unitária basta, DV 2397).
 
 ```prova
 n1: db16ee3862735dc7f5a43501af230f079703774f rodada exchangeos/MS-024d-1.18/n1 15:27 BRT 2026-11-21
