@@ -44,6 +44,15 @@
 # entra na pista sem banco; a senha guarda o nível em `nivel_teste` (o `nivel` N1/N2 segue igual), o --status acrescenta
 # «nível=unitária» ao estado e a prova gravada leva «nivel=unitaria».
 # Dono, select no DV em 2026-11-06: até 3 gates com banco juntos, também em warn (revoga «um por vez» de 05/11); critical segue 1.
+# Rodada pesada exclusiva e memória da VM do Docker (dono, sessão Baremetal em 2026-11-22, depois do incidente das 00:31
+# BRT: a VM tem 15,6 GB para tudo — malha ~4,4 GB, e2e ~1,5 GB, act —, uma rodada com CockroachDB próprio junto de outra
+# estourou a VM e os CockroachDB caíram juntos, Exited 7). (1) Pesada = toda rodada da pista banco, ou a da leve que
+# exporta REVENU_GATE_PESADA=1 (mutation-gate/gremlins): roda sozinha, nas duas pistas; entra só com nenhuma outra
+# rodando, e nenhuma entra enquanto ela roda ou espera só pela exclusiva. Vence o «até 3 com banco» de 06/11.
+# (2) Nenhuma rodada nova, nas duas pistas, com menos de REVENU_GATE_MEM_LIVRE_MIN_MB (6144) livres na VM (MemTotal do
+# docker info menos a soma do MemUsage do docker stats). Sem docker ou com leitura falha, não bloqueia: o --status e o
+# log dizem «memória da VM: não lida». Quem já roda termina. REVENU_GATE_EXCLUSIVA=0 desliga (1), MEM_LIVRE_MIN_MB=0 (2).
+# Correção do dono no mesmo dia: na pista leve, (2) vale só para quem declara contêiner (REVENU_GATE_DOCKER=1).
 FILA_LOCK=${REVENU_GATE_PESADO_LOCK:-/private/tmp/revenu-gate-pesado.lock}
 FILA_SENHAS=${REVENU_GATE_PESADO_SENHAS:-${FILA_LOCK%.lock}.senhas}
 FILA_LOG=${REVENU_GATE_PESADO_LOG:-${FILA_LOCK%.lock}.log}   # uma linha por entrada: as leituras que abriram a vaga
@@ -63,6 +72,12 @@ FILA_LEVE_CONFERE=${REVENU_GATE_LEVE_CONFERE:-2} # a cada quantas voltas a pista
 FILA_LOCK_BANCO=$FILA_LOCK
 FILA_LOCK_LEVE=${FILA_LOCK%.lock}.leve.lock
 fila_leve=0
+fila_pesada=0                                                    # 1: rodada pesada, exclusiva (dono, 2026-11-22)
+FILA_EXCLUSIVA=${REVENU_GATE_EXCLUSIVA:-1}
+FILA_MEM_LIVRE_MIN_MB=${REVENU_GATE_MEM_LIVRE_MIN_MB:-6144}      # 0 desliga a conferência da memória da VM
+FILA_MEM_PRAZO_S=${REVENU_GATE_MEM_PRAZO_S:-15}                  # docker travado não trava a fila: passou, «não lida»
+FILA_LEVE_DURANTE_PESADA=${REVENU_GATE_LEVE_DURANTE_PESADA:-1} # leves sem contêiner junto de uma pesada (2026-11-22)
+FILA_DECIDE=${FILA_LOCK%.lock}.decide # lock curto, comum às duas pistas: conferir a exclusiva e pegar a vaga sem corrida
 FILA_LIMITES=${REVENU_GATE_LIMITES_ARQ:-${FILA_LOCK%.lock}.limites} # KEY=N por linha, relido a cada volta; vence o ambiente
 FILA_PRIORIDADE=${REVENU_GATE_PRIORIDADE_ARQ:-${FILA_LOCK%.lock}.prioridade} # um regex de dono por linha; vazio ou ausente: sem prioridade
 # Reserva (dono, select no Core e na sessão Baremetal em 2026-11-13, MS-023 1.43): com o arquivo presente, nas duas
@@ -88,6 +103,7 @@ fila_limites() { # relê o arquivo de limites: uma mudança vale na volta seguin
       VAGAS_MAX) FILA_VAGAS_MAX=$v ;; CARGA_2) FILA_CARGA_2=$v ;; CARGA_0) FILA_CARGA_0=$v ;;
       SWAP_MAX) FILA_SWAP_MAX=$v ;; VAGAS_WARN) FILA_VAGAS_WARN=$v ;; CRDB_MAX) FILA_CRDB_MAX=$v ;;
       LEVE_MAX) FILA_LEVE_MAX=$v ;; LEVE_WARN) FILA_LEVE_WARN=$v ;;
+      MEM_LIVRE_MIN_MB) FILA_MEM_LIVRE_MIN_MB=$v ;; EXCLUSIVA) FILA_EXCLUSIVA=$v ;;
     esac
   done < "$FILA_LIMITES"
   if [ "$fila_leve" = 1 ]; then FILA_VAGAS_MAX=$FILA_LEVE_MAX; fi
@@ -124,7 +140,8 @@ fila_rodando() { # quantas vagas estão ocupadas por um dono vivo
 
 fila_crdb_vivos() { # CockroachDB de gate vivos: contêiner (label revenu.gate.dono, imagem cockroach) + binário nativo no host
   local c=0 n; n=$(pgrep -f '^[^ ]*cockroach start' 2>/dev/null | wc -l | tr -d ' ') # a malha roda na VM do Docker: não aparece aqui
-  command -v docker >/dev/null 2>&1 && c=$(docker ps --filter label=revenu.gate.dono --format '{{.Image}}' 2>/dev/null | grep -c -i cockroach || true)
+  # com prazo (2026-11-22): docker travado travava a cabeça aqui; sem resposta, conta 0, como na falha
+  command -v docker >/dev/null 2>&1 && c=$(fila_com_prazo "$FILA_MEM_PRAZO_S" docker ps --filter label=revenu.gate.dono --format '{{.Image}}' | grep -c -i cockroach || true)
   echo $(( ${c:-0} + ${n:-0} ))
 }
 
@@ -156,6 +173,89 @@ fila_rodando_tudo() { # gates rodando nas duas pistas, com banco e sem banco
   echo "$n"
 }
 
+fila_com_prazo() { # <segundos> <comando…>: a saída do comando; rc 124 se passar do prazo (o macOS não tem `timeout`)
+  local s=$1 f q i rc=0; shift; f=$(mktemp "${TMPDIR:-/tmp}/fila-prazo.XXXXXX") || return 1
+  "$@" > "$f" 2>/dev/null & q=$!
+  for ((i = 0; i < s * 4; i++)); do kill -0 "$q" 2>/dev/null || break; sleep 0.25; done
+  if kill -0 "$q" 2>/dev/null; then kill "$q" 2>/dev/null; wait "$q" 2>/dev/null; rm -f "$f"; return 124; fi
+  wait "$q" || rc=$?; cat "$f"; rm -f "$f"; return "$rc"
+}
+
+fila_mem_livre_mb() { # memória livre da VM do Docker, em MiB inteiros; «-» se não deu para ler (dono, 2026-11-22)
+  # MemTotal do `docker info` (bytes) menos a soma do uso dos contêineres no `docker stats` («1.5GiB / 15.6GiB»). Não vê
+  # o que é da VM e não de contêiner (kernel, dockerd, buildkit): a sobra real é um pouco menor que a lida.
+  command -v docker >/dev/null 2>&1 || { echo -; return 0; }
+  local total uso
+  total=$(fila_com_prazo "$FILA_MEM_PRAZO_S" docker info --format '{{.MemTotal}}') || { echo -; return 0; }
+  case "$total" in ''|*[!0-9]*|0) echo -; return 0 ;; esac
+  uso=$(fila_com_prazo "$FILA_MEM_PRAZO_S" docker stats --no-stream --format '{{.MemUsage}}') || { echo -; return 0; }
+  printf '%s\n' "$uso" | LC_ALL=C awk -v t="$total" '
+    BEGIN { m["B"] = 1; m["kB"] = 1e3; m["KB"] = 1e3; m["MB"] = 1e6; m["GB"] = 1e9; m["TB"] = 1e12
+            m["KiB"] = 1024; m["MiB"] = 1048576; m["GiB"] = 1073741824; m["TiB"] = 1099511627776 }
+    { s = $0; sub(/\/.*/, "", s); gsub(/[ \t]/, "", s) }
+    s == "" || s ~ /^-+$/ { next }            # contêiner subindo: o stats ainda não tem número
+    !match(s, /^[0-9.]+/) { ruim = 1; next }
+    { n = substr(s, 1, RLENGTH); u = substr(s, RLENGTH + 1); if (!(u in m)) { ruim = 1; next }; usado += n * m[u] }
+    END { if (ruim) { print "-"; exit }; l = (t - usado) / 1048576; printf "%d\n", (l < 0 ? 0 : l) }'
+}
+
+fila_gb() { # <MiB>: em GB com vírgula, como o dono lê («6», «5,5»)
+  LC_ALL=C awk -v m="$1" 'BEGIN { printf "%.1f\n", m / 1024 }' | sed 's/\.0$//; s/\./,/'
+}
+
+fila_pesadas_vivas() { # rodadas pesadas com vaga e dono vivo: toda vaga da pista banco e a da leve marcada `pesada`
+  local d n=0
+  for d in "$FILA_LOCK_BANCO" "$FILA_LOCK_BANCO".[0-9]*; do [ -d "$d" ] && fila_viva "$d" && n=$((n + 1)); done
+  for d in "$FILA_LOCK_LEVE" "$FILA_LOCK_LEVE".[0-9]*; do [ -f "$d/pesada" ] && fila_viva "$d" && n=$((n + 1)); done
+  echo "$n"
+}
+
+fila_pesada_esperando() { # 0 se uma senha pesada viva espera só pela exclusiva: as leves novas esperam com ela, senão
+  # a pista leve, sempre com alguém rodando, nunca deixaria a pesada entrar
+  local s
+  for s in "${FILA_LOCK_BANCO%.lock}".senhas/* "${FILA_LOCK_LEVE%.lock}".senhas/*; do
+    [ -f "$s/pesada" ] && [ ! -f "$s/vaga" ] && [ "$(cat "$s/motivo" 2>/dev/null)" = exclusiva ] && fila_viva "$s" && return 0
+  done
+  return 1
+}
+
+fila_exclusiva() { # o motivo se a regra da pesada exclusiva barra a entrada agora; nada se não barra
+  [ "$FILA_EXCLUSIVA" = 1 ] || return 0
+  if [ "$fila_pesada" = 1 ]; then
+    [ "$(fila_rodando_tudo)" -eq 0 ] || echo exclusiva
+  elif [ "$(fila_pesadas_vivas)" -gt 0 ]; then
+    # durante a pesada, a leve sem contêiner (sem REVENU_GATE_DOCKER) abre até FILA_LEVE_DURANTE_PESADA vaga (dono,
+    # 2026-11-22: às 15:13 BRT a leve ficou 46 min parada atrás do mutation-gate do accountos); a memória ela confere
+    # em fila_avaliar. Com contêiner, segue exclusiva
+    if [ "$fila_leve" = 1 ] && [ "${REVENU_GATE_DOCKER:-0}" != 1 ]; then
+      [ "$(fila_rodando)" -lt "$FILA_LEVE_DURANTE_PESADA" ] && return 0
+      echo 'exclusiva (já roda leve sem contêiner durante a pesada)'; return 0
+    fi
+    echo exclusiva
+  elif fila_pesada_esperando; then echo 'exclusiva (pesada na fila)'
+  fi
+  return 0
+}
+
+fila_cede() { # <dir da senha> <minha senha>: 0 se ela é leve com contêiner, espera a exclusiva e eu sou leve sem contêiner
+  [ "$fila_leve" = 1 ] && [ "$fila_pesada" != 1 ] && [ "${REVENU_GATE_DOCKER:-0}" != 1 ] || return 1
+  [ "${1##*/}" != "$2" ] && [ -f "$1/docker" ] && [ ! -f "$1/pesada" ] || return 1
+  case "$(cat "$1/motivo" 2>/dev/null)" in *exclusiva*) return 0 ;; esac
+  return 1
+}
+
+fila_decide_pega() { # 0 com o lock de decisão; 1 se outro decide agora (esta volta passa). Lock de dono morto é retomado
+  if mkdir "$FILA_DECIDE" 2>/dev/null; then echo "$$" > "$FILA_DECIDE/pid"; return 0; fi
+  fila_viva "$FILA_DECIDE" && return 1
+  rm -rf "$FILA_DECIDE"; mkdir "$FILA_DECIDE" 2>/dev/null || return 1
+  echo "$$" > "$FILA_DECIDE/pid"
+}
+
+fila_decide_solta() {
+  if [ "$(cat "$FILA_DECIDE/pid" 2>/dev/null)" = "$$" ]; then rm -rf "$FILA_DECIDE"; fi
+  return 0
+}
+
 fila_vagas_leve() { # a pista sem banco: não conta CockroachDB; carga, swap e pressão continuam valendo
   local c p; c=$(fila_carga); p=$(fila_pressao)
   [ "${REVENU_GATE_RODADA:-0}" = 1 ] && c=0 # a rodada não corta por carga, como em fila_vagas_de
@@ -176,8 +276,10 @@ fila_confere_leve() { # <dono> <pid> <início>: na pista sem banco, o motivo se 
   # A pista vale pela declaração (REVENU_GATE_SEM_BANCO=1), não pelo nome do comando (dono, select na sessão Baremetal em
   # 2026-11-08: um e2e em SQLite caía na pista com banco por ter «e2e» no nome). Durante a rodada, a fila confere o que
   # o comando subiu: (1) processo descendente que sobe banco ou contêiner; (2) contêiner CockroachDB ou Kafka criado
-  # depois do início, com o label revenu.gate.dono do dono ou sem label, desde que nenhum gate com banco esteja vivo
-  # para disputar a autoria. Quem sobe banco declarado leve é encerrado.
+  # depois do início, com o label revenu.gate.dono do dono, desde que nenhum gate com banco esteja vivo. Quem sobe banco
+  # declarado leve é encerrado. Contêiner SEM o label não conta (dono, 2026-11-22): às 11:46 um `docker run` solto da
+  # bancada da KeycloakOS derrubou duas leves da PaymentOS (rc 66), e um redpanda de testcontainers de outra sessão
+  # derrubou a N1 da AuthorityOS duas vezes. O da própria rodada sem label segue pego pelos descendentes (1).
   [ "$fila_leve" = 1 ] || return 0
   local dono=$1 pid=$2 inicio=$3 p cmd
   for p in $(fila_descendentes "$pid"); do
@@ -197,7 +299,7 @@ fila_confere_leve() { # <dono> <pid> <início>: na pista sem banco, o motivo se 
   while IFS='|' read -r id img rot criado; do
     [ -n "$id" ] || continue
     case "$(printf '%s' "$img" | tr '[:upper:]' '[:lower:]')" in *cockroach*|*kafka*|*redpanda*) ;; *) continue ;; esac
-    case "$(printf '%s' "$rot" | tr '[:upper:]' '[:lower:]')" in ''|"$d") ;; *) continue ;; esac
+    case "$(printf '%s' "$rot" | tr '[:upper:]' '[:lower:]')" in "$d") ;; *) continue ;; esac
     ts=$(date -j -f '%Y-%m-%d %H:%M:%S %z' "${criado:0:25}" +%s 2>/dev/null || date -d "${criado:0:25}" +%s 2>/dev/null) || continue # «2026-11-08 19:15:38 +0100 WAT»
     [ "$ts" -ge "$inicio" ] && { echo "contêiner $id ($img) criado durante a rodada"; return 0; }
   done < <(docker ps --format '{{.ID}}|{{.Image}}|{{.Label "revenu.gate.dono"}}|{{.CreatedAt}}' 2>/dev/null || true)
@@ -208,10 +310,26 @@ fila_descendentes() { # <pid>: os descendentes, um por linha
   local f; for f in $(pgrep -P "$1" 2>/dev/null); do echo "$f"; fila_descendentes "$f"; done
 }
 
-fila_avaliar() { # «vagas carga swap% pressão rodando crdb»: as vagas e as leituras que as decidiram, numa linha
-  local c p sw r k v; c=$(fila_carga); p=$(fila_pressao); sw=$(fila_swap_pct); r=$(fila_rodando); k=$(fila_crdb_vivos)
+fila_avaliar() { # «vagas carga swap% pressão rodando crdb memvm motivo…»: as vagas e as leituras que as decidiram, numa
+  # linha. memvm: MiB livres na VM do Docker, «-» não lida, «desligada» com o mínimo 0; motivo: «-» ou por que zerou
+  local c p sw r k v m x mot=""; c=$(fila_carga); p=$(fila_pressao); sw=$(fila_swap_pct); r=$(fila_rodando); k=$(fila_crdb_vivos)
   if [ "$fila_leve" = 1 ]; then v=$(fila_vagas_leve); else v=$(fila_vagas_de "$c" "$p" "$sw" "$r" "$k"); fi
-  echo "$v $c $sw $p $r $k"
+  # na pista leve só espera memória quem declara contêiner, REVENU_GATE_DOCKER=1 (dono, 2026-11-22, defeito achado pela
+  # AccountOS: o mínimo travava o `go test -short`, que roda no macOS e não usa a VM); banco e pesada esperam sempre
+  m=desligada
+  if [ "$fila_leve" = 1 ] && [ "$fila_pesada" != 1 ] && [ "${REVENU_GATE_DOCKER:-0}" != 1 ]; then m=dispensada
+    # durante a pesada ela divide a máquina: lê a memória e, sem leitura, não entra (dono, 2026-11-22)
+    if [ "$FILA_EXCLUSIVA" = 1 ] && [ "$FILA_MEM_LIVRE_MIN_MB" -gt 0 ] && [ "$(fila_pesadas_vivas)" -gt 0 ]; then
+      m=$(fila_mem_livre_mb)
+      case "$m" in ''|*[!0-9]*) v=0; mot="memória da VM não lida (leve sem contêiner durante a pesada)" ;; esac
+    fi
+  elif [ "$FILA_MEM_LIVRE_MIN_MB" -gt 0 ]; then m=$(fila_mem_livre_mb); fi
+  case "$m" in
+    ''|*[!0-9]*) ;;   # não lida (ou desligada): não bloqueia
+    *) [ "$m" -ge "$FILA_MEM_LIVRE_MIN_MB" ] || { v=0; mot="memória < $(fila_gb "$FILA_MEM_LIVRE_MIN_MB") GB"; } ;;
+  esac
+  x=$(fila_exclusiva); [ -z "$x" ] || { v=0; mot=${mot:+$mot; }$x; }
+  echo "$v $c $sw $p $r $k $m ${mot:--}"
 }
 
 fila_vagas() { # quantos gates podem rodar juntos agora, nesta pista (teto, não índice de vaga)
@@ -244,6 +362,7 @@ fila_progresso_resumo() { # <progresso.tsv>: «passo pacote desde · feitos/tota
   [ -r "$1" ] || { echo "- (progresso ilegível)"; return; }
   awk -F'\t' '
     /^#resumo\t/ { r = $3 " " $4; next }
+    /^#erro-conf\t/ { ec = ec (ec == "" ? "" : ",") $2; next }   # rc 2 do rodada-escopo.sh: passos.conf inválido
     /^#/ || NR == 1 && $1 == "ts_utc" { next }
     NF >= 4 { k = $2 SUBSEP $3
       if ($4 == "inicio") { ini[k] = $1; ordem[++n] = k } else { delete ini[k]; fim++; if ($4 == "falha") f++; if ($4 == "estourou") e++ } }
@@ -252,6 +371,7 @@ fila_progresso_resumo() { # <progresso.tsv>: «passo pacote desde · feitos/tota
       if (c == "") c = "-"
       if (r == "") r = "terminados=" fim + 0 " falhas=" f + 0
       if (e > 0) r = r " estourou=" e " ESTOUROU" # passo cortado pelo teto: ⚠️, não vermelho (CONVENTIONS § 6.6)
+      if (ec != "") r = r " ERRO-CONF erro de passos.conf (" ec ")"
       print c " · " r
     }' "$1"
 }
@@ -268,6 +388,7 @@ fila_status() { # uma linha por senha viva das duas pistas: pista, senha, dono, 
       agora=$(date +%s)
       if [ -f "$dir/$s/vaga" ]; then
         desde=$(stat -f %m "$dir/$s/vaga" 2>/dev/null || stat -c %Y "$dir/$s/vaga"); estado="vaga ${pista}:$(basename "$(cat "$dir/$s/vaga")") há $(( (agora - desde) / 60 )) min"
+        [ ! -s "$dir/$s/durante" ] || estado="$estado ($(cat "$dir/$s/durante"))"
         # teto de parede do nível declarado (N1 15 min, N2 45 min; CONVENTIONS § 6.10): passou, vira investigação com dono
         case $(cat "$dir/$s/nivel" 2>/dev/null) in
           N1) [ $(( agora - desde )) -gt "$FILA_TETO_N1_S" ] && estado="$estado TETO>N1" ;;
@@ -277,26 +398,84 @@ fila_status() { # uma linha por senha viva das duas pistas: pista, senha, dono, 
         desde=$(stat -f %m "$dir/$s/pid" 2>/dev/null || stat -c %Y "$dir/$s/pid" 2>/dev/null || echo "$agora"); estado="espera há $(( (agora - desde) / 60 )) min"
         [ $(( agora - desde )) -gt "$FILA_ESPERA_ALERTA_S" ] && estado="$estado ESPERA>30min"
         fila_barrada "$dir/$s" && estado="$estado RESERVA"
+        # por que a cabeça não entrou na última volta: «exclusiva», «memória < 6 GB» (dono, 2026-11-22)
+        [ ! -s "$dir/$s/motivo" ] || estado="$estado ($(cat "$dir/$s/motivo"))"
       fi
+      [ ! -f "$dir/$s/pesada" ] || estado="$estado pesada"
       [ "$(cat "$dir/$s/nivel_teste" 2>/dev/null)" != unitaria ] || estado="$estado nível=unitária"
       prog=-; [ -f "$dir/$s/progresso" ] && prog=$(fila_progresso_resumo "$(cat "$dir/$s/progresso")")
       printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$pista" "$s" "$(cat "$dir/$s/dono" 2>/dev/null)" "$pid" "$estado" "$prog"
     done
   done
+  fila_status_memoria
 }
 
+fila_status_memoria() { # a última linha do --status, com «#» na frente: a memória livre da VM do Docker lida agora
+  fila_limites
+  local m min; min=$(fila_gb "$FILA_MEM_LIVRE_MIN_MB")
+  if [ "$FILA_MEM_LIVRE_MIN_MB" -le 0 ]; then echo "# memória da VM: conferência desligada (MEM_LIVRE_MIN_MB=0)"; return 0; fi
+  m=$(fila_mem_livre_mb)
+  case "$m" in
+    ''|*[!0-9]*) echo "# memória da VM: não lida (sem docker ou leitura falha; não bloqueia; mínimo $min GB)" ;;
+    *) if [ "$m" -ge "$FILA_MEM_LIVRE_MIN_MB" ]; then echo "# memória da VM: $(fila_gb "$m") GB livres (mínimo $min GB)"
+       else echo "# memória da VM: $(fila_gb "$m") GB livres, memória < $min GB: nenhuma rodada nova"; fi ;;
+  esac
+}
+
+fila_ancestral() { # <pid>: 0 se o pid é este processo ou um ancestral dele
+  local p=$$ i
+  for ((i = 0; i < 64; i++)); do
+    [ "$p" = "$1" ] && return 0
+    case "$p" in ''|0|1|*[!0-9]*) return 1 ;; esac
+    p=$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')
+  done
+  return 1
+}
+
+fila_reentrada() { # <dono>: 0 se a chamada é aninhada na senha de um ancestral vivo (REVENU_GATE_SENHA=<pista>:<n>:<pid>).
+  # Dono, 2026-11-22: às 13:34 BRT a fila travou. A pesada «exchangeos/develop-ef84bda/runsh» (senha 1) rodava o run.sh, que
+  # chamou a fila de novo e esperou na leve (senha 9) atrás da cabeça 6 da KeycloakOS, que esperava a pesada pela
+  # exclusiva: uma esperava a outra. Aninhada não pede senha; senha herdada de pid morto ou que não é ancestral (env vazada)
+  # segue o caminho normal. As duas decisões vão ao log.
+  local h=${REVENU_GATE_SENHA:-} pista n pid motivo="" dir
+  [ -n "$h" ] || return 1
+  IFS=: read -r pista n pid <<< "$h"
+  dir=${FILA_LOCK_BANCO%.lock}.senhas; [ "$pista" = leve ] && dir=${FILA_LOCK_LEVE%.lock}.senhas
+  case "$pid" in
+    ''|*[!0-9]*) motivo="senha herdada ilegível" ;;
+    *) if ! kill -0 "$pid" 2>/dev/null; then motivo="senha herdada de pid morto"
+       elif ! fila_ancestral "$pid"; then motivo="senha herdada de pid que não é ancestral (env vazada)"
+       # a senha tem de existir nesta fila, com o mesmo pid: env de outra fila (a de um teste, no /tmp) não vale
+       elif [ "$(cat "$dir/$n/pid" 2>/dev/null)" != "$pid" ]; then motivo="senha herdada não existe nesta fila"; fi ;;
+  esac
+  if [ -n "$motivo" ]; then
+    echo "$(date -u +%FT%TZ) nao-reentrante dono=$1 pid=$$ herdada=$h motivo=«${motivo}»" >> "$FILA_LOG" 2>/dev/null || true
+    return 1
+  fi
+  echo "$(date -u +%FT%TZ) reentrante dono=$1 pid=$$ pista=$pista senha=$n pid_herdado=$pid" >> "$FILA_LOG" 2>/dev/null || true
+  echo "fila do gate pesado: $1 roda dentro da senha $pista:$n (pid $pid), sem senha nova (reentrante)" >&2
+}
+
+fila_reentrante=0; fila_reentrada_vista=0
+
 fila_entrar() { # <dono>
+  # chamada aninhada (o run.sh dentro de uma rodada da fila, por exemplo): roda na vaga do ancestral (dono, 2026-11-22)
+  if [ "$fila_reentrada_vista" != 1 ] && fila_reentrada "$1"; then fila_reentrante=1; return 0; fi
   local nt=${REVENU_GATE_NIVEL_TESTE:-${RODADA_NIVEL:-}}   # nível unitário: pista sem banco (dono, 2026-11-18)
   if [ "${REVENU_GATE_SEM_BANCO:-0}" = 1 ] || [ "$nt" = unitaria ]; then # pista própria: outra pasta de senhas e de vagas, sem esperar a cabeça com banco
     fila_leve=1; FILA_LOCK=$FILA_LOCK_LEVE; FILA_SENHAS=${FILA_LOCK%.lock}.senhas; FILA_VAGAS_MAX=$FILA_LEVE_MAX
   fi
-  local dono=$1 n s pos cabeca vagas v d antigos avisado=false leitura="" linha lv lc lsw lp lr lk vi
+  # pesada (dono, 2026-11-22): a pista banco sempre; a leve quando declara REVENU_GATE_PESADA=1 (mutation-gate/gremlins)
+  fila_pesada=0; if [ "$fila_leve" = 0 ] || [ "${REVENU_GATE_PESADA:-0}" = 1 ]; then fila_pesada=1; fi
+  local dono=$1 n s pos cabeca vagas avisado=false leitura="" linha lv lc lsw lp lr lk lm lmot vi
   mkdir -p "$FILA_SENHAS"
   while :; do
     n=$(fila_nova_senha "$dono")
     mkdir "$FILA_SENHAS/$n" 2>/dev/null && break
   done
   fila_senha=$n; echo "$$" > "$FILA_SENHAS/$n/pid"; echo "$dono" > "$FILA_SENHAS/$n/dono"; : > "$FILA_SENHAS/$n/cabeca"
+  if [ "$fila_pesada" = 1 ]; then : > "$FILA_SENHAS/$n/pesada"; fi
+  if [ "${REVENU_GATE_DOCKER:-0}" = 1 ]; then : > "$FILA_SENHAS/$n/docker"; fi   # a leve sem contêiner passa dela (abaixo)
   # progresso.tsv da prova (CONVENTIONS § 6.6): o caminho fica na senha, e o --status lê dali o passo e o pacote em curso
   case ${REVENU_GATE_NIVEL_PROVA:-} in N1|N2) echo "$REVENU_GATE_NIVEL_PROVA" > "$FILA_SENHAS/$n/nivel" ;; esac
   [ "$nt" != unitaria ] || echo "$nt" > "$FILA_SENHAS/$n/nivel_teste"   # campo à parte: quem lê o `nivel` não muda
@@ -311,6 +490,8 @@ fila_entrar() { # <dono>
       # Senha de código anterior (sem o marcador `cabeca`) segue a regra dela e não trava a cabeça daqui.
       if [ ! -f "$FILA_SENHAS/$s/cabeca" ] && [ "$s" != "$n" ]; then antigos=$((antigos + 1)); continue; fi
       if fila_barrada "$FILA_SENHAS/$s"; then [ "$s" = "$n" ] && break; continue; fi # reserva: fora da disputa
+      # a cabeça leve com contêiner que espera a exclusiva não segura a sem contêiner de trás (dono, 2026-11-22)
+      if fila_cede "$FILA_SENHAS/$s" "$n"; then continue; fi
       [ -n "$cabeca" ] || cabeca=$s
       [ "$s" = "$n" ] && break
       pos=$((pos + 1))
@@ -319,16 +500,17 @@ fila_entrar() { # <dono>
     if [ "$cabeca" = "$n" ]; then
       fila_limites
       leitura=$(fila_avaliar); vagas=${leitura%% *}
-      # «vagas» é teto de gates RODANDO, não índice: com a vaga 2 ocupada e teto 1, a vaga 1 livre não abre
-      # (MS-022 1.21: a 2ª prova do accountos entrou com VAGAS_MAX=1 em 2026-11-08). Abaixo do teto, qualquer vaga livre.
-      read -r _ _ _ _ lr _ <<< "$leitura"
-      for v in $(seq 1 "$FILA_VAGAS_MAX"); do
-        [ "${lr:-0}" -lt "$vagas" ] || break
-        [ "$v" = 1 ] && [ "$antigos" -gt 0 ] && continue   # vaga 1 reservada às senhas antigas que esperam à frente
-        d=$FILA_LOCK; [ "$v" = 1 ] || d=$FILA_LOCK.$v
-        if mkdir "$d" 2>/dev/null; then fila_vaga=$d; break 2; fi
-        fila_viva "$d" || { rm -rf "$d"; continue 2; }
-      done
+      read -r _ _ _ _ lr _ _ lmot <<< "$leitura"
+      if [ "$lmot" = - ]; then rm -f "$FILA_SENHAS/$n/motivo"; else echo "$lmot" > "$FILA_SENHAS/$n/motivo"; fi
+      # a exclusiva é conferida de novo sob o lock de decisão: a leitura da memória leva segundos, e a outra pista
+      # pode ter entrado nesse meio-tempo (dono, 2026-11-22)
+      if [ "$vagas" -gt 0 ] && fila_decide_pega; then
+        if [ -z "$(fila_exclusiva)" ]; then fila_pega_vaga "$lr" "$vagas" "$antigos"; fi
+        fila_decide_solta
+        [ -z "$fila_vaga" ] || break
+      fi
+    else
+      rm -f "$FILA_SENHAS/$n/motivo"   # passou a ter alguém à frente: o motivo era de quando era cabeça
     fi
     if [ "$avisado" != true ]; then
       echo "fila do gate pesado: senha $n (à frente: $pos); rodando: $(cat "$FILA_LOCK/dono" "$FILA_LOCK".[0-9]*/dono 2>/dev/null | tr '\n' ';' || echo '-') — esperando…" >&2
@@ -337,14 +519,40 @@ fila_entrar() { # <dono>
     sleep "$FILA_ESPERA_S"
   done
   echo "$$" > "$fila_vaga/pid"; echo "$dono $(date -u +%FT%TZ)" > "$fila_vaga/dono"
-  echo "$fila_vaga" > "$FILA_SENHAS/$n/vaga"
+  echo "$fila_vaga" > "$FILA_SENHAS/$n/vaga"; rm -f "$FILA_SENHAS/$n/motivo"
+  if [ "$fila_leve" = 1 ] && [ "$fila_pesada" != 1 ] && [ "$(fila_pesadas_vivas)" -gt 0 ]; then
+    echo 'leve sem contêiner durante a pesada' > "$FILA_SENHAS/$n/durante"   # o --status mostra
+  fi
   # Leitura que abriu a vaga (Core, 2026-11-02: provar entradas sob pressão). Formato: chave=valor numa linha.
-  read -r lv lc lsw lp lr lk <<< "$leitura"; vi=1; [ "$fila_vaga" = "$FILA_LOCK" ] || vi=${fila_vaga##*.}
+  read -r lv lc lsw lp lr lk lm _ <<< "$leitura"; vi=1; [ "$fila_vaga" = "$FILA_LOCK" ] || vi=${fila_vaga##*.}
+  case "$lm" in -) lm=nao-lida ;; *[!0-9]*) ;; *) lm=${lm}MiB ;; esac   # «memória da VM: não lida» vai ao log (2026-11-22)
   linha="$(date -u +%FT%TZ) senha=$n dono=$dono vaga=$vi carga=$lc swap=$lsw% pressao=$lp rodando=$lr crdb=$lk vagas=$lv"
+  linha="$linha memvm=$lm pesada=$fila_pesada docker=${REVENU_GATE_DOCKER:-0}"
   echo "$linha" > "$FILA_SENHAS/$n/leitura"; echo "$linha" >> "$FILA_LOG" 2>/dev/null || true
+  # o comando filho herda a senha: se chamar a fila de novo, entra como reentrante (dono, 2026-11-22)
+  if [ "$fila_leve" = 1 ]; then export REVENU_GATE_SENHA="leve:$n:$$"; else export REVENU_GATE_SENHA="banco:$n:$$"; fi
+}
+
+fila_pega_vaga() { # <rodando> <vagas> <antigos>: tenta uma vaga desta pista; fila_vaga fica com ela, ou vazio
+  # «vagas» é teto de gates RODANDO, não índice: com a vaga 2 ocupada e teto 1, a vaga 1 livre não abre
+  # (MS-022 1.21: a 2ª prova do accountos entrou com VAGAS_MAX=1 em 2026-11-08). Abaixo do teto, qualquer vaga livre.
+  local r=$1 vagas=$2 antigos=$3 v d
+  for v in $(seq 1 "$FILA_VAGAS_MAX"); do
+    [ "${r:-0}" -lt "$vagas" ] || break
+    [ "$v" = 1 ] && [ "$antigos" -gt 0 ] && continue   # vaga 1 reservada às senhas antigas que esperam à frente
+    d=$FILA_LOCK; [ "$v" = 1 ] || d=$FILA_LOCK.$v
+    # vaga de dono morto: apaga e tenta a mesma (antes, `continue 2` voltava ao laço da cabeça; aqui há o lock de decisão)
+    if ! mkdir "$d" 2>/dev/null; then fila_viva "$d" && continue; rm -rf "$d"; mkdir "$d" 2>/dev/null || continue; fi
+    fila_vaga=$d; echo "$$" > "$d/pid"   # pid já aqui: a outra pista vê a vaga viva assim que o lock de decisão sai
+    if [ "$fila_pesada" = 1 ]; then : > "$d/pesada"; fi
+    return 0
+  done
+  return 0
 }
 
 fila_sair() {
+  if [ "$fila_reentrante" = 1 ]; then return 0; fi   # aninhada: a senha e a vaga são do ancestral, que as solta
+  fila_decide_solta   # sinal no meio da decisão não deixa o lock de decisão para trás
   if [ -n "$fila_vaga" ] && [ "$(cat "$fila_vaga/pid" 2>/dev/null)" = "$$" ]; then rm -rf "$fila_vaga"; fi
   fila_vaga=""
   if [ -n "$fila_senha" ]; then rm -rf "${FILA_SENHAS:?}/$fila_senha"; fila_senha=""; fi
@@ -754,6 +962,9 @@ if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   dono=$1; shift
   trap fila_sair EXIT; trap 'exit 130' INT TERM
   command -v "$1" >/dev/null 2>&1 || { echo "fila: '$1' não existe nesta máquina; recusado antes de pegar a vez (rc 127)" >&2; exit 127; }
+  # aninhada na senha de um ancestral: roda direto, com exec, sem senha, DLQ nem timeout próprios (dono, 2026-11-22)
+  if fila_reentrada "$dono"; then trap - EXIT INT TERM; exec "$@"; fi
+  fila_reentrada_vista=1
   chave=$(fila_chave "$dono" "$@"); fila_bloqueio "$chave" || exit $?
   fila_entrar "$dono"
   "$@" &

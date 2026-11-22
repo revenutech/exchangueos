@@ -12,11 +12,29 @@
 #   scripts/ci-local/run.sh --publicar        → depois do push: status `ci-local` success no commit, a prova que o
 #                                               gate do cd-baremetal-staging (platform-actions ≥ v0.3.3) aceita
 #
+# Modo unitário (dono, DV 2397, 22/11/2026: enquanto o plano do módulo não fecha, só a N1
+# unitária): a linha «unitario» no .ci-local-modo da raiz do repo troca o act por
+# a N1 declarada no .ci-local-modo-n1 (um passo por linha) ou, sem ela, `go test -short` no
+# go.mod da raiz; sem banco, act nem mutante, na pista leve da fila; verde, publica o
+# status `gate-local` no commit (ver n1_unitaria).
+#
 # Fora por desenho (deploy, nuvem ou contexto do PR): cd-*, rollback*, terraform*, release*,
 # dependabot-*, cleanup-*, pr-template*. Lista extra por repo em .ci-local-ignorar (um nome por linha).
 set -euo pipefail
 root=$(git rev-parse --show-toplevel); cd "$root"; here="$root/scripts/ci-local"
-if [ -f "$root/.git" ]; then
+# Modo do pre-push: a 1ª linha útil (# comenta) do .ci-local-modo; sem o arquivo, o de sempre
+# (act). Lido antes da checagem de worktree: o unitário não sobe contêiner e roda em worktree
+# (dono, 22/11/2026; toda sessão empurra de worktree); o act (completo ou --workflow), não.
+modo=""
+if [ -f .ci-local-modo ]; then
+  modo=$(grep -vE '^[[:space:]]*(#|$)' .ci-local-modo | head -1 | tr -d '[:space:]' || true)
+fi
+case "$modo" in
+  ''|completo) modo="";;
+  unitario) ;;
+  *) echo ".ci-local-modo: modo «${modo}» desconhecido (completo ou unitario)" >&2; exit 1;;
+esac
+if [ -f "$root/.git" ] && { [ "$modo" != unitario ] || [ "${1:-}" = --workflow ]; }; then
   echo "CI local não roda em git worktree (o .git aponta para fora do container). Use um clone." >&2; exit 1
 fi
 # shellcheck source=/dev/null
@@ -27,19 +45,199 @@ sha=$(git rev-parse HEAD); ok="$root/.cache/ci-local/ok/$sha"; logs="$root/.cach
 if [ -n "${PRE_COMMIT_TO_REF:-}" ] && [ -n "${PRE_COMMIT_TO_REF//0/}" ] && [ "$(git rev-parse "$PRE_COMMIT_TO_REF^{commit}" 2>/dev/null)" != "$sha" ]; then
   echo "pre-push de ${PRE_COMMIT_TO_REF:0:12} (não é o HEAD): faça checkout do commit e empurre de novo" >&2; exit 1
 fi
+# A prova do modo unitário fica em ok-unitario/ e vai ao status `gate-local`: nunca vale como
+# CI completo (ci-local).
+contexto=ci-local
+if [ "$modo" = unitario ]; then ok="$root/.cache/ci-local/ok-unitario/$sha"; contexto=gate-local; fi
 mkdir -p "$(dirname "$ok")" "$logs"
+publicar() { # status $contexto success no $sha (descrição: 2ª linha do $ok); 1 se não deu
+  local repo
+  repo=$(gh repo view --json nameWithOwner -q .nameWithOwner) || return 1
+  gh api "repos/$repo/commits/$sha" -q .sha >/dev/null 2>&1 || return 1
+  gh api -X POST "repos/$repo/statuses/$sha" -f state=success -f context="$contexto" \
+    -f description="$(sed -n 2p "$ok" | cut -c1-140)" \
+    -q '"status \(.context) \(.state)"' || return 1
+  echo "em ${sha:0:12}"
+}
 case "${1:-}" in
-  --status) if [ -f "$ok" ]; then echo "CI local OK para $sha"; exit 0; fi; echo "CI local AINDA NÃO passou para $sha"; exit 1;;
-  --marca) [ -f "$ok" ] || { echo "CI local ainda não passou para $sha" >&2; exit 1; }
+  --status) if [ -f "$ok" ]; then echo "CI local OK para $sha${modo:+ (modo $modo)}"; exit 0; fi
+            echo "CI local AINDA NÃO passou para $sha${modo:+ (modo $modo)}"; exit 1;;
+  --marca) if [ -n "$modo" ]; then
+             echo "modo $modo: a prova é o status $contexto (--publicar), não a marca" >&2; exit 1
+           fi
+           [ -f "$ok" ] || { echo "CI local ainda não passou para $sha" >&2; exit 1; }
            echo "<!-- ci-local: $sha $(head -1 "$ok") -->"; exit 0;;
   --publicar) [ -f "$ok" ] || { echo "CI local ainda não passou para $sha" >&2; exit 1; }
-           repo=$(gh repo view --json nameWithOwner -q .nameWithOwner)
-           gh api "repos/$repo/commits/$sha" -q .sha >/dev/null 2>&1 \
-             || { echo "$sha ainda não está no GitHub: faça o push antes de publicar" >&2; exit 1; }
-           gh api -X POST "repos/$repo/statuses/$sha" -f state=success -f context=ci-local \
-             -f description="$(sed -n 2p "$ok" | cut -c1-140)" -q '"status ci-local \(.state)"'; echo "em ${sha:0:12}"
+           publicar || { echo "$sha ainda não está no GitHub: faça o push antes" >&2; exit 1; }
            exit 0;;
 esac
+# Modo unitário (DV 2397): só a N1 unitária, sem as variáveis de banco e de broker (como o nível
+# unitário do rodada-escopo.sh). Sem act, sem Docker, sem base do PR. A N1 (dono, 22/11/2026):
+#   - declarada: cada linha útil (# comenta) do .ci-local-modo-n1 versionado é um passo, rodado
+#     com `bash -c` na raiz: `[docker:] <comando shell>` ou `[docker:] passo <nome>` (o comando do
+#     passo de disco <nome> do .ci-local/passos.conf, sem marcador n2/fresco/banco/integration/
+#     e2e). Conta pass/fail pelo rc de cada um; verde = todos rc 0. A marca `docker:` deixa o passo
+#     usar contêiner efêmero (sem banco nem broker) e põe a rodada na fila com REVENU_GATE_DOCKER=1;
+#     sem ela, o passo vê um `docker` que recusa e um DOCKER_HOST inválido. Banco, broker, act e
+#     mutante são recusados no texto do passo, e o `act` recusa em qualquer passo;
+#   - sem declaração: `go test -short -json ./...` no go.mod DA RAIZ (go.mod só em subpasta, de
+#     e2e ou tools, não testa o produto e não conta); verde = algum teste passou, nenhum falhou
+#     e o go test saiu 0;
+#   - nem uma nem outra: recusa o push (nunca verde vazio).
+# Entra na pista leve da fila, sem REVENU_GATE_PESADA (e sem REVENU_GATE_DOCKER, salvo passo com
+# a marca `docker:`). Verde: grava o $ok
+# e publica o `gate-local`. O
+# commit só chega ao GitHub depois do hook: se ainda não está lá, um processo à parte tenta
+# CI_LOCAL_PUBLICAR_TENTATIVAS vezes (60), a cada CI_LOCAL_PUBLICAR_ESPERA_S (10 s); o gate do
+# CD espera a prova por 30 min.
+sem_env='(TEST_)?(DB|DATABASE)_(URL|DSN)|_IT_DATABASE_URL|TEST_DSN|COCKROACH|CRDB|KAFKA'
+sem_env="$sem_env|REDPANDA|BROKER|BOOTSTRAP_SERVERS|SCHEMA_REGISTRY"
+sem_env="$sem_env|^PG(HOST|HOSTADDR|PORT|USER|PASSWORD|DATABASE|SERVICE|SSLMODE)\$"
+n1_proibido='(^|[^[:alnum:]_.-])act([[:space:]]|$)|mutac|mutant|mutation|gremlins|mutesting'
+n1_proibido="$n1_proibido|cockroach|crdb|postgres|kafka|redpanda|strimzi|docker[ -]compose"
+n1_proibido="$n1_proibido|testcontainers"
+passo_conf() { # <nome>: «<marcadores>\t<comando>» do passo de disco <nome> no .ci-local/passos.conf
+  awk -v p="$1" '!/^[[:space:]]*#/ && index($0, " -- ") {
+    i0 = index($0, " -- "); n = split(substr($0, 1, i0 - 1), t, " "); m = ""; i = 1
+    while (i < n && t[i] ~ /^(n2|fresco|banco|integration|e2e)$/) { m = m t[i] " "; i++ }
+    if (t[i] == p) { print m "\t" substr($0, i0 + 4); exit }
+  }' .ci-local/passos.conf 2>/dev/null
+}
+n1_plano() { # lê o .ci-local-modo-n1: N1_CMD[i], N1_DOCKER[i] (0|1); sai 1 com a linha errada
+  local ln c d r m nl=0 tab=$'\t'
+  N1_CMD=(); N1_DOCKER=()
+  while IFS= read -r ln || [ -n "$ln" ]; do
+    nl=$((nl + 1)); c=$(printf '%s' "$ln" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
+    case "$c" in ''|'#'*) continue;; esac
+    d=0; case "$c" in 'docker:'*) d=1; c=${c#docker:}; c=${c#"${c%%[! ]*}"};; esac
+    case "$c" in
+      'passo '*) r=$(passo_conf "${c#passo }")
+        if [ -z "$r" ]; then
+          echo ".ci-local-modo-n1:$nl: passo «${c#passo }» não é passo de disco do" \
+            ".ci-local/passos.conf (linha go: declare o comando direto)" >&2; exit 1
+        fi
+        m=${r%%"$tab"*}
+        if [ -n "$m" ]; then
+          echo ".ci-local-modo-n1:$nl: passo «${c#passo }» tem marcador ${m}e fica fora" \
+            "da N1 unitária" >&2; exit 1
+        fi
+        c=${r#*"$tab"};;
+    esac
+    if printf '%s\n' "$c" | grep -qiE -- "$n1_proibido"; then
+      echo ".ci-local-modo-n1:$nl: banco, broker, act ou mutante não entram na N1 unitária" \
+        "(DV 2397): $c" >&2; exit 1
+    fi
+    N1_CMD+=("$c"); N1_DOCKER+=("$d")
+  done < .ci-local-modo-n1
+  if [ ${#N1_CMD[@]} = 0 ]; then
+    echo "modo unitário: .ci-local-modo-n1 sem nenhum passo (um por linha; # comenta)" >&2; exit 1
+  fi
+}
+conta() { # <Action> <json>: testes (e subtestes) com a ação no -json do go test
+  jq -Rn --arg a "$1" '[inputs | fromjson? | select(.Test != null and .Action == $a)] | length' "$2"
+}
+n1_unitaria() {
+  local decl=0 docker=0 i n j e t0 dur p f k rc=0 v sd limpa=(env)
+  if [ -f .ci-local-modo-n1 ]; then
+    decl=1; n1_plano
+    for i in "${N1_DOCKER[@]}"; do [ "$i" = 0 ] || docker=1; done
+  elif ! git ls-files --error-unmatch go.mod >/dev/null 2>&1; then
+    echo "modo unitário: sem .ci-local-modo-n1 e sem go.mod na raiz (go.mod em subpasta não" \
+      "conta); push recusado. Crie e commite $root/.ci-local-modo-n1 com um passo de N1" \
+      "por linha (# comenta): um comando shell (rodado na raiz), «passo <nome>» do" \
+      ".ci-local/passos.conf ou «docker: …» para contêiner efêmero. Por exemplo:" >&2
+    git ls-files -- '*/go.mod' | grep -vE '(^|/)(vendor|testdata)/' | sed -E \
+      's|^(.*)/go.mod$|  go -C \1 test -short ./...|' >&2 || true
+    echo "  <validador ou teste do produto, ex.: npx vitest run --maxWorkers=2>" >&2
+    echo "ou tire o .ci-local-modo (volta ao CI completo)." >&2
+    exit 1
+  fi
+  for v in $(compgen -e | grep -E -- "$sem_env" | grep -Ev '^(REVENU_GATE|RODADA)_' || true); do
+    limpa+=(-u "$v")
+  done
+  # shellcheck source=/dev/null
+  . "$here/fila-pesado.sh"
+  trap fila_sair EXIT
+  unset REVENU_GATE_DOCKER REVENU_GATE_PESADA
+  if [ "$docker" = 1 ]; then
+    echo "N1 unitária (DV 2397): pista leve da fila, com passo docker (sem banco, act nem mutante)"
+    REVENU_GATE_DOCKER=1 REVENU_GATE_SEM_BANCO=1 REVENU_GATE_NIVEL_TESTE=unitaria \
+      REVENU_GATE_NIVEL_PROVA=N1 fila_entrar "ci-local-n1:$(basename "$root")"
+  else
+    echo "N1 unitária (DV 2397): pista leve da fila, sem act nem contêiner"
+    REVENU_GATE_SEM_BANCO=1 REVENU_GATE_NIVEL_TESTE=unitaria REVENU_GATE_NIVEL_PROVA=N1 \
+      fila_entrar "ci-local-n1:$(basename "$root")"
+  fi
+  j=$logs/$sha-n1-unitaria.json; e=$logs/$sha-n1-unitaria.err; : > "$j"; : > "$e"
+  t0=$(date +%s)
+  if [ "$decl" = 1 ]; then
+    # docker e act de recusa: act em todo passo; docker (e DOCKER_HOST inválido, para quem fala
+    # com a API direto) só no passo sem a marca
+    sd="$root/.cache/ci-local/n1-sem-docker"; mkdir -p "$sd/act" "$sd/docker"
+    printf '#!/bin/sh\necho "N1 unitária: act proibido (DV 2397)" >&2; exit 97\n' > "$sd/act/act"
+    printf '#!/bin/sh\necho "N1 unitária: passo sem a marca docker chamou o docker" >&2\n%s\n' \
+      'exit 97' > "$sd/docker/docker"
+    chmod +x "$sd/act/act" "$sd/docker/docker"
+    n=${#N1_CMD[@]}; p=0; f=0
+    for i in $(seq 0 $((n - 1))); do
+      if [ "${N1_DOCKER[$i]}" = 1 ]; then
+        echo "▶ N1 declarada $((i + 1)) (docker): ${N1_CMD[$i]}"; set -- PATH="$sd/act:$PATH"
+      else
+        echo "▶ N1 declarada $((i + 1)): ${N1_CMD[$i]}"
+        set -- PATH="$sd/act:$sd/docker:$PATH" DOCKER_HOST=unix:///n1-unitaria/sem-docker
+      fi
+      if "${limpa[@]}" "$@" bash -c "${N1_CMD[$i]}" < /dev/null >> "$e" 2>&1; then p=$((p + 1))
+      else f=$((f + 1)); echo "  FAIL passo $((i + 1)): ${N1_CMD[$i]}"; fi
+    done
+    dur=$(( $(date +%s) - t0 ))
+    if [ "$f" != 0 ] || [ "$p" = 0 ]; then
+      tail -30 "$e"
+      echo "❌ N1 unitária FALHOU em ${dur}s: $n comandos, $p pass/$f fail —" \
+        "sem gate-local; corrija antes do push (log em ${e#"$root"/})"
+      exit 1
+    fi
+    printf '%s\nN1 unitária (2397): %s comandos, %s pass/%s fail, %ss\n' \
+      "$(date -u +%FT%TZ)" "$n" "$p" "$f" "$dur" > "$ok"
+    echo "✅ N1 unitária verde em ${dur}s para ${sha:0:12}: $n comandos, $p pass/$f fail"
+    return 0
+  fi
+  echo "▶ go test -short ./... na raiz"
+  "${limpa[@]}" go test -short -json ./... >> "$j" 2>> "$e" || rc=1
+  dur=$(( $(date +%s) - t0 )); p=$(conta pass "$j"); f=$(conta fail "$j"); k=$(conta skip "$j")
+  if [ "$rc" != 0 ] || [ "$f" != 0 ] || [ "$p" = 0 ]; then
+    jq -Rr 'fromjson? | select(.Action == "fail") | "  FAIL \(.Package) \(.Test // "(pacote)")"' \
+      "$j" | head -40
+    tail -20 "$e"
+    echo "❌ N1 unitária FALHOU em ${dur}s: $p pass/$f fail, $k skip, go test rc=$rc —" \
+      "sem gate-local; corrija antes do push (log em ${j#"$root"/})"
+    exit 1
+  fi
+  printf '%s\nN1 unitária (2397): go test -short, %s pass/%s fail, %s skip, %ss\n' \
+    "$(date -u +%FT%TZ)" "$p" "$f" "$k" "$dur" > "$ok"
+  echo "✅ N1 unitária verde em ${dur}s para ${sha:0:12}: $p pass/$f fail, $k skip"
+}
+if [ "$modo" = unitario ] && [ -z "$so" ]; then
+  if [ -f "$ok" ]; then echo "N1 unitária já passou para $sha"
+  else
+    if [ -n "$(git status --porcelain --untracked-files=normal)" ]; then
+      echo "árvore suja: commite (ou guarde) antes — o resultado vale para um commit exato" >&2
+      exit 1
+    fi
+    n1_unitaria
+  fi
+  if publicar; then exit 0; fi
+  pl="$logs/$sha-gate-local.log"
+  echo "gate-local: ${sha:0:12} ainda não está no GitHub; publico à parte depois do push" \
+    "(log em ${pl#"$root"/})"
+  ( trap - EXIT
+    for _ in $(seq 1 "${CI_LOCAL_PUBLICAR_TENTATIVAS:-60}"); do
+      sleep "${CI_LOCAL_PUBLICAR_ESPERA_S:-10}"; if publicar; then exit 0; fi
+    done
+    echo "desisti: ${sha:0:12} não apareceu no GitHub; rode scripts/ci-local/run.sh --publicar"
+  ) < /dev/null >> "$pl" 2>&1 &
+  disown || true
+  exit 0
+fi
 if [ -z "$so" ] && [ -f "$ok" ]; then echo "CI local já passou para $sha — nada a fazer"; exit 0; fi
 if [ -z "$so" ] && [ -n "$(git status --porcelain --untracked-files=normal)" ]; then
   echo "árvore suja: commite (ou guarde) antes — o resultado vale para um commit exato" >&2; exit 1
@@ -266,7 +464,9 @@ trap limpar EXIT
 if [ -n "$banco" ]; then
   echo "gate pesado: pista banco —$banco"; REVENU_GATE_SEM_BANCO=0 fila_entrar "ci-local:$(basename "$root")"
 elif [ -n "$pesado" ]; then
-  echo "gate pesado: pista leve (sem banco) —$pesado"; REVENU_GATE_SEM_BANCO=1 fila_entrar "ci-local:$(basename "$root")"
+  # o act sobe contêiner (hadolint, dockle e os jobs): espera a memória da VM do Docker (dono, 2026-11-22)
+  echo "gate pesado: pista leve (sem banco) —$pesado"
+  REVENU_GATE_SEM_BANCO=1 REVENU_GATE_DOCKER=1 fila_entrar "ci-local:$(basename "$root")"
 fi
 
 # UM act por máquina (mesmo lock do baremetal: porta 34567 e CPU emulada).
@@ -301,6 +501,8 @@ jq -n --arg b "$base" --arg h "$sha" --arg ref "$(git rev-parse --abbrev-ref HEA
 
 plats=(); for r in "${rotulos[@]}"; do plats+=(-P "$r=$imagem_local"); done
 start=$(date +%s); falhou=(); sem_prova=(); fora=()
+# Teto de CPU por job (2026-10-26, malha `revenu` caiu com a VM do Docker a 2487 %): 2 jobs × 2 CPUs. Vale só para o
+# container do job; os `services:` (CRDB, Kafka) o act cria sem essa opção. CI_LOCAL_CPUS muda o teto.
 for f in "${fluxos[@]}"; do
   n=$(basename "$f"); log="$logs/$sha-$n.log"
   matriz=(); fora_wf=(); roda=0; : > "$log"
