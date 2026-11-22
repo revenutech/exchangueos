@@ -292,6 +292,39 @@ func TestCache_Acceptance100k(t *testing.T) {
 	assert.Less(t, p99, 10*time.Millisecond)
 }
 
+// TestCache_Load100k is the functional half of the 100k acceptance, without wall-clock bounds, so it runs in every
+// round (N1 under -race, N2 coverage ratchet): Load of 100k entries succeeds and 1000 Match calls succeed, and a
+// typo'd list name still finds its own entry. The timing half is TestCache_Acceptance100k, behind EXCHANGEOS_PERF=1
+// (MS-024d 1.18); this one keeps the scale coverage it took away (MS-024d 1.19; IdentityOS review note, 2026-11-22).
+func TestCache_Load100k(t *testing.T) {
+	if testing.Short() {
+		t.Skip("100k entries: skipped under -short")
+	}
+	entries := syntheticEntries(100_000, 7)
+	c := NewCache()
+	require.NoError(t, c.Load(entries))
+
+	r := rand.New(rand.NewPCG(11, 13))
+	found := 0
+	for i := range 1000 {
+		q := MatchQuery{Name: syntheticName(r), MinScore: 0.85}
+		var want string
+		if i%2 == 0 { // half the queries are typo'd list names: the entry itself must come back
+			e := entries[r.IntN(len(entries))]
+			q.Name, want = e.Name+"x", e.ID
+		}
+		got, err := c.Match(q)
+		require.NoError(t, err)
+		if want == "" {
+			continue
+		}
+		require.True(t, slices.ContainsFunc(got, func(m Match) bool { return m.EntryID == want }),
+			"query %d: typo'd name of %s did not return its entry (%d matches)", i, want, len(got))
+		found++
+	}
+	assert.Equal(t, 500, found)
+}
+
 func BenchmarkCacheLoad100k(b *testing.B) {
 	entries := syntheticEntries(100_000, 7)
 	c := NewCache()
