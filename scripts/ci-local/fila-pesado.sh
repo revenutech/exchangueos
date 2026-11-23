@@ -12,6 +12,7 @@
 #       vários), ou amplia seguido de uma ou mais linhas «motivo: …», qualquer que seja o gatilho (CONVENTIONS § 6.10)
 #   revenu-gate-pesado.sh --hash <passo> <caminho…> → chave de idempotência da entrada (árvore, go.mod/go.sum, go, tools.lock);
 #       --prova <passo> <hash> [<caminho…>] (árvore suja não grava) e --reaproveita <passo> <hash>
+#   revenu-gate-pesado.sh --tem-vaga leve|banco   → só lê: rc 0 se uma senha nova da pista entraria agora, 1 se não
 #   revenu-gate-pesado.sh --status   → por senha viva: pista, senha, dono, pid, vaga ou espera, e o passo e o pacote em curso
 #       lidos do progresso.tsv que a prova declarou em REVENU_GATE_PROGRESSO (CONVENTIONS § 6.6); ESPERA>30min e, com
 #       REVENU_GATE_NIVEL_PROVA=N1|N2, TETO>N1 (15 min) ou TETO>N2 (45 min) de vaga (§ 6.10)
@@ -53,6 +54,17 @@
 # docker info menos a soma do MemUsage do docker stats). Sem docker ou com leitura falha, não bloqueia: o --status e o
 # log dizem «memória da VM: não lida». Quem já roda termina. REVENU_GATE_EXCLUSIVA=0 desliga (1), MEM_LIVRE_MIN_MB=0 (2).
 # Correção do dono no mesmo dia: na pista leve, (2) vale só para quem declara contêiner (REVENU_GATE_DOCKER=1).
+# «As duas, com teto» (dono, sessão Baremetal em 2026-11-22 ~19:00 BRT: uma pesada esperou 21 min pela exclusiva e
+# 17 leves unitárias pararam atrás dela). (3) Pesada só com liberação: a DV 2397 diz que hoje vale só a N1 unitária;
+# a senha pesada (pista banco, ou leve com REVENU_GATE_PESADA=1) sem REVENU_GATE_PESADA_LIBERADA=<motivo> no ambiente
+# de quem pede é recusada na hora, rc 77, sem pegar senha; o motivo da liberação vai ao log. Desliga com a constante
+# FILA_PESADA_LIBERACAO abaixo ou com PESADA_LIBERACAO=0 no .limites (o vigia reescreve o arquivo e a regra volta);
+# nunca pelo ambiente de quem pede. (4) Janela da leve: enquanto uma pesada espera a exclusiva, a leve sem contêiner
+# segue entrando como sempre (teto de vagas leves e memória mínima da VM), por até JANELA_LEVE_S (600) desde o pedido
+# da exclusiva; depois, a fila drena e a pesada entra. Com contêiner, espera desde o início. O fim da janela fica na
+# senha da pesada (janela_ate), com o teto dela; o ambiente da leve não estica a janela. Início e fim vão ao log.
+FILA_PESADA_LIBERACAO=1   # DV 2397: trocar para 0 quando ela cair (sem variável de ambiente, de propósito)
+FILA_JANELA_LEVE_S=${REVENU_GATE_JANELA_LEVE_S:-600}             # 0: sem janela (a leve espera desde o pedido)
 FILA_LOCK=${REVENU_GATE_PESADO_LOCK:-/private/tmp/revenu-gate-pesado.lock}
 FILA_SENHAS=${REVENU_GATE_PESADO_SENHAS:-${FILA_LOCK%.lock}.senhas}
 FILA_LOG=${REVENU_GATE_PESADO_LOG:-${FILA_LOCK%.lock}.log}   # uma linha por entrada: as leituras que abriram a vaga
@@ -96,7 +108,8 @@ fila_senha=""; fila_vaga=""
 
 fila_limites() { # relê o arquivo de limites: uma mudança vale na volta seguinte, também para quem já espera neste código
   [ -f "$FILA_LIMITES" ] || return 0
-  local k v
+  local k v proprio=0
+  [ "$FILA_LIMITES" != "${FILA_LOCK_BANCO%.lock}.limites" ] || proprio=1
   while IFS='=' read -r k v; do
     case "$v" in ''|*[!0-9]*) continue ;; esac
     case "$k" in
@@ -104,6 +117,9 @@ fila_limites() { # relê o arquivo de limites: uma mudança vale na volta seguin
       SWAP_MAX) FILA_SWAP_MAX=$v ;; VAGAS_WARN) FILA_VAGAS_WARN=$v ;; CRDB_MAX) FILA_CRDB_MAX=$v ;;
       LEVE_MAX) FILA_LEVE_MAX=$v ;; LEVE_WARN) FILA_LEVE_WARN=$v ;;
       MEM_LIVRE_MIN_MB) FILA_MEM_LIVRE_MIN_MB=$v ;; EXCLUSIVA) FILA_EXCLUSIVA=$v ;;
+      JANELA_LEVE_S) FILA_JANELA_LEVE_S=$v ;;
+      # só o arquivo da própria fila: REVENU_GATE_LIMITES_ARQ, que é ambiente de quem pede, não desliga a liberação
+      PESADA_LIBERACAO) [ "$proprio" != 1 ] || FILA_PESADA_LIBERACAO=$v ;;
     esac
   done < "$FILA_LIMITES"
   if [ "$fila_leve" = 1 ]; then FILA_VAGAS_MAX=$FILA_LEVE_MAX; fi
@@ -211,12 +227,69 @@ fila_pesadas_vivas() { # rodadas pesadas com vaga e dono vivo: toda vaga da pist
 }
 
 fila_pesada_esperando() { # 0 se uma senha pesada viva espera só pela exclusiva: as leves novas esperam com ela, senão
-  # a pista leve, sempre com alguém rodando, nunca deixaria a pesada entrar
-  local s
+  # a pista leve, sempre com alguém rodando, nunca deixaria a pesada entrar. fila_janela_ate fica com o fim da janela
+  # da leve (dono, 2026-11-22): o menor entre as pesadas que esperam; 0 se alguma não abriu janela
+  local s a r=1; fila_janela_ate=""
   for s in "${FILA_LOCK_BANCO%.lock}".senhas/* "${FILA_LOCK_LEVE%.lock}".senhas/*; do
-    [ -f "$s/pesada" ] && [ ! -f "$s/vaga" ] && [ "$(cat "$s/motivo" 2>/dev/null)" = exclusiva ] && fila_viva "$s" && return 0
+    if ! { [ -f "$s/pesada" ] && [ ! -f "$s/vaga" ] && [ "$(cat "$s/motivo" 2>/dev/null)" = exclusiva ]; }; then continue; fi
+    fila_viva "$s" || continue
+    a=$(cat "$s/janela_ate" 2>/dev/null); case "$a" in ''|*[!0-9]*) a=0 ;; esac
+    if [ -z "$fila_janela_ate" ] || [ "$a" -lt "$fila_janela_ate" ]; then fila_janela_ate=$a; fi
+    r=0
   done
-  return 1
+  return "$r"
+}
+fila_janela_ate=""
+
+fila_janela_aberta() { # 0 se uma pesada espera a exclusiva e a janela da leve sem contêiner ainda não passou do teto
+  fila_pesada_esperando && [ "$(date +%s)" -lt "${fila_janela_ate:-0}" ]
+}
+
+fila_janela_pesada() { # <senha> <motivo>: a pesada que espera só pela exclusiva abre a janela da leve, e fecha no teto
+  local d=$FILA_SENHAS/$1 agora a
+  [ "$2" = exclusiva ] || return 0
+  agora=$(date +%s)
+  if [ ! -f "$d/janela_ate" ]; then
+    # antes do `motivo`: quem lê a pesada como «na fila» já acha o fim da janela
+    echo $((agora + FILA_JANELA_LEVE_S)) > "$d/janela_ate"
+    echo "$(date -u +%FT%TZ) janela-leve inicio senha=$1 dono=$(cat "$d/dono" 2>/dev/null) teto=${FILA_JANELA_LEVE_S}s" \
+      >> "$FILA_LOG" 2>/dev/null || true
+  elif [ ! -f "$d/janela_fim" ]; then
+    a=$(cat "$d/janela_ate" 2>/dev/null); case "$a" in ''|*[!0-9]*) a=0 ;; esac
+    [ "$agora" -ge "$a" ] && fila_janela_fecha "$1" 'teto: a fila drena para a pesada'
+  fi
+  return 0
+}
+
+fila_janela_fecha() { # <senha> <motivo>: registra o fim da janela da leve, uma vez só
+  local d=$FILA_SENHAS/$1
+  [ -f "$d/janela_ate" ] && [ ! -f "$d/janela_fim" ] || return 0
+  : > "$d/janela_fim"
+  echo "$(date -u +%FT%TZ) janela-leve fim senha=$1 dono=$(cat "$d/dono" 2>/dev/null) motivo=«$2»" >> "$FILA_LOG" 2>/dev/null || true
+}
+
+fila_pede_pesada() { # <dono>: registra a liberação no log, ou recusa a pesada antes da senha e encerra (rc 77)
+  local m; m=$(printf '%s' "${REVENU_GATE_PESADA_LIBERADA:-}" | tr '\n\r\t' '   ' | cut -c1-200)
+  local pista=banco; [ "$fila_leve" = 0 ] || pista=leve
+  if fila_liberada; then
+    [ "$FILA_PESADA_LIBERACAO" = 1 ] || return 0
+    echo "$(date -u +%FT%TZ) pesada-liberada dono=$1 pid=$$ pista=$pista motivo=«${m}»" >> "$FILA_LOG" 2>/dev/null || true
+    return 0
+  fi
+  echo "$(date -u +%FT%TZ) pesada-recusada dono=$1 pid=$$ pista=$pista motivo=«sem REVENU_GATE_PESADA_LIBERADA»" \
+    >> "$FILA_LOG" 2>/dev/null || true
+  {
+    echo "fila do gate pesado: rodada pesada de $1 (pista $pista) recusada, sem senha (rc 77)."
+    echo "  A DV 2397 diz que hoje vale só a N1 unitária: pesada só com ordem do dono."
+    echo "  Com a ordem, peça de novo com o motivo: REVENU_GATE_PESADA_LIBERADA='<ordem do dono>' <o mesmo comando>"
+  } >&2
+  exit 77
+}
+
+fila_liberada() { # 0 se a pesada pode pedir senha: regra desligada ou REVENU_GATE_PESADA_LIBERADA com motivo (DV 2397)
+  local m=${REVENU_GATE_PESADA_LIBERADA:-}
+  [ "$FILA_PESADA_LIBERACAO" = 1 ] || return 0
+  [ -n "${m//[[:space:]]/}" ]
 }
 
 fila_exclusiva() { # o motivo se a regra da pesada exclusiva barra a entrada agora; nada se não barra
@@ -232,7 +305,12 @@ fila_exclusiva() { # o motivo se a regra da pesada exclusiva barra a entrada ago
       echo 'exclusiva (já roda leve sem contêiner durante a pesada)'; return 0
     fi
     echo exclusiva
-  elif fila_pesada_esperando; then echo 'exclusiva (pesada na fila)'
+  elif fila_pesada_esperando; then
+    # janela da leve (dono, 2026-11-22): a sem contêiner entra como sempre até o teto contado do pedido da exclusiva
+    if [ "$fila_leve" = 1 ] && [ "${REVENU_GATE_DOCKER:-0}" != 1 ] && [ "$(date +%s)" -lt "${fila_janela_ate:-0}" ]; then
+      return 0
+    fi
+    echo 'exclusiva (pesada na fila)'
   fi
   return 0
 }
@@ -286,9 +364,11 @@ fila_confere_leve() { # <dono> <pid> <início>: na pista sem banco, o motivo se 
     cmd=$(ps -o command= -p "$p" 2>/dev/null) || continue
     case "$cmd" in
       *"cockroach start"*|*kafka-server-start*) echo "processo $p: ${cmd:0:120}"; return 0 ;;
-      # docker só conta quando sobe banco: o act, o hadolint e o dockle rodam `docker run` sem banco (MS-022 1.26)
-      *"docker run"*|*"docker create"*|*"docker compose"*|*docker-compose*)
-        case "$(printf '%s' "$cmd" | tr '[:upper:]' '[:lower:]')" in
+      # docker só conta quando sobe banco: o act, o hadolint e o dockle rodam `docker run` sem banco (MS-022 1.26).
+      # Casa a IMAGEM, não a linha inteira (2026-11-23, IdentityOS): `-v …/wt-kafka:/src` do lint e um `bash … docker run
+      # … internal/kafkaauth` (o processo é o bash, não o docker) derrubavam leves sem banco com rc 66.
+      *docker*)
+        case "$(fila_imagem_docker "$cmd" | tr '[:upper:]' '[:lower:]')" in
           *cockroach*|*kafka*|*redpanda*) echo "processo $p: ${cmd:0:120}"; return 0 ;;
         esac ;;
     esac
@@ -306,6 +386,46 @@ fila_confere_leve() { # <dono> <pid> <início>: na pista sem banco, o motivo se 
   return 0
 }
 
+fila_imagem_docker() { # <linha de comando>: a imagem de um `docker run|create` (ou o resto da linha de um compose); vazio se o
+  # processo não é o próprio docker. Opções com valor separado pulam o valor (-v x, --name y); `--opt=valor` é um token só.
+  local -a a; read -r -a a <<<"$1"; local i=1 n=${#a[@]} t
+  [ "$n" -gt 0 ] || return 0
+  case "${a[0]##*/}" in
+    docker-compose) printf '%s' "${a[*]:1}"; return 0 ;;
+    docker|com.docker.cli) ;;
+    *) return 0 ;;
+  esac
+  while [ "$i" -lt "$n" ]; do # opções globais (--context x, -H y) até o subcomando
+    case "${a[$i]}" in
+      --context|-c|-H|--host|--config|-l|--log-level) i=$((i + 2)) ;;
+      -*) i=$((i + 1)) ;;
+      *) break ;;
+    esac
+  done
+  [ "$i" -lt "$n" ] || return 0
+  case "${a[$i]}" in
+    compose) printf '%s' "${a[*]:$((i + 1))}"; return 0 ;;
+    container) i=$((i + 1)); case "${a[$i]:-}" in run|create) ;; *) return 0 ;; esac ;;
+    run|create) ;;
+    *) return 0 ;;
+  esac
+  i=$((i + 1))
+  while [ "$i" -lt "$n" ]; do
+    t=${a[$i]}
+    case "$t" in
+      --*=*) i=$((i + 1)) ;;
+      -v|--volume|-e|--env|--env-file|--name|--network|--net|-w|--workdir|--entrypoint|-p|--publish|-l|--label|\
+      --label-file|-u|--user|--mount|-m|--memory|--memory-swap|--cpus|-c|--cpu-shares|--cpuset-cpus|--platform|-h|\
+      --hostname|--add-host|--cap-add|--cap-drop|--device|--dns|--log-driver|--log-opt|--restart|--security-opt|--tmpfs|\
+      --ulimit|--pull|--cidfile|--stop-signal|--stop-timeout|--ipc|--pid|--shm-size|--gpus|--runtime|--network-alias|\
+      --link|--volumes-from|--expose|--group-add|--userns|--uts|-a|--attach|--health-cmd|--health-interval|--annotation)
+        i=$((i + 2)) ;;
+      -*) i=$((i + 1)) ;;
+      *) printf '%s' "$t"; return 0 ;;
+    esac
+  done
+}
+
 fila_descendentes() { # <pid>: os descendentes, um por linha
   local f; for f in $(pgrep -P "$1" 2>/dev/null); do echo "$f"; fila_descendentes "$f"; done
 }
@@ -318,10 +438,12 @@ fila_avaliar() { # «vagas carga swap% pressão rodando crdb memvm motivo…»: 
   # AccountOS: o mínimo travava o `go test -short`, que roda no macOS e não usa a VM); banco e pesada esperam sempre
   m=desligada
   if [ "$fila_leve" = 1 ] && [ "$fila_pesada" != 1 ] && [ "${REVENU_GATE_DOCKER:-0}" != 1 ]; then m=dispensada
-    # durante a pesada ela divide a máquina: lê a memória e, sem leitura, não entra (dono, 2026-11-22)
-    if [ "$FILA_EXCLUSIVA" = 1 ] && [ "$FILA_MEM_LIVRE_MIN_MB" -gt 0 ] && [ "$(fila_pesadas_vivas)" -gt 0 ]; then
+    # durante a pesada ela divide a máquina: lê a memória e, sem leitura, não entra (dono, 2026-11-22); na janela da
+    # pesada que espera a exclusiva também, porque a pesada vai precisar da VM (mesmo dia, «com a memória mínima»)
+    if [ "$FILA_EXCLUSIVA" = 1 ] && [ "$FILA_MEM_LIVRE_MIN_MB" -gt 0 ] \
+      && { [ "$(fila_pesadas_vivas)" -gt 0 ] || fila_janela_aberta; }; then
       m=$(fila_mem_livre_mb)
-      case "$m" in ''|*[!0-9]*) v=0; mot="memória da VM não lida (leve sem contêiner durante a pesada)" ;; esac
+      case "$m" in ''|*[!0-9]*) v=0; mot="memória da VM não lida (leve sem contêiner junto da pesada)" ;; esac
     fi
   elif [ "$FILA_MEM_LIVRE_MIN_MB" -gt 0 ]; then m=$(fila_mem_livre_mb); fi
   case "$m" in
@@ -467,6 +589,7 @@ fila_entrar() { # <dono>
   fi
   # pesada (dono, 2026-11-22): a pista banco sempre; a leve quando declara REVENU_GATE_PESADA=1 (mutation-gate/gremlins)
   fila_pesada=0; if [ "$fila_leve" = 0 ] || [ "${REVENU_GATE_PESADA:-0}" = 1 ]; then fila_pesada=1; fi
+  if [ "$fila_pesada" = 1 ]; then fila_limites; fila_pede_pesada "$1"; fi   # sem liberação, sai aqui (rc 77)
   local dono=$1 n s pos cabeca vagas avisado=false leitura="" linha lv lc lsw lp lr lk lm lmot vi
   mkdir -p "$FILA_SENHAS"
   while :; do
@@ -501,6 +624,7 @@ fila_entrar() { # <dono>
       fila_limites
       leitura=$(fila_avaliar); vagas=${leitura%% *}
       read -r _ _ _ _ lr _ _ lmot <<< "$leitura"
+      if [ "$fila_pesada" = 1 ]; then fila_janela_pesada "$n" "$lmot"; fi   # janela da leve (dono, 2026-11-22)
       if [ "$lmot" = - ]; then rm -f "$FILA_SENHAS/$n/motivo"; else echo "$lmot" > "$FILA_SENHAS/$n/motivo"; fi
       # a exclusiva é conferida de novo sob o lock de decisão: a leitura da memória leva segundos, e a outra pista
       # pode ter entrado nesse meio-tempo (dono, 2026-11-22)
@@ -522,7 +646,10 @@ fila_entrar() { # <dono>
   echo "$fila_vaga" > "$FILA_SENHAS/$n/vaga"; rm -f "$FILA_SENHAS/$n/motivo"
   if [ "$fila_leve" = 1 ] && [ "$fila_pesada" != 1 ] && [ "$(fila_pesadas_vivas)" -gt 0 ]; then
     echo 'leve sem contêiner durante a pesada' > "$FILA_SENHAS/$n/durante"   # o --status mostra
+  elif [ "$fila_leve" = 1 ] && [ "$fila_pesada" != 1 ] && fila_janela_aberta; then
+    echo 'leve sem contêiner na janela da pesada' > "$FILA_SENHAS/$n/durante"
   fi
+  [ "$fila_pesada" != 1 ] || fila_janela_fecha "$n" "a pesada entrou"
   # Leitura que abriu a vaga (Core, 2026-11-02: provar entradas sob pressão). Formato: chave=valor numa linha.
   read -r lv lc lsw lp lr lk lm _ <<< "$leitura"; vi=1; [ "$fila_vaga" = "$FILA_LOCK" ] || vi=${fila_vaga##*.}
   case "$lm" in -) lm=nao-lida ;; *[!0-9]*) ;; *) lm=${lm}MiB ;; esac   # «memória da VM: não lida» vai ao log (2026-11-22)
@@ -531,6 +658,29 @@ fila_entrar() { # <dono>
   echo "$linha" > "$FILA_SENHAS/$n/leitura"; echo "$linha" >> "$FILA_LOG" 2>/dev/null || true
   # o comando filho herda a senha: se chamar a fila de novo, entra como reentrante (dono, 2026-11-22)
   if [ "$fila_leve" = 1 ]; then export REVENU_GATE_SENHA="leve:$n:$$"; else export REVENU_GATE_SENHA="banco:$n:$$"; fi
+}
+
+fila_tem_vaga() { # <leve|banco>: 0 se uma senha nova desta pista entraria agora; só lê, sem senha nem vaga.
+  # Para o hook pre-push falhar rápido com a fila cheia (dono, 2026-11-22: o GitHub derruba o SSH do `git push` que
+  # espera vaga; SocketOS, OnboardOS e FinanceOS). Conservadora: senha viva esperando nesta pista já é «sem vaga».
+  # Vale o ambiente de quem pergunta (REVENU_GATE_DOCKER, REVENU_GATE_PESADA), como no fila_entrar.
+  case "$1" in
+    leve) fila_leve=1; FILA_LOCK=$FILA_LOCK_LEVE; FILA_SENHAS=${FILA_LOCK%.lock}.senhas; fila_pesada=0
+          [ "${REVENU_GATE_PESADA:-0}" != 1 ] || fila_pesada=1 ;;
+    banco) fila_leve=0; FILA_LOCK=$FILA_LOCK_BANCO; FILA_SENHAS=${FILA_LOCK%.lock}.senhas; fila_pesada=1 ;;
+    *) echo "uso: --tem-vaga leve|banco" >&2; return 2 ;;
+  esac
+  fila_limites; [ "$fila_leve" = 0 ] || FILA_VAGAS_MAX=$FILA_LEVE_MAX
+  local s l v r mot
+  if [ "$fila_pesada" = 1 ] && ! fila_liberada; then echo "sem vaga $1: pesada sem liberação (DV 2397)"; return 1; fi
+  for s in "$FILA_SENHAS"/*; do
+    if [ ! -d "$s" ] || [ -f "$s/vaga" ] || ! fila_viva "$s"; then continue; fi
+    echo "sem vaga $1: a senha ${s##*/} ($(cat "$s/dono" 2>/dev/null)) já espera"; return 1
+  done
+  l=$(fila_avaliar); v=${l%% *}; read -r _ _ _ _ r _ _ mot <<< "$l"
+  if [ "${r:-0}" -lt "${v:-0}" ]; then echo "vaga $1 livre agora (rodando $r de $v)"; return 0; fi
+  [ "$mot" != - ] || mot=""
+  echo "sem vaga $1: rodando $r de $v${mot:+ ($mot)}"; return 1
 }
 
 fila_pega_vaga() { # <rodando> <vagas> <antigos>: tenta uma vaga desta pista; fila_vaga fica com ela, ou vazio
@@ -555,6 +705,7 @@ fila_sair() {
   fila_decide_solta   # sinal no meio da decisão não deixa o lock de decisão para trás
   if [ -n "$fila_vaga" ] && [ "$(cat "$fila_vaga/pid" 2>/dev/null)" = "$$" ]; then rm -rf "$fila_vaga"; fi
   fila_vaga=""
+  if [ -n "$fila_senha" ] && [ "$fila_pesada" = 1 ]; then fila_janela_fecha "$fila_senha" 'a pesada saiu sem entrar'; fi
   if [ -n "$fila_senha" ]; then rm -rf "${FILA_SENHAS:?}/$fila_senha"; fila_senha=""; fi
 }
 
@@ -952,6 +1103,7 @@ if [ "${BASH_SOURCE[0]}" = "$0" ]; then
     --prova) : "${2:?passo}" "${3:?hash}"; shift; fila_prova "$@"; exit ;;
     --reaproveita) fila_reaproveita "${2:?passo}" "${3:?hash}"; exit ;;
     --status) fila_status; exit 0 ;;
+    --tem-vaga) fila_tem_vaga "${2:-}"; exit ;;
     --leituras) fila_leituras; exit ;;
     --dlq) cat "$FILA_ESTADO"/dlq/* 2>/dev/null || true; exit 0 ;;
     --dlq-tira) rm -f "$FILA_ESTADO/dlq/${2:?chave}" "$FILA_ESTADO/falhas/$2"; exit 0 ;;
