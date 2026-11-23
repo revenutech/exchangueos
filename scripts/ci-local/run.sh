@@ -11,6 +11,17 @@
 #   scripts/ci-local/run.sh --marca           → imprime a marca <!-- ci-local: <sha> … --> para o corpo do PR
 #   scripts/ci-local/run.sh --publicar        → depois do push: status `ci-local` success no commit, a prova que o
 #                                               gate do cd-baremetal-staging (platform-actions ≥ v0.3.3) aceita
+#   scripts/ci-local/run.sh --sem-cache [...] → a rodada do push à mão: go test sem cache de resultado (abaixo)
+#
+# Rodada do push sem cache de teste (dono, «Aplica no push», 23/11/2026, DV 2930; verde falso por
+# cache no ledgeros, DV 2927): no hook pre-push (PRE_COMMIT_TO_REF no ambiente, que o pre-commit
+# exporta no estágio pre-push e os blocos de husky e lefthook do instalar.sh passam) ou com
+# --sem-cache, o `go test` roda com -count=1: no padrão da N1 unitária, na linha de comando; nos
+# passos do .ci-local-modo-n1, por GOFLAGS (-count=1 acrescentado ao que já houver; o go só o aplica
+# ao `go test`); no act, por `--env GOFLAGS=-count=1` (o GOCACHE volta do cache do actions/cache
+# via ~/.cache/actcache; env do workflow ou do passo prevalece). À mão, sem a flag, segue com
+# cache. A prova gravada à mão com cache não libera o push: o hook roda de novo, sem cache. A nota
+# vai à 3ª linha da prova, fora da descrição do status (o gate do CD casa a descrição inteira).
 #
 # Modo unitário (dono, DV 2397, 22/11/2026: enquanto o plano do módulo não fecha, só a N1
 # unitária): a linha «unitario» no .ci-local-modo da raiz do repo troca o act por
@@ -21,6 +32,7 @@
 # Fora por desenho (deploy, nuvem ou contexto do PR): cd-*, rollback*, terraform*, release*,
 # dependabot-*, cleanup-*, pr-template*. Lista extra por repo em .ci-local-ignorar (um nome por linha).
 set -euo pipefail
+sem_cache=""; if [ "${1:-}" = --sem-cache ]; then sem_cache=1; shift; fi
 root=$(git rev-parse --show-toplevel); cd "$root"; here="$root/scripts/ci-local"
 # Modo do pre-push: a 1ª linha útil (# comenta) do .ci-local-modo; sem o arquivo, o de sempre
 # (act). Lido antes da checagem de worktree: o unitário não sobe contêiner e roda em worktree
@@ -45,19 +57,91 @@ sha=$(git rev-parse HEAD); ok="$root/.cache/ci-local/ok/$sha"; logs="$root/.cach
 if [ -n "${PRE_COMMIT_TO_REF:-}" ] && [ -n "${PRE_COMMIT_TO_REF//0/}" ] && [ "$(git rev-parse "$PRE_COMMIT_TO_REF^{commit}" 2>/dev/null)" != "$sha" ]; then
   echo "pre-push de ${PRE_COMMIT_TO_REF:0:12} (não é o HEAD): faça checkout do commit e empurre de novo" >&2; exit 1
 fi
+# Rodada que libera o push (DV 2930): o hook, ou à mão com --sem-cache. A prova dela leva a nota na
+# 3ª linha (a 2ª é a descrição do status, que o gate do CD casa inteira).
+[ -z "${PRE_COMMIT_TO_REF:-}" ] || sem_cache=1
+nota_sem_cache="sem cache (DV 2930)"
+ok_vale() { # 0 se há prova do HEAD que serve a esta rodada (na do push, só a gravada sem cache)
+  [ -f "$ok" ] || return 1
+  [ -z "$sem_cache" ] && return 0
+  grep -qxF "$nota_sem_cache" "$ok" && return 0
+  echo "a prova de ${sha:0:12} foi com cache de teste: a rodada do push roda de novo, sem cache" \
+    "(DV 2930)"
+  return 1
+}
 # A prova do modo unitário fica em ok-unitario/ e vai ao status `gate-local`: nunca vale como
 # CI completo (ci-local).
 contexto=ci-local
 if [ "$modo" = unitario ]; then ok="$root/.cache/ci-local/ok-unitario/$sha"; contexto=gate-local; fi
 mkdir -p "$(dirname "$ok")" "$logs"
-publicar() { # status $contexto success no $sha (descrição: 2ª linha do $ok); 1 se não deu
-  local repo
-  repo=$(gh repo view --json nameWithOwner -q .nameWithOwner) || return 1
-  gh api "repos/$repo/commits/$sha" -q .sha >/dev/null 2>&1 || return 1
-  gh api -X POST "repos/$repo/statuses/$sha" -f state=success -f context="$contexto" \
+repo_origin() { # owner/repo do remoto origin (ssh ou https); vazio se não der. Nunca o `gh repo
+  # view`: num fork ele resolve o repo pai (FlinkOS, 22/11: apache/flink, status recusado). Lê a URL
+  # como está na config (sem o insteadOf), a mesma do `git remote get-url` sem reescrita
+  git config --get remote.origin.url 2>/dev/null | sed -nE \
+    's#^(git@[^:/]+:|ssh://([^@/]+@)?[^/]+/|https?://([^@/]+@)?[^/]+/)([^/]+/[^/]+)$#\4#p' \
+    | sed -E 's#/$##; s#\.git$##' | grep -E '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$' || true
+}
+publicar() { # status $contexto success no $sha (descrição: 2ª linha do $ok); 1 se não deu.
+  # Diz o repo alvo e, na falha, o rc e a mensagem curta do gh (vão ao log do retry)
+  local repo e rc=0
+  repo=$(repo_origin)
+  if [ -z "$repo" ]; then
+    echo "publicar: não extraí owner/repo do origin «$(git config --get remote.origin.url \
+      | sed -E 's#//[^@/]+@#//#')»; recusado (sem cair no gh repo view)" >&2; return 1
+  fi
+  echo "publicar: alvo $repo, ${sha:0:12}, status $contexto" >&2
+  # sha fora do origin (push que não entrou: o SSH caiu no hook, KeycloakOS 22/11): a API de statuses
+  # responde 422 «No commit found for SHA»; diz isso no log, sem publicar por outro caminho
+  e=$(gh api "repos/$repo/commits/$sha" -q .sha 2>&1) || rc=$?
+  if [ "$rc" != 0 ]; then
+    echo "publicar: sha ainda não está no origin ($repo, ${sha:0:12}; gh rc $rc): ${e:0:160}" >&2; return 1
+  fi
+  e=$(gh api -X POST "repos/$repo/statuses/$sha" -f state=success -f context="$contexto" \
     -f description="$(sed -n 2p "$ok" | cut -c1-140)" \
-    -q '"status \(.context) \(.state)"' || return 1
-  echo "em ${sha:0:12}"
+    -q '"status \(.context) \(.state)"' 2>&1) || rc=$?
+  if [ "$rc" != 0 ]; then
+    case "$e" in *"No commit found"*) e="sha ainda não está no origin: $e" ;; esac
+    echo "publicar: POST do status em $repo (gh rc $rc): ${e:0:160}" >&2; return 1
+  fi
+  echo "$e em $repo@${sha:0:12}"
+}
+java_do_repo() { # JDK do repo para os passos (FlinkOS, IcebergOS e KeycloakOS, 22/11: o hook herdava o
+  # OpenJDK 26 do Mac, e eles compilam em 21). Ordem: .ci-local-java, .java-version, java= do
+  # .sdkmanrc. Sem arquivo, não mexe; JDK pedido e ausente: falha dizendo a versão e o arquivo
+  local f v="" jh
+  for f in .ci-local-java .java-version .sdkmanrc; do
+    [ -f "$f" ] || continue
+    if [ "$f" = .sdkmanrc ]; then v=$(grep -E '^[[:space:]]*java=' "$f" | head -1 | cut -d= -f2- || true)
+    else v=$(grep -vE '^[[:space:]]*(#|$)' "$f" | head -1 || true); fi
+    v=$(printf '%s' "$v" | tr -d '[:space:]' | sed -E 's/^[^0-9]*//; s/^([0-9]+(\.[0-9]+)*).*/\1/')
+    [ -z "$v" ] || break
+  done
+  [ -n "$v" ] || return 0
+  jh=$(command -v java_home 2>/dev/null || echo /usr/libexec/java_home)
+  if ! JAVA_HOME=$("$jh" -v "$v" 2>/dev/null) || [ -z "$JAVA_HOME" ]; then
+    echo "JDK $v (pedido em $f) não está instalado nesta máquina: instale-o (ex.: brew install" \
+      "--cask temurin@${v%%.*}) e rode de novo" >&2; exit 1
+  fi
+  export JAVA_HOME PATH="$JAVA_HOME/bin:$PATH"
+  echo "JDK $v (de $f): JAVA_HOME=$JAVA_HOME"
+}
+pacotes_pact() { # diretórios com _test.go de contrato pact (//go:build com pact ou import do pact-go)
+  git grep -lE '^//go:build.*(^|[^[:alnum:]_])pact([^[:alnum:]_]|$)|"github\.com/pact-foundation/pact-go' \
+    -- '*_test.go' 2>/dev/null | xargs -n1 dirname 2>/dev/null | sort -u || true
+}
+lembra_push() { # no hook: o «Passed» não prova que o push entrou (KeycloakOS, 22/11: o SSH caiu depois)
+  [ -n "${PRE_COMMIT_TO_REF:-}" ] || return 0
+  echo "confira que o push entrou: git ls-remote origin $(git rev-parse --abbrev-ref HEAD) deve" \
+    "mostrar ${sha:0:12}"
+}
+hook_sem_vaga() { # pista leve, sem prova: no hook pre-push, sai já se a fila não tem vaga agora
+  # (dono, 2026-11-22: o GitHub derruba o SSH do push que espera vaga). À mão, espera como sempre.
+  local r
+  if [ -z "${PRE_COMMIT_TO_REF:-}" ] || ! declare -F fila_tem_vaga >/dev/null; then return 0; fi
+  if r=$( (fila_tem_vaga leve) 2>&1); then return 0; fi
+  printf '%s\n' "$r" "fila sem vaga: rode \`scripts/ci-local/run.sh --sem-cache\` (sem push) e" \
+    "empurre de novo; a marca sem cache faz o hook passar na hora (DV 2930)" >&2
+  exit 75
 }
 case "${1:-}" in
   --status) if [ -f "$ok" ]; then echo "CI local OK para $sha${modo:+ (modo $modo)}"; exit 0; fi
@@ -117,7 +201,8 @@ n1_sem_caminhos() { # <texto>: token com / sai, salvo imagem (depois de docker r
       img = (tolower($i) ~ /^(image:|from)$/)
       if (dk == 1) dk = ($i ~ /^(run|pull|create)$/) ? 2 : 0
       else if (dk == 0 && cmd && $i ~ /(^|\/)docker$/) dk = 1
-      cmd = (t ~ /^[A-Za-z_][A-Za-z0-9_]*=/ || t ~ /^(sudo|env|exec|time|nice|sh|bash|xargs)$/)
+      cmd = (t ~ /^[A-Za-z_][A-Za-z0-9_]*=/ || t ~ /^(sudo|env|exec|time|nice|sh|bash|xargs)$/ \
+        || (cmd && t == "-c"))   # sh -c <comando>: o seguinte ainda é comando
     }
     print o }'
 }
@@ -129,7 +214,7 @@ passo_conf() { # <nome>: «<marcadores>\t<comando>» do passo de disco <nome> no
   }' .ci-local/passos.conf 2>/dev/null
 }
 n1_plano() { # lê o .ci-local-modo-n1: N1_CMD[i], N1_DOCKER[i] (0|1); sai 1 com a linha errada
-  local ln c d r m nl=0 tab=$'\t'
+  local ln c cs d r m nl=0 tab=$'\t'
   N1_CMD=(); N1_DOCKER=()
   while IFS= read -r ln || [ -n "$ln" ]; do
     nl=$((nl + 1)); c=$(printf '%s' "$ln" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
@@ -148,9 +233,11 @@ n1_plano() { # lê o .ci-local-modo-n1: N1_CMD[i], N1_DOCKER[i] (0|1); sai 1 com
         fi
         c=${r#*"$tab"};;
     esac
-    if printf '%s\n' "$c" | grep -qiE -- "$n1_proibido" \
-      || n1_sem_caminhos "$c" | grep -qiE -- "$n1_ferramenta" \
-      || printf '%s\n' "$c" | grep -oE '(^|[[:space:]])[A-Za-z_][A-Za-z0-9_]*=' | tr -d '[:space:]=' \
+    # aspas viram espaço: em `sh -c 'docker run …'` o token seria «'docker» (FlinkOS, 22/11)
+    cs=$(printf '%s' "$c" | tr "\"'" '  ')
+    if printf '%s\n' "$cs" | grep -qiE -- "$n1_proibido" \
+      || n1_sem_caminhos "$cs" | grep -qiE -- "$n1_ferramenta" \
+      || printf '%s\n' "$cs" | grep -oE '(^|[[:space:]])[A-Za-z_][A-Za-z0-9_]*=' | tr -d '[:space:]=' \
         | grep -qE -- "$sem_env"; then
       echo ".ci-local-modo-n1:$nl: banco, broker, act ou mutante não entram na N1 unitária" \
         "(DV 2397): $c" >&2; exit 1
@@ -165,7 +252,7 @@ conta() { # <Action> <json>: testes (e subtestes) com a ação no -json do go te
   jq -Rn --arg a "$1" '[inputs | fromjson? | select(.Test != null and .Action == $a)] | length' "$2"
 }
 n1_unitaria() {
-  local decl=0 docker=0 i n j e t0 dur p f k rc=0 v sd limpa=(env)
+  local decl=0 docker=0 i n j e t0 dur p f k rc=0 v sd pact limpa=(env)
   if [ -f .ci-local-modo-n1 ]; then
     decl=1; n1_plano
     for i in "${N1_DOCKER[@]}"; do [ "$i" = 0 ] || docker=1; done
@@ -178,6 +265,14 @@ n1_unitaria() {
       's|^(.*)/go.mod$|  go -C \1 test -short ./...|' >&2 || true
     echo "  <validador ou teste do produto, ex.: npx vitest run --maxWorkers=2>" >&2
     echo "ou tire o .ci-local-modo (volta ao CI completo)." >&2
+    exit 1
+  elif pact=$(pacotes_pact) && [ -n "$pact" ]; then
+    # contrato pact não linka sem a pact_ffi (AuthorityOS, 22/11): o `go test ./...` reprovaria. A fila
+    # nunca tira pacote por conta própria (afrouxaria o gate): quem declara o recorte é o repo
+    echo "modo unitário: sem .ci-local-modo-n1 e com testes de contrato pact (precisam da pact_ffi)" \
+      "em: $(printf '%s' "$pact" | tr '\n' ' ')— push recusado antes de rodar. Declare a N1 em" \
+      "$root/.ci-local-modo-n1 (um passo por linha; por exemplo, o go test dos pacotes sem" \
+      "pact, ou «passo <nome>» do .ci-local/passos.conf) e commite." >&2
     exit 1
   fi
   for v in $(compgen -e | grep -E -- "$sem_env" | grep -Ev '^(REVENU_GATE|RODADA)_' || true); do
@@ -199,10 +294,15 @@ n1_unitaria() {
       case ":$PATH:" in *":$v/bin:"*) ;; *) PATH="$PATH:$v/bin";; esac
     fi
   fi
+  # Rodada do push (DV 2930): go test sem cache de resultado. Nos passos, pelo GOFLAGS (o go só
+  # aplica o -count ao `go test`); no padrão, também na linha de comando (abaixo).
+  if [ -n "$sem_cache" ]; then limpa+=("GOFLAGS=${GOFLAGS:+$GOFLAGS }-count=1"); fi
+  java_do_repo   # antes da senha: JDK ausente falha sem pegar a fila
   # shellcheck source=/dev/null
   . "$here/fila-pesado.sh"
   trap fila_sair EXIT
   unset REVENU_GATE_DOCKER REVENU_GATE_PESADA
+  REVENU_GATE_DOCKER=$docker hook_sem_vaga
   if [ "$docker" = 1 ]; then
     echo "N1 unitária (DV 2397): pista leve da fila, com passo docker (sem banco, act nem mutante)"
     REVENU_GATE_DOCKER=1 REVENU_GATE_SEM_BANCO=1 REVENU_GATE_NIVEL_TESTE=unitaria \
@@ -240,13 +340,18 @@ n1_unitaria() {
         "sem gate-local; corrija antes do push (log em ${e#"$root"/})"
       exit 1
     fi
-    printf '%s\nN1 unitária (2397): %s comandos, %s pass/%s fail, %ss\n' \
-      "$(date -u +%FT%TZ)" "$n" "$p" "$f" "$dur" > "$ok"
+    printf '%s\nN1 unitária (2397): %s comandos, %s pass/%s fail, %ss\n%s' \
+      "$(date -u +%FT%TZ)" "$n" "$p" "$f" "$dur" "${sem_cache:+$nota_sem_cache$'\n'}" > "$ok"
     echo "✅ N1 unitária verde em ${dur}s para ${sha:0:12}: $n comandos, $p pass/$f fail"
     return 0
   fi
-  echo "▶ go test -short ./... na raiz"
-  "${limpa[@]}" go test -short -json ./... >> "$j" 2>> "$e" || rc=1
+  if [ -n "$sem_cache" ]; then
+    echo "▶ go test -short -count=1 ./... na raiz (rodada do push, sem cache; DV 2930)"
+    "${limpa[@]}" go test -short -count=1 -json ./... >> "$j" 2>> "$e" || rc=1
+  else
+    echo "▶ go test -short ./... na raiz"
+    "${limpa[@]}" go test -short -json ./... >> "$j" 2>> "$e" || rc=1
+  fi
   dur=$(( $(date +%s) - t0 )); p=$(conta pass "$j"); f=$(conta fail "$j"); k=$(conta skip "$j")
   if [ "$rc" != 0 ] || [ "$f" != 0 ] || [ "$p" = 0 ]; then
     jq -Rr 'fromjson? | select(.Action == "fail") | "  FAIL \(.Package) \(.Test // "(pacote)")"' \
@@ -256,12 +361,12 @@ n1_unitaria() {
       "sem gate-local; corrija antes do push (log em ${j#"$root"/})"
     exit 1
   fi
-  printf '%s\nN1 unitária (2397): go test -short, %s pass/%s fail, %s skip, %ss\n' \
-    "$(date -u +%FT%TZ)" "$p" "$f" "$k" "$dur" > "$ok"
+  printf '%s\nN1 unitária (2397): go test -short, %s pass/%s fail, %s skip, %ss\n%s' \
+    "$(date -u +%FT%TZ)" "$p" "$f" "$k" "$dur" "${sem_cache:+$nota_sem_cache$'\n'}" > "$ok"
   echo "✅ N1 unitária verde em ${dur}s para ${sha:0:12}: $p pass/$f fail, $k skip"
 }
 if [ "$modo" = unitario ] && [ -z "$so" ]; then
-  if [ -f "$ok" ]; then echo "N1 unitária já passou para $sha"
+  if ok_vale; then echo "N1 unitária já passou para $sha"
   else
     if [ -n "$(git status --porcelain --untracked-files=normal)" ]; then
       echo "árvore suja: commite (ou guarde) antes — o resultado vale para um commit exato" >&2
@@ -269,20 +374,21 @@ if [ "$modo" = unitario ] && [ -z "$so" ]; then
     fi
     n1_unitaria
   fi
-  if publicar; then exit 0; fi
+  if publicar; then lembra_push; exit 0; fi
   pl="$logs/$sha-gate-local.log"
   echo "gate-local: ${sha:0:12} ainda não está no GitHub; publico à parte depois do push" \
     "(log em ${pl#"$root"/})"
   ( trap - EXIT
-    for _ in $(seq 1 "${CI_LOCAL_PUBLICAR_TENTATIVAS:-60}"); do
+    for i in $(seq 1 "${CI_LOCAL_PUBLICAR_TENTATIVAS:-60}"); do
       sleep "${CI_LOCAL_PUBLICAR_ESPERA_S:-10}"; if publicar; then exit 0; fi
+      echo "$(date -u +%FT%TZ) tentativa $i falhou"
     done
     echo "desisti: ${sha:0:12} não apareceu no GitHub; rode scripts/ci-local/run.sh --publicar"
   ) < /dev/null >> "$pl" 2>&1 &
   disown || true
-  exit 0
+  lembra_push; exit 0
 fi
-if [ -z "$so" ] && [ -f "$ok" ]; then echo "CI local já passou para $sha — nada a fazer"; exit 0; fi
+if [ -z "$so" ] && ok_vale; then echo "CI local já passou para $sha — nada a fazer"; lembra_push; exit 0; fi
 if [ -z "$so" ] && [ -n "$(git status --porcelain --untracked-files=normal)" ]; then
   echo "árvore suja: commite (ou guarde) antes — o resultado vale para um commit exato" >&2; exit 1
 fi
@@ -509,7 +615,7 @@ if [ -n "$banco" ]; then
   echo "gate pesado: pista banco —$banco"; REVENU_GATE_SEM_BANCO=0 fila_entrar "ci-local:$(basename "$root")"
 elif [ -n "$pesado" ]; then
   # o act sobe contêiner (hadolint, dockle e os jobs): espera a memória da VM do Docker (dono, 2026-11-22)
-  echo "gate pesado: pista leve (sem banco) —$pesado"
+  REVENU_GATE_DOCKER=1 hook_sem_vaga; echo "gate pesado: pista leve (sem banco) —$pesado"
   REVENU_GATE_SEM_BANCO=1 REVENU_GATE_DOCKER=1 fila_entrar "ci-local:$(basename "$root")"
 fi
 
@@ -544,6 +650,10 @@ jq -n --arg b "$base" --arg h "$sha" --arg ref "$(git rev-parse --abbrev-ref HEA
   '{pull_request: {number: 0, base: {sha: $b, ref: $br}, head: {sha: $h, ref: $ref}, labels: []}}' > "$event"
 
 plats=(); for r in "${rotulos[@]}"; do plats+=(-P "$r=$imagem_local"); done
+# Rodada do push (DV 2930): o setup-go devolve o GOCACHE (com os resultados de teste) pelo cache do
+# act em ~/.cache/actcache; o -count=1 no GOFLAGS desliga o cache de teste. O env do workflow ou do
+# passo que define GOFLAGS prevalece (cardos e investos zeram o GOFLAGS num passo).
+cache_env=(); if [ -n "$sem_cache" ]; then cache_env=(--env GOFLAGS=-count=1); fi
 start=$(date +%s); falhou=(); sem_prova=(); fora=()
 # Teto de CPU por job (2026-10-26, malha `revenu` caiu com a VM do Docker a 2487 %): 2 jobs × 2 CPUs. Vale só para o
 # container do job; os `services:` (CRDB, Kafka) o act cria sem essa opção. CI_LOCAL_CPUS muda o teto.
@@ -568,6 +678,7 @@ for f in "${fluxos[@]}"; do
   echo "▶ $n — log em ${log#"$root"/}"
   set +e
   "$act" pull_request -W "$f" -e "$event" "${plats[@]}" ${matriz[@]+"${matriz[@]}"} \
+    ${cache_env[@]+"${cache_env[@]}"} \
     --container-architecture linux/amd64 --pull=false --var LOCAL_CI=true \
     -s GITHUB_TOKEN --privileged --rm --concurrent-jobs 2 \
     --container-options "--cpus=${CI_LOCAL_CPUS:-2} --memory=${CI_LOCAL_MEMORIA:-3g}" \
@@ -591,6 +702,8 @@ if [ ${#falhou[@]} -gt 0 ]; then
   echo "❌ CI local FALHOU em ${dur}s: ${falhou[*]} — corrija antes do push (logs em .cache/ci-local/logs/)"; exit 1
 fi
 if [ -z "$so" ]; then
-  { date -u +%FT%TZ; echo "duração=${dur}s act=$ACT_VERSION workflows=${#fluxos[@]}${nota:+ ($nota)}"; } > "$ok"
+  { date -u +%FT%TZ; echo "duração=${dur}s act=$ACT_VERSION workflows=${#fluxos[@]}${nota:+ ($nota)}"
+    if [ -n "$sem_cache" ]; then echo "$nota_sem_cache"; fi; } > "$ok"
 fi
 echo "✅ CI local verde em ${dur}s para $(git rev-parse --short HEAD) (${#fluxos[@]} workflows${nota:+; $nota})"
+lembra_push
